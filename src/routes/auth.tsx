@@ -43,7 +43,8 @@ function PinGate() {
         });
         if (error) throw error;
         await navigate({ to: "/dashboard", replace: true });
-      } catch {
+      } catch (err) {
+        console.error("unlock failed", err);
         setStatus("error");
         setPin("");
       }
