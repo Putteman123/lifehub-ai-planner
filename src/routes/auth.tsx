@@ -41,7 +41,13 @@ function AuthPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(
+        error.message.includes("Invalid login credentials")
+          ? "Fel e-post eller lösenord."
+          : error.message.includes("Email not confirmed")
+            ? "Bekräfta din e-post innan du loggar in."
+            : error.message,
+      );
       return;
     }
     navigate({ to: "/dashboard", replace: true });
@@ -64,7 +70,7 @@ function AuthPage() {
       return;
     }
     if (!data.session) {
-      toast.success("Konto skapat! Bekräfta din e-post för att logga in.");
+      toast.success("Konto skapat! Du kan logga in nu.");
       return;
     }
     navigate({ to: "/dashboard", replace: true });

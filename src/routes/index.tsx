@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CalendarDays, Scale, Sparkles, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -44,6 +46,14 @@ const FEATURES = [
 ];
 
 function Landing() {
+  const [signedIn, setSignedIn] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSignedIn(Boolean(data.session)));
+    const { data } = supabase.auth.onAuthStateChange((_e, session) => setSignedIn(Boolean(session)));
+    return () => data.subscription.unsubscribe();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-6">
@@ -54,7 +64,7 @@ function Landing() {
           LifeHub AI
         </span>
         <Button asChild variant="ghost" size="sm">
-          <Link to="/auth">Logga in</Link>
+          <Link to={signedIn ? "/dashboard" : "/auth"}>{signedIn ? "Öppna appen" : "Logga in"}</Link>
         </Button>
       </header>
 
@@ -70,7 +80,9 @@ function Landing() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg">
-              <Link to="/auth">Kom igång</Link>
+              <Link to={signedIn ? "/dashboard" : "/auth"}>
+                {signedIn ? "Öppna appen" : "Kom igång"}
+              </Link>
             </Button>
           </div>
         </section>
