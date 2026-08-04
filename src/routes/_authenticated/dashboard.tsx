@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Plus, Sparkles } from "lucide-react";
 
+import { AiPanel } from "@/components/AiPanel";
 import { AppShell } from "@/components/AppShell";
 import { DataGate } from "@/components/DataGate";
 import { EventDialog } from "@/components/EventDialog";
@@ -147,10 +148,13 @@ function Dashboard() {
           <section className="card-soft bg-accent/40 p-5">
             <div className="flex items-center gap-2 text-primary">
               <Sparkles className="size-4" />
-              <h2 className="text-sm font-semibold">AI-sammanfattning</h2>
+              <h2 className="text-sm font-semibold">Dagens sammanfattning</h2>
             </div>
             <p className="mt-2 text-sm leading-relaxed text-foreground">{summary}</p>
           </section>
+
+          <AiPanel />
+
 
           <section className="card-soft p-5">
             <h2 className="text-sm font-semibold">Idag</h2>
