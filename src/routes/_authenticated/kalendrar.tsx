@@ -59,7 +59,7 @@ function CalendarsPage() {
     if (!name.trim()) return;
     await upsert.mutateAsync({
       name: name.trim(),
-      provider,
+      source: provider as "apple" | "family" | "google" | "ics" | "local" | "outlook" | "school" | "sports",
       ics_url: url || null,
       color: category,
     });
