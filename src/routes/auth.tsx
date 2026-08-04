@@ -27,8 +27,12 @@ function PinGate() {
   const [pin, setPin] = useState("");
   const [status, setStatus] = useState<"idle" | "checking" | "error">("idle");
 
+  const busy = useRef(false);
+
   const submit = useCallback(
     async (code: string) => {
+      if (busy.current) return;
+      busy.current = true;
       setStatus("checking");
       try {
         const res = await unlock({ data: { pin: code } });
@@ -43,10 +47,11 @@ function PinGate() {
         });
         if (error) throw error;
         await navigate({ to: "/dashboard", replace: true });
-      } catch (err) {
-        console.error("unlock failed", err);
+      } catch {
         setStatus("error");
         setPin("");
+      } finally {
+        busy.current = false;
       }
     },
     [unlock, navigate],
@@ -60,13 +65,11 @@ function PinGate() {
       return;
     }
     if (!key) return;
-    setPin((p) => {
-      if (p.length >= 4) return p;
-      const next = p + key;
-      if (next.length === 4) void submit(next);
-      return next;
-    });
+    const next = (pin.length >= 4 ? pin : pin + key).slice(0, 4);
+    setPin(next);
+    if (next.length === 4) void submit(next);
   }
+
 
 
   return (
