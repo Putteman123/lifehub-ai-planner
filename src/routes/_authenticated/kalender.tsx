@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
+import { DataGate } from "@/components/DataGate";
 import { EventDialog } from "@/components/EventDialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,7 +36,8 @@ export const Route = createFileRoute("/_authenticated/kalender")({
 type View = "dag" | "vecka" | "manad" | "ar" | "agenda";
 
 function CalendarPage() {
-  const { data: rawEvents = [] } = useEvents();
+  const eventsQ = useEvents();
+  const rawEvents = eventsQ.data ?? [];
   const [view, setView] = useState<View>("vecka");
   const [cursor, setCursor] = useState(() => new Date());
   const [active, setActive] = useState<Category[]>(CATEGORIES.map((c) => c.value));
@@ -87,6 +89,7 @@ function CalendarPage() {
         </Button>
       }
     >
+      <DataGate queries={[eventsQ]}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Tabs value={view} onValueChange={(v) => setView(v as View)}>
           <TabsList>
@@ -141,6 +144,7 @@ function CalendarPage() {
         event={selected}
         defaultDate={cursor}
       />
+      </DataGate>
     </AppShell>
   );
 }

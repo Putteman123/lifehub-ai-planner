@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
+import { DataGate } from "@/components/DataGate";
 import { EventDialog } from "@/components/EventDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,8 +32,10 @@ export const Route = createFileRoute("/_authenticated/barn")({
 });
 
 function ChildrenPage() {
-  const { data: children = [] } = useChildren();
-  const { data: rawEvents = [] } = useEvents();
+  const childrenQ = useChildren();
+  const children = childrenQ.data ?? [];
+  const eventsQ = useEvents();
+  const rawEvents = eventsQ.data ?? [];
   const upsertChild = useUpsertRow("children");
   const [addOpen, setAddOpen] = useState(false);
   const [name, setName] = useState("");
@@ -83,6 +86,7 @@ function ChildrenPage() {
         </div>
       }
     >
+      <DataGate queries={[childrenQ, eventsQ]}>
       <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setFilter(null)}
@@ -187,6 +191,7 @@ function ChildrenPage() {
         defaultDate={new Date()}
         defaultCategory="barn"
       />
+      </DataGate>
     </AppShell>
   );
 }

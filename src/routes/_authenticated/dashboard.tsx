@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { Plus, Sparkles } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
+import { DataGate } from "@/components/DataGate";
 import { EventDialog } from "@/components/EventDialog";
 import { Button } from "@/components/ui/button";
 import { categoryMeta, type EventRow } from "@/lib/categories";
@@ -96,9 +97,12 @@ function EventRowItem({ event, onClick }: { event: EventRow; onClick: () => void
 }
 
 function Dashboard() {
-  const { data: rawEvents = [] } = useEvents();
-  const { data: tasks = [] } = useCaseTasks();
-  const { data: reminders = [] } = useReminders();
+  const eventsQ = useEvents();
+  const rawEvents = eventsQ.data ?? [];
+  const tasksQ = useCaseTasks();
+  const tasks = tasksQ.data ?? [];
+  const remindersQ = useReminders();
+  const reminders = remindersQ.data ?? [];
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selected, setSelected] = useState<EventRow | null>(null);
 
@@ -137,6 +141,7 @@ function Dashboard() {
         </Button>
       }
     >
+      <DataGate queries={[eventsQ, tasksQ, remindersQ]}>
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
           <section className="card-soft bg-accent/40 p-5">
@@ -335,6 +340,7 @@ function Dashboard() {
         event={selected}
         defaultDate={addDays(today, 0)}
       />
+      </DataGate>
     </AppShell>
   );
 }
