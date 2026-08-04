@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Plus, RefreshCw, Trash2 } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
+import { DataGate } from "@/components/DataGate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,7 +46,8 @@ const PROVIDERS = [
 ] as const;
 
 function CalendarsPage() {
-  const { data: calendars = [] } = useCalendars();
+  const calendarsQ = useCalendars();
+  const calendars = calendarsQ.data ?? [];
   const upsert = useUpsertRow("calendars");
   const remove = useDeleteRow("calendars");
 
@@ -78,6 +80,7 @@ function CalendarsPage() {
         </Button>
       }
     >
+      <DataGate queries={[calendarsQ]}>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {calendars.length === 0 ? (
           <div className="card-soft p-6 text-sm text-muted-foreground sm:col-span-2 lg:col-span-3">
@@ -188,6 +191,7 @@ function CalendarsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </DataGate>
     </AppShell>
   );
 }

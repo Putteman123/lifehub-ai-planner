@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { Plus, Check } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
+import { DataGate } from "@/components/DataGate";
 import { EventDialog } from "@/components/EventDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,9 +33,12 @@ export const Route = createFileRoute("/_authenticated/jurist")({
 });
 
 function LegalPage() {
-  const { data: cases = [] } = useCases();
-  const { data: tasks = [] } = useCaseTasks();
-  const { data: rawEvents = [] } = useEvents();
+  const casesQ = useCases();
+  const cases = casesQ.data ?? [];
+  const tasksQ = useCaseTasks();
+  const tasks = tasksQ.data ?? [];
+  const eventsQ = useEvents();
+  const rawEvents = eventsQ.data ?? [];
   const upsertCase = useUpsertRow("legal_cases");
   const upsertTask = useUpsertRow("case_tasks");
 
@@ -102,6 +106,7 @@ function LegalPage() {
         </div>
       }
     >
+      <DataGate queries={[casesQ, tasksQ, eventsQ]}>
       <div className="grid gap-5 lg:grid-cols-3">
         <section className="card-soft p-5">
           <h2 className="text-sm font-semibold">Ärenden</h2>
@@ -271,6 +276,7 @@ function LegalPage() {
         defaultDate={new Date()}
         defaultCategory="jurist"
       />
+      </DataGate>
     </AppShell>
   );
 }
