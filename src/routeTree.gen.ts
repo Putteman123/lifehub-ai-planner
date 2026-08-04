@@ -16,6 +16,7 @@ import { Route as AuthenticatedBarnRouteImport } from './routes/_authenticated/b
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedJuristRouteImport } from './routes/_authenticated/jurist'
 import { Route as AuthenticatedKalenderRouteImport } from './routes/_authenticated/kalender'
+import { Route as AuthenticatedKalendrarRouteImport } from './routes/_authenticated/kalendrar'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -51,6 +52,11 @@ const AuthenticatedKalenderRoute = AuthenticatedKalenderRouteImport.update({
   path: '/kalender',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedKalendrarRoute = AuthenticatedKalendrarRouteImport.update({
+  id: '/kalendrar',
+  path: '/kalendrar',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/jurist': typeof AuthenticatedJuristRoute
   '/kalender': typeof AuthenticatedKalenderRoute
+  '/kalendrar': typeof AuthenticatedKalendrarRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/jurist': typeof AuthenticatedJuristRoute
   '/kalender': typeof AuthenticatedKalenderRoute
+  '/kalendrar': typeof AuthenticatedKalendrarRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -77,12 +85,27 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/jurist': typeof AuthenticatedJuristRoute
   '/_authenticated/kalender': typeof AuthenticatedKalenderRoute
+  '/_authenticated/kalendrar': typeof AuthenticatedKalendrarRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/barn' | '/dashboard' | '/jurist' | '/kalender'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/barn'
+    | '/dashboard'
+    | '/jurist'
+    | '/kalender'
+    | '/kalendrar'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/barn' | '/dashboard' | '/jurist' | '/kalender'
+  to:
+    | '/'
+    | '/auth'
+    | '/barn'
+    | '/dashboard'
+    | '/jurist'
+    | '/kalender'
+    | '/kalendrar'
   id:
     | '__root__'
     | '/'
@@ -92,6 +115,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/jurist'
     | '/_authenticated/kalender'
+    | '/_authenticated/kalendrar'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -151,6 +175,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedKalenderRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/kalendrar': {
+      id: '/_authenticated/kalendrar'
+      path: '/kalendrar'
+      fullPath: '/kalendrar'
+      preLoaderRoute: typeof AuthenticatedKalendrarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -159,6 +190,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedJuristRoute: typeof AuthenticatedJuristRoute
   AuthenticatedKalenderRoute: typeof AuthenticatedKalenderRoute
+  AuthenticatedKalendrarRoute: typeof AuthenticatedKalendrarRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -166,6 +198,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedJuristRoute: AuthenticatedJuristRoute,
   AuthenticatedKalenderRoute: AuthenticatedKalenderRoute,
+  AuthenticatedKalendrarRoute: AuthenticatedKalendrarRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

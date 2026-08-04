@@ -60,8 +60,8 @@ function CalendarsPage() {
     await upsert.mutateAsync({
       name: name.trim(),
       provider,
-      external_url: url || null,
-      default_category: category,
+      ics_url: url || null,
+      color: category,
     });
     setName("");
     setUrl("");
@@ -85,22 +85,22 @@ function CalendarsPage() {
           </div>
         ) : null}
         {calendars.map((c) => {
-          const meta = CATEGORIES.find((x) => x.value === c.default_category) ?? CATEGORIES[0]!;
+          const meta = CATEGORIES.find((x) => x.value === c.color) ?? CATEGORIES[0]!;
           return (
             <div key={c.id} className="card-soft p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{c.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {PROVIDERS.find((p) => p.value === c.provider)?.label ?? c.provider}
+                    {PROVIDERS.find((p) => p.value === c.source)?.label ?? c.source}
                   </p>
                 </div>
                 <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] ${meta.chip}`}>
                   {meta.label}
                 </span>
               </div>
-              {c.external_url ? (
-                <p className="mt-2 truncate text-xs text-muted-foreground">{c.external_url}</p>
+              {c.ics_url ? (
+                <p className="mt-2 truncate text-xs text-muted-foreground">{c.ics_url}</p>
               ) : null}
               <div className="mt-3 flex items-center justify-between">
                 <span className="text-[11px] text-muted-foreground">

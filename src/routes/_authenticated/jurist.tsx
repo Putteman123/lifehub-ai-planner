@@ -61,7 +61,7 @@ function LegalPage() {
     await upsertCase.mutateAsync({
       title: title.trim(),
       client_name: client || null,
-      notes: notes || null,
+      description: notes || null,
     });
     setTitle("");
     setClient("");
@@ -224,8 +224,8 @@ function LegalPage() {
               <Input id="case-client" value={client} onChange={(e) => setClient(e.target.value)} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="case-notes">Anteckningar</Label>
-              <Textarea id="case-notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
+              <Label htmlFor="case-desc">Anteckningar</Label>
+              <Textarea id="case-desc" value={notes} onChange={(e) => setNotes(e.target.value)} />
             </div>
           </div>
           <DialogFooter>
