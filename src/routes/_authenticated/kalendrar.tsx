@@ -1,6 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+
 
 import { AppShell } from "@/components/AppShell";
 import { DataGate } from "@/components/DataGate";
@@ -23,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { CATEGORIES, type Category } from "@/lib/categories";
 import { fmt } from "@/lib/calendar";
+import { syncCalendar } from "@/lib/calendar-sync.functions";
 import { useCalendars, useDeleteRow, useUpsertRow } from "@/lib/db";
 
 export const Route = createFileRoute("/_authenticated/kalendrar")({
@@ -50,6 +55,28 @@ function CalendarsPage() {
   const calendars = calendarsQ.data ?? [];
   const upsert = useUpsertRow("calendars");
   const remove = useDeleteRow("calendars");
+  const qc = useQueryClient();
+  const runSyncFn = useServerFn(syncCalendar);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
+
+  async function runSync(calendarId: string) {
+    setSyncingId(calendarId);
+    try {
+      const result = await runSyncFn({ data: { calendarId } });
+      await qc.invalidateQueries({ queryKey: ["calendars"] });
+      await qc.invalidateQueries({ queryKey: ["events"] });
+      toast.success(
+        result.imported > 0
+          ? `Synkade ${result.imported} händelser`
+          : "Synkad – inga händelser hittades",
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Synkning misslyckades");
+    } finally {
+      setSyncingId(null);
+    }
+  }
+
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -113,12 +140,17 @@ function CalendarsPage() {
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() =>
-                      upsert.mutate({ id: c.id, last_synced_at: new Date().toISOString() })
-                    }
+                    disabled={syncingId === c.id}
+                    onClick={() => runSync(c.id)}
+                    aria-label="Synka kalender"
                   >
-                    <RefreshCw className="size-4" />
+                    {syncingId === c.id ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="size-4" />
+                    )}
                   </Button>
+
                   <Button size="icon" variant="ghost" onClick={() => remove.mutate(c.id)}>
                     <Trash2 className="size-4" />
                   </Button>
