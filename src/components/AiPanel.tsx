@@ -85,7 +85,7 @@ export function AiPanel({ compact = false }: { compact?: boolean }) {
         {asked ? (
           <div className="rounded-xl bg-muted/40 p-3">
             <p className="text-xs font-medium text-muted-foreground">{asked}</p>
-            <div className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">
+            <div className="mt-2 text-sm leading-relaxed [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-2 [&_strong]:font-semibold [&_ul]:mb-2 [&_ul]:space-y-1">
               {mutation.isPending ? (
                 <span className="flex items-center gap-2 text-muted-foreground">
                   <Loader2 className="size-4 animate-spin" /> Tänker…
@@ -95,9 +95,10 @@ export function AiPanel({ compact = false }: { compact?: boolean }) {
                   {mutation.error instanceof Error ? mutation.error.message : "Något gick fel."}
                 </span>
               ) : (
-                mutation.data
+                <ReactMarkdown>{mutation.data}</ReactMarkdown>
               )}
             </div>
+
           </div>
         ) : null}
       </div>
