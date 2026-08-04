@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Delete, Loader2, Lock, Sparkles } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { unlockWithPin } from "@/lib/pin.functions";
