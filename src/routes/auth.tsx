@@ -27,15 +27,11 @@ function PinGate() {
   const [pin, setPin] = useState("");
   const [status, setStatus] = useState<"idle" | "checking" | "error">("idle");
 
-  useEffect(() => {
-    if (pin.length !== 4 || status === "checking") return;
-
-    let cancelled = false;
-    (async () => {
+  const submit = useCallback(
+    async (code: string) => {
       setStatus("checking");
       try {
-        const res = await unlock({ data: { pin } });
-        if (cancelled) return;
+        const res = await unlock({ data: { pin: code } });
         if (!res.ok) {
           setStatus("error");
           setPin("");
@@ -48,24 +44,29 @@ function PinGate() {
         if (error) throw error;
         await navigate({ to: "/dashboard", replace: true });
       } catch {
-        if (!cancelled) {
-          setStatus("error");
-          setPin("");
-        }
+        setStatus("error");
+        setPin("");
       }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [pin, status, unlock, navigate]);
+    },
+    [unlock, navigate],
+  );
 
   function press(key: string) {
     if (status === "checking") return;
     setStatus("idle");
-    if (key === "del") setPin((p) => p.slice(0, -1));
-    else if (key) setPin((p) => (p.length < 4 ? p + key : p));
+    if (key === "del") {
+      setPin((p) => p.slice(0, -1));
+      return;
+    }
+    if (!key) return;
+    setPin((p) => {
+      if (p.length >= 4) return p;
+      const next = p + key;
+      if (next.length === 4) void submit(next);
+      return next;
+    });
   }
+
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background px-6 py-10">
