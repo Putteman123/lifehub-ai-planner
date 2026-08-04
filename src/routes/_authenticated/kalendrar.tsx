@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { CATEGORIES, type Category } from "@/lib/categories";
 import { fmt } from "@/lib/calendar";
+import { syncCalendar } from "@/lib/calendar-sync.functions";
 import { useCalendars, useDeleteRow, useUpsertRow } from "@/lib/db";
 
 export const Route = createFileRoute("/_authenticated/kalendrar")({
@@ -117,12 +118,17 @@ function CalendarsPage() {
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() =>
-                      upsert.mutate({ id: c.id, last_synced_at: new Date().toISOString() })
-                    }
+                    disabled={syncingId === c.id}
+                    onClick={() => runSync(c.id)}
+                    aria-label="Synka kalender"
                   >
-                    <RefreshCw className="size-4" />
+                    {syncingId === c.id ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="size-4" />
+                    )}
                   </Button>
+
                   <Button size="icon" variant="ghost" onClick={() => remove.mutate(c.id)}>
                     <Trash2 className="size-4" />
                   </Button>
