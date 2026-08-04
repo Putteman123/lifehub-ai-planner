@@ -55,6 +55,28 @@ function CalendarsPage() {
   const calendars = calendarsQ.data ?? [];
   const upsert = useUpsertRow("calendars");
   const remove = useDeleteRow("calendars");
+  const qc = useQueryClient();
+  const runSyncFn = useServerFn(syncCalendar);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
+
+  async function runSync(calendarId: string) {
+    setSyncingId(calendarId);
+    try {
+      const result = await runSyncFn({ data: { calendarId } });
+      await qc.invalidateQueries({ queryKey: ["calendars"] });
+      await qc.invalidateQueries({ queryKey: ["events"] });
+      toast.success(
+        result.imported > 0
+          ? `Synkade ${result.imported} händelser`
+          : "Synkad – inga händelser hittades",
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Synkning misslyckades");
+    } finally {
+      setSyncingId(null);
+    }
+  }
+
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
