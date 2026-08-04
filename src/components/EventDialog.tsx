@@ -1,0 +1,288 @@
+import { useEffect, useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { CATEGORIES, type Category, type EventRow } from "@/lib/categories";
+import { useCalendars, useCases, useChildren, useDeleteRow, useUpsertRow } from "@/lib/db";
+
+const NONE = "__none__";
+
+function toLocalInput(value: string) {
+  const d = new Date(value);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export function EventDialog({
+  open,
+  onOpenChange,
+  event,
+  defaultDate,
+  defaultCategory,
+  defaultChildId,
+  defaultCaseId,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  event?: EventRow | null;
+  defaultDate?: Date;
+  defaultCategory?: Category;
+  defaultChildId?: string | null;
+  defaultCaseId?: string | null;
+}) {
+  const upsert = useUpsertRow("events", "Händelsen sparades");
+  const remove = useDeleteRow("events", "Händelsen togs bort");
+  const { data: calendars = [] } = useCalendars();
+  const { data: children = [] } = useChildren();
+  const { data: cases = [] } = useCases();
+
+  const [form, setForm] = useState({
+    title: "",
+    startsAt: "",
+    endsAt: "",
+    allDay: false,
+    category: (defaultCategory ?? "privat") as Category,
+    location: "",
+    description: "",
+    calendarId: NONE,
+    childId: NONE,
+    caseId: NONE,
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    if (event) {
+      setForm({
+        title: event.title,
+        startsAt: toLocalInput(event.starts_at),
+        endsAt: toLocalInput(event.ends_at),
+        allDay: event.all_day,
+        category: event.category,
+        location: event.location ?? "",
+        description: event.description ?? "",
+        calendarId: event.calendar_id ?? NONE,
+        childId: event.child_id ?? NONE,
+        caseId: event.case_id ?? NONE,
+      });
+      return;
+    }
+    const base = defaultDate ? new Date(defaultDate) : new Date();
+    base.setMinutes(0, 0, 0);
+    if (!defaultDate) base.setHours(base.getHours() + 1);
+    else base.setHours(9);
+    const end = new Date(base.getTime() + 60 * 60 * 1000);
+    setForm({
+      title: "",
+      startsAt: toLocalInput(base.toISOString()),
+      endsAt: toLocalInput(end.toISOString()),
+      allDay: false,
+      category: defaultCategory ?? "privat",
+      location: "",
+      description: "",
+      calendarId: NONE,
+      childId: defaultChildId ?? NONE,
+      caseId: defaultCaseId ?? NONE,
+    });
+  }, [open, event, defaultDate, defaultCategory, defaultChildId, defaultCaseId]);
+
+  function save() {
+    if (!form.title.trim() || !form.startsAt || !form.endsAt) return;
+    upsert.mutate(
+      {
+        ...(event ? { id: event.id } : {}),
+        title: form.title.trim(),
+        starts_at: new Date(form.startsAt).toISOString(),
+        ends_at: new Date(form.endsAt).toISOString(),
+        all_day: form.allDay,
+        category: form.category,
+        location: form.location.trim() || null,
+        description: form.description.trim() || null,
+        calendar_id: form.calendarId === NONE ? null : form.calendarId,
+        child_id: form.childId === NONE ? null : form.childId,
+        case_id: form.caseId === NONE ? null : form.caseId,
+      },
+      { onSuccess: () => onOpenChange(false) },
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{event ? "Redigera händelse" : "Ny händelse"}</DialogTitle>
+        </DialogHeader>
+
+        <div className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="title">Titel</Label>
+            <Input
+              id="title"
+              value={form.title}
+              placeholder="T.ex. Juristmöte"
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-2">
+              <Label htmlFor="start">Start</Label>
+              <Input
+                id="start"
+                type="datetime-local"
+                value={form.startsAt}
+                onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="end">Slut</Label>
+              <Input
+                id="end"
+                type="datetime-local"
+                value={form.endsAt}
+                onChange={(e) => setForm({ ...form, endsAt: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+            <Label htmlFor="allday">Heldag</Label>
+            <Switch
+              id="allday"
+              checked={form.allDay}
+              onCheckedChange={(v) => setForm({ ...form, allDay: v })}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label>Kategori</Label>
+            <Select
+              value={form.category}
+              onValueChange={(v) => setForm({ ...form, category: v as Category })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORIES.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>
+                    <span className="flex items-center gap-2">
+                      <span className={`size-2.5 rounded-full ${c.dot}`} />
+                      {c.label}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-3">
+            <div className="grid gap-2">
+              <Label>Kalender</Label>
+              <Select
+                value={form.calendarId}
+                onValueChange={(v) => setForm({ ...form, calendarId: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Ingen" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>Ingen</SelectItem>
+                  {calendars.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Barn</Label>
+              <Select value={form.childId} onValueChange={(v) => setForm({ ...form, childId: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Inget" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>Inget</SelectItem>
+                  {children.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Ärende</Label>
+              <Select value={form.caseId} onValueChange={(v) => setForm({ ...form, caseId: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Inget" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>Inget</SelectItem>
+                  {cases.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="location">Plats</Label>
+            <Input
+              id="location"
+              value={form.location}
+              onChange={(e) => setForm({ ...form, location: e.target.value })}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="desc">Anteckning</Label>
+            <Textarea
+              id="desc"
+              rows={3}
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+            />
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2 sm:justify-between">
+          {event ? (
+            <Button
+              variant="ghost"
+              className="text-destructive"
+              onClick={() => remove.mutate(event.id, { onSuccess: () => onOpenChange(false) })}
+            >
+              Ta bort
+            </Button>
+          ) : (
+            <span />
+          )}
+          <Button onClick={save} disabled={upsert.isPending}>
+            Spara
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

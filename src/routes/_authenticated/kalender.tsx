@@ -1,0 +1,373 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+
+import { AppShell } from "@/components/AppShell";
+import { EventDialog } from "@/components/EventDialog";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CATEGORIES, categoryMeta, type Category, type EventRow } from "@/lib/categories";
+import {
+  addDays,
+  dayLoad,
+  eventsOnDay,
+  fmt,
+  LOAD_STYLES,
+  mergeDuplicates,
+  monthGrid,
+  timeRange,
+  weekDays,
+} from "@/lib/calendar";
+import { useEvents } from "@/lib/db";
+
+export const Route = createFileRoute("/_authenticated/kalender")({
+  head: () => ({
+    meta: [
+      { title: "Kalender – LifeHub AI" },
+      { name: "description", content: "Dag, vecka, månad, år och agenda – alla kalendrar i en vy." },
+      { property: "og:title", content: "Kalender – LifeHub AI" },
+      { property: "og:description", content: "Alla dina aktiviteter i en färgkodad kalender." },
+    ],
+  }),
+  component: CalendarPage,
+});
+
+type View = "dag" | "vecka" | "manad" | "ar" | "agenda";
+
+function CalendarPage() {
+  const { data: rawEvents = [] } = useEvents();
+  const [view, setView] = useState<View>("vecka");
+  const [cursor, setCursor] = useState(() => new Date());
+  const [active, setActive] = useState<Category[]>(CATEGORIES.map((c) => c.value));
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selected, setSelected] = useState<EventRow | null>(null);
+
+  const events = useMemo(
+    () => mergeDuplicates(rawEvents).filter((e) => active.includes(e.category)),
+    [rawEvents, active],
+  );
+
+  function shift(direction: number) {
+    const next = new Date(cursor);
+    if (view === "dag") next.setDate(next.getDate() + direction);
+    else if (view === "vecka") next.setDate(next.getDate() + 7 * direction);
+    else if (view === "manad" || view === "agenda") next.setMonth(next.getMonth() + direction);
+    else next.setFullYear(next.getFullYear() + direction);
+    setCursor(next);
+  }
+
+  function open(event: EventRow | null, date?: Date) {
+    setSelected(event);
+    if (date) setCursor(date);
+    setDialogOpen(true);
+  }
+
+  function toggle(category: Category) {
+    setActive((prev) =>
+      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category],
+    );
+  }
+
+  const label =
+    view === "dag"
+      ? fmt(cursor, "EEEE d MMMM yyyy")
+      : view === "vecka"
+        ? `Vecka ${fmt(cursor, "w")} · ${fmt(cursor, "MMMM yyyy")}`
+        : view === "ar"
+          ? fmt(cursor, "yyyy")
+          : fmt(cursor, "MMMM yyyy");
+
+  return (
+    <AppShell
+      title="Kalender"
+      subtitle={label}
+      actions={
+        <Button size="sm" onClick={() => open(null, cursor)}>
+          <Plus className="size-4" /> Ny
+        </Button>
+      }
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Tabs value={view} onValueChange={(v) => setView(v as View)}>
+          <TabsList>
+            <TabsTrigger value="dag">Dag</TabsTrigger>
+            <TabsTrigger value="vecka">Vecka</TabsTrigger>
+            <TabsTrigger value="manad">Månad</TabsTrigger>
+            <TabsTrigger value="ar">År</TabsTrigger>
+            <TabsTrigger value="agenda">Agenda</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <div className="flex items-center gap-1">
+          <Button variant="outline" size="icon" onClick={() => shift(-1)}>
+            <ChevronLeft className="size-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setCursor(new Date())}>
+            Idag
+          </Button>
+          <Button variant="outline" size="icon" onClick={() => shift(1)}>
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        {CATEGORIES.map((c) => (
+          <button
+            key={c.value}
+            onClick={() => toggle(c.value)}
+            className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors ${
+              active.includes(c.value)
+                ? `${c.chip} border-transparent`
+                : "border-border text-muted-foreground"
+            }`}
+          >
+            <span className={`size-2 rounded-full ${c.dot}`} />
+            {c.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-5">
+        {view === "dag" ? <DayView events={events} day={cursor} onSelect={open} /> : null}
+        {view === "vecka" ? <WeekView events={events} day={cursor} onSelect={open} /> : null}
+        {view === "manad" ? <MonthView events={events} day={cursor} onSelect={open} /> : null}
+        {view === "ar" ? <YearView events={events} day={cursor} onPick={setCursor} /> : null}
+        {view === "agenda" ? <AgendaView events={events} day={cursor} onSelect={open} /> : null}
+      </div>
+
+      <EventDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        event={selected}
+        defaultDate={cursor}
+      />
+    </AppShell>
+  );
+}
+
+type SelectFn = (event: EventRow | null, date?: Date) => void;
+
+function EventChip({ event, onSelect }: { event: EventRow; onSelect: SelectFn }) {
+  const meta = categoryMeta(event.category);
+  return (
+    <button
+      onClick={() => onSelect(event)}
+      className={`w-full truncate rounded-md px-2 py-1 text-left text-[11px] ${meta.chip}`}
+    >
+      {event.all_day ? "" : `${fmt(event.starts_at, "HH:mm")} `}
+      {event.title}
+    </button>
+  );
+}
+
+function DayView({ events, day, onSelect }: { events: EventRow[]; day: Date; onSelect: SelectFn }) {
+  const items = eventsOnDay(events, day);
+  const load = dayLoad(events, day);
+  return (
+    <div className="card-soft p-5">
+      <div className={`mb-4 flex items-center gap-2 text-sm ${LOAD_STYLES[load].text}`}>
+        <span className={`size-2 rounded-full ${LOAD_STYLES[load].dot}`} />
+        {LOAD_STYLES[load].label}
+      </div>
+      <div className="space-y-2">
+        {items.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Inga aktiviteter denna dag.</p>
+        ) : (
+          items.map((e) => {
+            const meta = categoryMeta(e.category);
+            return (
+              <button
+                key={e.id}
+                onClick={() => onSelect(e)}
+                className={`flex w-full items-center gap-3 rounded-lg border-l-2 bg-surface px-3 py-3 text-left hover:bg-accent ${meta.bar}`}
+              >
+                <span className="w-24 shrink-0 text-xs tabular-nums text-muted-foreground">
+                  {timeRange(e)}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium">{e.title}</span>
+                  {e.location ? (
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {e.location}
+                    </span>
+                  ) : null}
+                </span>
+              </button>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}
+
+function WeekView({ events, day, onSelect }: { events: EventRow[]; day: Date; onSelect: SelectFn }) {
+  const days = weekDays(day);
+  return (
+    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-7">
+      {days.map((d) => {
+        const items = eventsOnDay(events, d);
+        const load = dayLoad(events, d);
+        return (
+          <button
+            key={d.toISOString()}
+            onClick={() => onSelect(null, d)}
+            className="card-soft min-h-32 p-3 text-left transition-colors hover:bg-accent/40"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium capitalize">{fmt(d, "EEE d/M")}</span>
+              <span className={`size-2 rounded-full ${LOAD_STYLES[load].dot}`} />
+            </div>
+            <div className="mt-2 space-y-1">
+              {items.map((e) => (
+                <EventChip key={e.id} event={e} onSelect={onSelect} />
+              ))}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function MonthView({ events, day, onSelect }: { events: EventRow[]; day: Date; onSelect: SelectFn }) {
+  const days = monthGrid(day);
+  return (
+    <div className="card-soft p-3">
+      <div className="grid grid-cols-7 gap-1 pb-1 text-center text-[11px] text-muted-foreground">
+        {["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"].map((d) => (
+          <span key={d}>{d}</span>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {days.map((d) => {
+          const items = eventsOnDay(events, d);
+          const otherMonth = d.getMonth() !== day.getMonth();
+          return (
+            <button
+              key={d.toISOString()}
+              onClick={() => onSelect(null, d)}
+              className={`min-h-20 rounded-lg bg-surface p-1.5 text-left align-top hover:bg-accent ${
+                otherMonth ? "opacity-45" : ""
+              }`}
+            >
+              <span className="text-[11px] font-medium">{fmt(d, "d")}</span>
+              <div className="mt-1 space-y-0.5">
+                {items.slice(0, 3).map((e) => (
+                  <EventChip key={e.id} event={e} onSelect={onSelect} />
+                ))}
+                {items.length > 3 ? (
+                  <span className="text-[10px] text-muted-foreground">
+                    +{items.length - 3} till
+                  </span>
+                ) : null}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function YearView({
+  events,
+  day,
+  onPick,
+}: {
+  events: EventRow[];
+  day: Date;
+  onPick: (date: Date) => void;
+}) {
+  const months = Array.from({ length: 12 }, (_, i) => new Date(day.getFullYear(), i, 1));
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {months.map((m) => {
+        const days = monthGrid(m);
+        return (
+          <button
+            key={m.toISOString()}
+            onClick={() => onPick(m)}
+            className="card-soft p-3 text-left hover:bg-accent/40"
+          >
+            <span className="text-xs font-semibold capitalize">{fmt(m, "MMMM")}</span>
+            <div className="mt-2 grid grid-cols-7 gap-0.5">
+              {days.map((d) => {
+                const load = dayLoad(events, d);
+                const other = d.getMonth() !== m.getMonth();
+                return (
+                  <span
+                    key={d.toISOString()}
+                    className={`flex aspect-square items-center justify-center rounded-[3px] text-[9px] ${
+                      other ? "opacity-30" : ""
+                    } ${
+                      load === "full"
+                        ? "bg-cat-viktigt/20"
+                        : load === "delvis"
+                          ? "bg-cat-barn/20"
+                          : "bg-surface"
+                    }`}
+                  >
+                    {fmt(d, "d")}
+                  </span>
+                );
+              })}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function AgendaView({
+  events,
+  day,
+  onSelect,
+}: {
+  events: EventRow[];
+  day: Date;
+  onSelect: SelectFn;
+}) {
+  const days = Array.from({ length: 30 }, (_, i) => addDays(day, i));
+  const withEvents = days
+    .map((d) => ({ day: d, items: eventsOnDay(events, d) }))
+    .filter((d) => d.items.length > 0);
+
+  if (withEvents.length === 0) {
+    return (
+      <div className="card-soft p-6 text-sm text-muted-foreground">
+        Inga aktiviteter de kommande 30 dagarna.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {withEvents.map(({ day: d, items }) => (
+        <section key={d.toISOString()} className="card-soft p-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {fmt(d, "EEEE d MMMM")}
+          </h3>
+          <div className="mt-3 space-y-2">
+            {items.map((e) => {
+              const meta = categoryMeta(e.category);
+              return (
+                <button
+                  key={e.id}
+                  onClick={() => onSelect(e)}
+                  className={`flex w-full items-center gap-3 rounded-lg border-l-2 bg-surface px-3 py-2 text-left hover:bg-accent ${meta.bar}`}
+                >
+                  <span className="w-24 shrink-0 text-xs tabular-nums text-muted-foreground">
+                    {timeRange(e)}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-sm">{e.title}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
