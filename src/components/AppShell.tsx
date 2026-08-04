@@ -3,7 +3,7 @@ import {
   Baby,
   CalendarDays,
   LayoutDashboard,
-  LogOut,
+  Lock,
   Scale,
   Settings2,
   Sparkles,
@@ -36,7 +36,7 @@ export function AppShell({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  async function signOut() {
+  async function lockApp() {
     await queryClient.cancelQueries();
     queryClient.clear();
     await supabase.auth.signOut();
@@ -67,9 +67,9 @@ export function AppShell({
             </Link>
           ))}
         </nav>
-        <Button variant="ghost" size="sm" className="justify-start gap-3" onClick={signOut}>
-          <LogOut className="size-4" />
-          Logga ut
+        <Button variant="ghost" size="sm" className="justify-start gap-3" onClick={lockApp}>
+          <Lock className="size-4" />
+          Lås appen
         </Button>
       </aside>
 
