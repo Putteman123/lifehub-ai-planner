@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { categoryMeta, type EventRow } from "@/lib/categories";
 import { fmt, mergeDuplicates } from "@/lib/calendar";
-import { useCaseTasks, useEvents, useLegalCases, useUpsertRow } from "@/lib/db";
+import { useCaseTasks, useEvents, useCases, useUpsertRow } from "@/lib/db";
 
 export const Route = createFileRoute("/_authenticated/jurist")({
   head: () => ({
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/_authenticated/jurist")({
 });
 
 function LegalPage() {
-  const { data: cases = [] } = useLegalCases();
+  const { data: cases = [] } = useCases();
   const { data: tasks = [] } = useCaseTasks();
   const { data: rawEvents = [] } = useEvents();
   const upsertCase = useUpsertRow("legal_cases");
