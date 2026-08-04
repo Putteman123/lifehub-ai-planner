@@ -204,7 +204,7 @@ function LegalPage() {
         <section className="card-soft mt-5 p-5">
           <h2 className="text-sm font-semibold">Anteckningar</h2>
           <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
-            {cases.find((c) => c.id === activeCase)?.notes || "Inga anteckningar."}
+            {cases.find((c) => c.id === activeCase)?.description || "Inga anteckningar."}
           </p>
         </section>
       ) : null}
