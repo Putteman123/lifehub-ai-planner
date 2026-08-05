@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { TablesUpdate } from "@/integrations/supabase/types";
 
 /**
  * Åtgärder som Andrea får utföra i appen. Alla körningar sker mot ägarens
@@ -54,15 +55,7 @@ export async function updateEvent(
   userId: string,
   input: { event_id: string } & { [K in keyof EventInput]?: EventInput[K] | undefined },
 ) {
-  const patch: {
-    title?: string | undefined;
-    starts_at?: string | undefined;
-    ends_at?: string | undefined;
-    category?: EventInput["category"] | undefined;
-    all_day?: boolean | undefined;
-    location?: string | undefined;
-    description?: string | undefined;
-  } = {};
+  const patch: TablesUpdate<"events"> = {};
   if (input.title !== undefined) patch.title = input.title;
   if (input.starts_at !== undefined) patch.starts_at = iso(input.starts_at);
   if (input.ends_at !== undefined) patch.ends_at = iso(input.ends_at);
@@ -237,11 +230,7 @@ export async function updatePlace(
     radius_m?: number | undefined;
   },
 ) {
-  const patch: {
-    name?: string | undefined;
-    kind?: "jobb" | "jurist" | "hem" | "barn" | "annat" | undefined;
-    radius_m?: number | undefined;
-  } = {};
+  const patch: TablesUpdate<"places"> = {};
   if (input.name !== undefined) patch.name = input.name;
   if (input.kind !== undefined) patch.kind = input.kind;
   if (input.radius_m !== undefined) patch.radius_m = input.radius_m;
