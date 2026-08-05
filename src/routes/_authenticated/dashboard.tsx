@@ -1,9 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Plus, Sparkles } from "lucide-react";
 
-import { AiPanel } from "@/components/AiPanel";
 import { AppShell } from "@/components/AppShell";
+
 import { DataGate } from "@/components/DataGate";
 import { EventDialog } from "@/components/EventDialog";
 import { Button } from "@/components/ui/button";
@@ -153,7 +153,7 @@ function Dashboard() {
             <p className="mt-2 text-sm leading-relaxed text-foreground">{summary}</p>
           </section>
 
-          <AiPanel />
+
 
 
           <section className="card-soft p-5">
@@ -176,7 +176,12 @@ function Dashboard() {
                 const load = dayLoad(events, day);
                 const items = eventsOnDay(events, day);
                 return (
-                  <div key={day.toISOString()} className="rounded-lg bg-surface p-3">
+                  <Link
+                    key={day.toISOString()}
+                    to="/kalender"
+                    search={{ vy: "dag", datum: fmt(day, "yyyy-MM-dd") }}
+                    className="rounded-lg bg-surface p-3 transition-colors hover:bg-accent"
+                  >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium capitalize">
                         {fmt(day, "EEEE d/M")}
@@ -199,9 +204,10 @@ function Dashboard() {
                         <li className="text-xs text-muted-foreground">Ledig</li>
                       ) : null}
                     </ul>
-                  </div>
+                  </Link>
                 );
               })}
+
             </div>
           </section>
 
@@ -218,9 +224,11 @@ function Dashboard() {
                 const isToday = fmt(day, "yyyy-MM-dd") === fmt(today, "yyyy-MM-dd");
                 const otherMonth = day.getMonth() !== today.getMonth();
                 return (
-                  <div
+                  <Link
                     key={day.toISOString()}
-                    className={`aspect-square rounded-md p-1 text-[11px] ${
+                    to="/kalender"
+                    search={{ vy: "dag", datum: fmt(day, "yyyy-MM-dd") }}
+                    className={`aspect-square rounded-md p-1 text-[11px] transition-colors hover:ring-1 hover:ring-primary/40 ${
                       isToday ? "bg-primary/10 font-semibold text-primary" : "bg-surface"
                     } ${otherMonth ? "opacity-40" : ""}`}
                   >
@@ -233,7 +241,7 @@ function Dashboard() {
                         />
                       ))}
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>

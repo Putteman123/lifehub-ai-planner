@@ -21,7 +21,15 @@ import {
 } from "@/lib/calendar";
 import { useEvents } from "@/lib/db";
 
+type View = "dag" | "vecka" | "manad" | "ar" | "agenda";
+
+const VIEWS: View[] = ["dag", "vecka", "manad", "ar", "agenda"];
+
 export const Route = createFileRoute("/_authenticated/kalender")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    vy: VIEWS.includes(search['vy'] as View) ? (search['vy'] as View) : undefined,
+    datum: typeof search['datum'] === "string" ? (search['datum'] as string) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Kalender – LifeHub AI" },
@@ -33,13 +41,14 @@ export const Route = createFileRoute("/_authenticated/kalender")({
   component: CalendarPage,
 });
 
-type View = "dag" | "vecka" | "manad" | "ar" | "agenda";
-
 function CalendarPage() {
+  const search = Route.useSearch();
   const eventsQ = useEvents();
   const rawEvents = eventsQ.data ?? [];
-  const [view, setView] = useState<View>("vecka");
-  const [cursor, setCursor] = useState(() => new Date());
+  const [view, setView] = useState<View>(search.vy ?? "vecka");
+  const [cursor, setCursor] = useState(() =>
+    search.datum ? new Date(`${search.datum}T12:00:00`) : new Date(),
+  );
   const [active, setActive] = useState<Category[]>(CATEGORIES.map((c) => c.value));
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selected, setSelected] = useState<EventRow | null>(null);
@@ -48,6 +57,12 @@ function CalendarPage() {
     () => mergeDuplicates(rawEvents).filter((e) => active.includes(e.category)),
     [rawEvents, active],
   );
+
+  function openDay(date: Date) {
+    setCursor(date);
+    setView("dag");
+  }
+
 
   function shift(direction: number) {
     const next = new Date(cursor);
@@ -132,10 +147,15 @@ function CalendarPage() {
 
       <div className="mt-5">
         {view === "dag" ? <DayView events={events} day={cursor} onSelect={open} /> : null}
-        {view === "vecka" ? <WeekView events={events} day={cursor} onSelect={open} /> : null}
-        {view === "manad" ? <MonthView events={events} day={cursor} onSelect={open} /> : null}
-        {view === "ar" ? <YearView events={events} day={cursor} onPick={setCursor} /> : null}
+        {view === "vecka" ? (
+          <WeekView events={events} day={cursor} onSelect={open} onOpenDay={openDay} />
+        ) : null}
+        {view === "manad" ? (
+          <MonthView events={events} day={cursor} onSelect={open} onOpenDay={openDay} />
+        ) : null}
+        {view === "ar" ? <YearView events={events} day={cursor} onPick={openDay} /> : null}
         {view === "agenda" ? <AgendaView events={events} day={cursor} onSelect={open} /> : null}
+
       </div>
 
       <EventDialog
@@ -155,7 +175,10 @@ function EventChip({ event, onSelect }: { event: EventRow; onSelect: SelectFn })
   const meta = categoryMeta(event.category);
   return (
     <button
-      onClick={() => onSelect(event)}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect(event);
+      }}
       className={`w-full truncate rounded-md px-2 py-1 text-left text-[11px] ${meta.chip}`}
     >
       {event.all_day ? "" : `${fmt(event.starts_at, "HH:mm")} `}
@@ -205,7 +228,17 @@ function DayView({ events, day, onSelect }: { events: EventRow[]; day: Date; onS
   );
 }
 
-function WeekView({ events, day, onSelect }: { events: EventRow[]; day: Date; onSelect: SelectFn }) {
+function WeekView({
+  events,
+  day,
+  onSelect,
+  onOpenDay,
+}: {
+  events: EventRow[];
+  day: Date;
+  onSelect: SelectFn;
+  onOpenDay: (date: Date) => void;
+}) {
   const days = weekDays(day);
   return (
     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-7">
@@ -213,28 +246,55 @@ function WeekView({ events, day, onSelect }: { events: EventRow[]; day: Date; on
         const items = eventsOnDay(events, d);
         const load = dayLoad(events, d);
         return (
-          <button
+          <div
             key={d.toISOString()}
-            onClick={() => onSelect(null, d)}
-            className="card-soft min-h-32 p-3 text-left transition-colors hover:bg-accent/40"
+            role="button"
+            tabIndex={0}
+            onClick={() => onOpenDay(d)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") onOpenDay(d);
+            }}
+            className="card-soft min-h-32 cursor-pointer p-3 text-left transition-colors hover:bg-accent/40"
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium capitalize">{fmt(d, "EEE d/M")}</span>
-              <span className={`size-2 rounded-full ${LOAD_STYLES[load].dot}`} />
+              <div className="flex items-center gap-1.5">
+                <span className={`size-2 rounded-full ${LOAD_STYLES[load].dot}`} />
+                <button
+                  aria-label="Ny händelse"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelect(null, d);
+                  }}
+                  className="text-muted-foreground hover:text-primary"
+                >
+                  <Plus className="size-3.5" />
+                </button>
+              </div>
             </div>
             <div className="mt-2 space-y-1">
               {items.map((e) => (
                 <EventChip key={e.id} event={e} onSelect={onSelect} />
               ))}
             </div>
-          </button>
+          </div>
         );
       })}
     </div>
   );
 }
 
-function MonthView({ events, day, onSelect }: { events: EventRow[]; day: Date; onSelect: SelectFn }) {
+function MonthView({
+  events,
+  day,
+  onSelect,
+  onOpenDay,
+}: {
+  events: EventRow[];
+  day: Date;
+  onSelect: SelectFn;
+  onOpenDay: (date: Date) => void;
+}) {
   const days = monthGrid(day);
   return (
     <div className="card-soft p-3">
@@ -248,10 +308,15 @@ function MonthView({ events, day, onSelect }: { events: EventRow[]; day: Date; o
           const items = eventsOnDay(events, d);
           const otherMonth = d.getMonth() !== day.getMonth();
           return (
-            <button
+            <div
               key={d.toISOString()}
-              onClick={() => onSelect(null, d)}
-              className={`min-h-20 rounded-lg bg-surface p-1.5 text-left align-top hover:bg-accent ${
+              role="button"
+              tabIndex={0}
+              onClick={() => onOpenDay(d)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") onOpenDay(d);
+              }}
+              className={`min-h-20 cursor-pointer rounded-lg bg-surface p-1.5 text-left align-top hover:bg-accent ${
                 otherMonth ? "opacity-45" : ""
               }`}
             >
@@ -266,13 +331,14 @@ function MonthView({ events, day, onSelect }: { events: EventRow[]; day: Date; o
                   </span>
                 ) : null}
               </div>
-            </button>
+            </div>
           );
         })}
       </div>
     </div>
   );
 }
+
 
 function YearView({
   events,
@@ -289,20 +355,22 @@ function YearView({
       {months.map((m) => {
         const days = monthGrid(m);
         return (
-          <button
-            key={m.toISOString()}
-            onClick={() => onPick(m)}
-            className="card-soft p-3 text-left hover:bg-accent/40"
-          >
-            <span className="text-xs font-semibold capitalize">{fmt(m, "MMMM")}</span>
+          <div key={m.toISOString()} className="card-soft p-3 text-left">
+            <button
+              onClick={() => onPick(m)}
+              className="text-xs font-semibold capitalize hover:text-primary"
+            >
+              {fmt(m, "MMMM")}
+            </button>
             <div className="mt-2 grid grid-cols-7 gap-0.5">
               {days.map((d) => {
                 const load = dayLoad(events, d);
                 const other = d.getMonth() !== m.getMonth();
                 return (
-                  <span
+                  <button
                     key={d.toISOString()}
-                    className={`flex aspect-square items-center justify-center rounded-[3px] text-[9px] ${
+                    onClick={() => onPick(d)}
+                    className={`flex aspect-square items-center justify-center rounded-[3px] text-[9px] transition-colors hover:ring-1 hover:ring-primary/50 ${
                       other ? "opacity-30" : ""
                     } ${
                       load === "full"
@@ -313,13 +381,14 @@ function YearView({
                     }`}
                   >
                     {fmt(d, "d")}
-                  </span>
+                  </button>
                 );
               })}
             </div>
-          </button>
+          </div>
         );
       })}
+
     </div>
   );
 }

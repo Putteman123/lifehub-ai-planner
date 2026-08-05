@@ -11,6 +11,7 @@ import {
 import type { ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
+import { Andrea } from "@/components/andrea/Andrea";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -101,6 +102,8 @@ export function AppShell({
           </Link>
         ))}
       </nav>
+
+      <Andrea />
     </div>
   );
 }
