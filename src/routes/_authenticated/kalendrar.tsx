@@ -131,7 +131,7 @@ function CalendarsPage() {
       title="Kalendrar"
       subtitle="Importera och synkronisera obegränsat antal källor"
       actions={
-        <Button size="sm" onClick={() => setOpen(true)}>
+        <Button size="sm" onClick={openCreate}>
           <Plus className="size-4" /> Lägg till
         </Button>
       }
