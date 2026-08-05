@@ -53,6 +53,8 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
   const [verified, setVerified] = useState(false);
   const [kmTouched, setKmTouched] = useState(false);
   const [verifiedTouched, setVerifiedTouched] = useState(false);
+  const [mode, setMode] = useState<TravelMode>("bil");
+
 
   useEffect(() => {
     if (!trip) return;
