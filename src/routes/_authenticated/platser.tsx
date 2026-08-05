@@ -621,6 +621,11 @@ function PlacesPage() {
           <TravelTimeline places={places} />
         </div>
 
+        <div className="mt-4">
+          <FrequentRoutes places={places} />
+        </div>
+
+
 
 
         <section className="mt-4 rounded-2xl border border-border bg-card p-4">
