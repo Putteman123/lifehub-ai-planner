@@ -11,7 +11,9 @@ import { routeBatch } from "@/lib/maps.functions";
 import { getWeeklyTravelPlanInsight } from "@/lib/travel-insight.functions";
 import {
   buildTravelPlan,
+  legKey,
   summarizePlan,
+  type RouteLookup,
   type PreferenceRow,
   type TravelPlanItem,
 } from "@/lib/travel-plan";
