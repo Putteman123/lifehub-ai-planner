@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, streamText, tool, type UIMessage } from "ai";
 import { z } from "zod";
 
+import { findFreeSlot, suggestCategory } from "@/lib/calendar";
+
 type Body = { messages?: unknown };
 
 export const Route = createFileRoute("/api/chat")({
@@ -46,6 +48,45 @@ export const Route = createFileRoute("/api/chat")({
                 reason: z.string().describe("Kort förklaring varför."),
               }),
               execute: async ({ route, reason }) => ({ route, reason }),
+            }),
+            find_free_time: tool({
+              description: "Hitta nästa lediga tidslucka av en viss längd.",
+              inputSchema: z.object({
+                minutes: z.number().describe("Hur många minuter som behövs."),
+                reason: z.string().describe("Vad luckan ska användas till."),
+              }),
+              execute: async ({ minutes, reason }) => {
+                const { buildAndreaContext } = await import("@/lib/andrea.server");
+                const ctxText = await buildAndreaContext();
+                const eventsMatch = ctxText.match(/Händelser \(kommande 21 dagar\):([\s\S]*?)(?=\n\n|$)/);
+                const events: { starts_at: string; ends_at: string; all_day: boolean; category: string; title: string }[] = [];
+                if (eventsMatch) {
+                  const lines = eventsMatch[1].split("\n").filter((l) => l.startsWith("- "));
+                  for (const line of lines) {
+                    const m = line.match(/- (.+?) \| (\w+) \| (.+)/);
+                    if (m) {
+                      const [_, timePart, category, title] = m;
+                      const [start, end] = timePart.split("–");
+                      events.push({
+                        starts_at: new Date(start!).toISOString(),
+                        ends_at: new Date(end!).toISOString(),
+                        all_day: !timePart.includes(":"),
+                        category: category!,
+                        title: title!,
+                      });
+                    }
+                  }
+                }
+                const slot = findFreeSlot(events as any, minutes, new Date(), 14);
+                return { found: !!slot, slot, reason };
+              },
+            }),
+            suggest_category: tool({
+              description: "Föreslå en kategori för en ny händelse baserat på titeln.",
+              inputSchema: z.object({
+                title: z.string().describe("Händelsens titel."),
+              }),
+              execute: async ({ title }) => ({ category: suggestCategory(title) }),
             }),
           },
         });
