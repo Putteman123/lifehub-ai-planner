@@ -314,6 +314,9 @@ export type RouteResult = {
   mode: "bil" | "kollektivt" | "gang_cykel";
   minutes: number;
   km: number;
+  meters: number;
+  /** Kodad polyline för att rita rutten på kartan. */
+  polyline: string | null;
 };
 
 const TRAVEL_MODE: Record<RouteResult["mode"], string> = {
@@ -329,7 +332,10 @@ export async function mapsRoute(
 ): Promise<RouteResult> {
   const data = (await call("maps", "/routes/directions/v2:computeRoutes", {
     method: "POST",
-    headers: { "X-Goog-FieldMask": "routes.duration,routes.distanceMeters" },
+    headers: {
+      "X-Goog-FieldMask":
+        "routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline",
+    },
     body: {
       origin: { location: { latLng: { latitude: origin.lat, longitude: origin.lng } } },
       destination: {
@@ -337,17 +343,67 @@ export async function mapsRoute(
       },
       travelMode: TRAVEL_MODE[mode],
     },
-  })) as { routes?: Array<{ duration?: string; distanceMeters?: number }> };
+  })) as {
+    routes?: Array<{
+      duration?: string;
+      distanceMeters?: number;
+      polyline?: { encodedPolyline?: string };
+    }>;
+  };
 
   const route = data.routes?.[0];
   if (!route) throw new Error("Ingen rutt hittades.");
   const seconds = Number((route.duration ?? "0s").replace("s", ""));
+  const meters = route.distanceMeters ?? 0;
   return {
     mode,
     minutes: Math.round(seconds / 60),
-    km: Math.round(((route.distanceMeters ?? 0) / 1000) * 10) / 10,
+    km: Math.round((meters / 1000) * 10) / 10,
+    meters,
+    polyline: route.polyline?.encodedPolyline ?? null,
   };
 }
+
+export type GeocodedPlace = {
+  address: string;
+  /** Kort namn: butik/byggnad eller gata. */
+  shortName: string;
+};
+
+/** Slår upp adress för en koordinat via Googles geokodning. */
+export async function geocodeLatLng(
+  lat: number,
+  lng: number,
+): Promise<GeocodedPlace | null> {
+  const data = (await call(
+    "maps",
+    `/maps/api/geocode/json?latlng=${lat},${lng}&language=sv&result_type=point_of_interest|premise|street_address|route|establishment`,
+  )) as {
+    status?: string;
+    results?: Array<{
+      formatted_address?: string;
+      address_components?: Array<{ short_name?: string; types?: string[] }>;
+    }>;
+  };
+
+  const first = data.results?.[0];
+  if (!first?.formatted_address) return null;
+  const components = first.address_components ?? [];
+  const pick = (type: string) =>
+    components.find((c) => c.types?.includes(type))?.short_name ?? null;
+  const shortName =
+    pick("point_of_interest") ??
+    pick("establishment") ??
+    pick("premise") ??
+    [pick("route"), pick("street_number")].filter(Boolean).join(" ") ??
+    first.formatted_address;
+
+  return {
+    address: first.formatted_address,
+    shortName: shortName || first.formatted_address,
+  };
+}
+
 
 /** Lägger på användarens sparade mejlregler på en Gmail-sökfråga. */
 export async function mailQueryWithRules(base: string): Promise<string> {
