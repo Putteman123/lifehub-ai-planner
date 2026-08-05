@@ -164,6 +164,9 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.7 0.17 277);
 
+  --cat-natt: oklch(0.68 0.14 285);
+  --cat-kvall: oklch(0.78 0.14 55);
+
   --nav-oversikt: oklch(0.72 0.17 277);
   --nav-kalender: oklch(0.74 0.15 258);
   --nav-attgora: oklch(0.74 0.16 310);
