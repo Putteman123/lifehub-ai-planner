@@ -1,4 +1,4 @@
-import { findFreeSlot, fmt, overlapsOnDay } from "@/lib/calendar";
+import { findFreeSlot, overlapsOnDay } from "@/lib/calendar";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   PLACE_KINDS,
