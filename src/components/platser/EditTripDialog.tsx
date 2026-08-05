@@ -144,6 +144,8 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
       label: label.trim() || null,
       distance_m: meters,
       distance_verified: verified,
+      travel_mode: mode,
+
       is_manual: true,
     });
     onClose();
