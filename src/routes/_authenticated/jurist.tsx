@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Plus, Check } from "lucide-react";
+import { Plus, Check, Briefcase, CalendarDays, ListTodo } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
 import { DataGate } from "@/components/DataGate";
