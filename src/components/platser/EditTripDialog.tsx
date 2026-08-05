@@ -51,6 +51,8 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
   const [label, setLabel] = useState("");
   const [km, setKm] = useState("");
   const [verified, setVerified] = useState(false);
+  const [kmTouched, setKmTouched] = useState(false);
+  const [verifiedTouched, setVerifiedTouched] = useState(false);
 
   useEffect(() => {
     if (!trip) return;
@@ -76,9 +78,46 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
     setLabel(trip.label ?? "");
     setKm(((trip.distance_m ?? 0) / 1000).toFixed(1).replace(".", ","));
     setVerified(trip.distance_verified ?? false);
+    setKmTouched(false);
+    setVerifiedTouched(false);
   }, [trip, places]);
 
+  const startPoint = places.find((p) => p.id === startPlace)
+    ?? (trip && trip.lat != null && trip.lng != null
+      ? { lat: trip.lat, lng: trip.lng }
+      : null);
+  const endPoint = places.find((p) => p.id === endPlace)
+    ?? (trip && trip.end_lat != null && trip.end_lng != null
+      ? { lat: trip.end_lat, lng: trip.end_lng }
+      : null);
+
+  const crowMeters =
+    startPoint && endPoint
+      ? Math.round(haversineMeters(startPoint.lat, startPoint.lng, endPoint.lat, endPoint.lng))
+      : null;
+  const estimateMeters =
+    startPoint && endPoint
+      ? estimateRouteMeters(startPoint.lat, startPoint.lng, endPoint.lat, endPoint.lng)
+      : null;
+
+  // Fyll i beräknat avstånd automatiskt så länge fältet inte redigerats manuellt.
+  useEffect(() => {
+    if (estimateMeters == null || kmTouched) return;
+    setKm((estimateMeters / 1000).toFixed(1).replace(".", ","));
+  }, [estimateMeters, kmTouched]);
+
+  const enteredMeters = Math.max(0, Math.round(Number(km.replace(",", ".")) * 1000) || 0);
+  const autoMatches =
+    estimateMeters != null && distanceMatches(enteredMeters, estimateMeters);
+
+  // Bocka i/ur "avståndet stämmer" automatiskt tills användaren väljer själv.
+  useEffect(() => {
+    if (estimateMeters == null || verifiedTouched) return;
+    setVerified(autoMatches);
+  }, [autoMatches, estimateMeters, verifiedTouched]);
+
   if (!trip) return null;
+
 
   const start = places.find((p) => p.id === startPlace);
   const end = places.find((p) => p.id === endPlace);
