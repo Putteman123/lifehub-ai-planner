@@ -1,4 +1,4 @@
-import { auth, defineMcp } from "@lovable.dev/mcp-js";
+import { auth, defineMcp, type McpDefinitionInput } from "@lovable.dev/mcp-js";
 
 import addShoppingItems from "./tools/add-shopping-items";
 import completeTodo from "./tools/complete-todo";
@@ -25,6 +25,7 @@ export default defineMcp({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated",
   }),
+  // exactOptionalPropertyTypes: verktygens generiska typ matchar inte den typraderade listan.
   tools: [
     listEvents,
     createEvent,
@@ -36,5 +37,5 @@ export default defineMcp({
     addShoppingItems,
     listPlaces,
     listVisits,
-  ],
+  ] as unknown as McpDefinitionInput["tools"],
 });
