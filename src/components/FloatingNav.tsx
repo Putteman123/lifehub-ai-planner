@@ -9,18 +9,21 @@ import {
   Scale,
   Settings2,
   ShieldCheck,
+  ShoppingCart,
 } from "lucide-react";
 
 const NAV = [
   { to: "/dashboard", label: "Översikt", icon: LayoutDashboard },
   { to: "/kalender", label: "Kalender", icon: CalendarDays },
   { to: "/attgora", label: "Att göra", icon: ListTodo },
+  { to: "/handla", label: "Handla", icon: ShoppingCart },
   { to: "/barn", label: "Barn", icon: Baby },
   { to: "/jurist", label: "Jurist", icon: Scale },
   { to: "/platser", label: "Platser", icon: MapPin },
   { to: "/kassaskap", label: "Kassaskåp", icon: ShieldCheck },
   { to: "/kalendrar", label: "Kalendrar", icon: Settings2 },
 ] as const;
+
 
 
 /** Flytande vertikal meny längs vänsterkanten. */

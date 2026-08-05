@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAttgoraRouteImport } from './routes/_authenticated/attgora'
 import { Route as AuthenticatedBarnRouteImport } from './routes/_authenticated/barn'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedHandlaRouteImport } from './routes/_authenticated/handla'
 import { Route as AuthenticatedJuristRouteImport } from './routes/_authenticated/jurist'
 import { Route as AuthenticatedKalenderRouteImport } from './routes/_authenticated/kalender'
 import { Route as AuthenticatedKalendrarRouteImport } from './routes/_authenticated/kalendrar'
@@ -51,6 +52,11 @@ const AuthenticatedBarnRoute = AuthenticatedBarnRouteImport.update({
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHandlaRoute = AuthenticatedHandlaRouteImport.update({
+  id: '/handla',
+  path: '/handla',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedJuristRoute = AuthenticatedJuristRouteImport.update({
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/attgora': typeof AuthenticatedAttgoraRoute
   '/barn': typeof AuthenticatedBarnRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/handla': typeof AuthenticatedHandlaRoute
   '/jurist': typeof AuthenticatedJuristRoute
   '/kalender': typeof AuthenticatedKalenderRoute
   '/kalendrar': typeof AuthenticatedKalendrarRoute
@@ -115,6 +122,7 @@ export interface FileRoutesByTo {
   '/attgora': typeof AuthenticatedAttgoraRoute
   '/barn': typeof AuthenticatedBarnRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/handla': typeof AuthenticatedHandlaRoute
   '/jurist': typeof AuthenticatedJuristRoute
   '/kalender': typeof AuthenticatedKalenderRoute
   '/kalendrar': typeof AuthenticatedKalendrarRoute
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/_authenticated/attgora': typeof AuthenticatedAttgoraRoute
   '/_authenticated/barn': typeof AuthenticatedBarnRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/handla': typeof AuthenticatedHandlaRoute
   '/_authenticated/jurist': typeof AuthenticatedJuristRoute
   '/_authenticated/kalender': typeof AuthenticatedKalenderRoute
   '/_authenticated/kalendrar': typeof AuthenticatedKalendrarRoute
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/attgora'
     | '/barn'
     | '/dashboard'
+    | '/handla'
     | '/jurist'
     | '/kalender'
     | '/kalendrar'
@@ -164,6 +174,7 @@ export interface FileRouteTypes {
     | '/attgora'
     | '/barn'
     | '/dashboard'
+    | '/handla'
     | '/jurist'
     | '/kalender'
     | '/kalendrar'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | '/_authenticated/attgora'
     | '/_authenticated/barn'
     | '/_authenticated/dashboard'
+    | '/_authenticated/handla'
     | '/_authenticated/jurist'
     | '/_authenticated/kalender'
     | '/_authenticated/kalendrar'
@@ -241,6 +253,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/handla': {
+      id: '/_authenticated/handla'
+      path: '/handla'
+      fullPath: '/handla'
+      preLoaderRoute: typeof AuthenticatedHandlaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/jurist': {
@@ -306,6 +325,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAttgoraRoute: typeof AuthenticatedAttgoraRoute
   AuthenticatedBarnRoute: typeof AuthenticatedBarnRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedHandlaRoute: typeof AuthenticatedHandlaRoute
   AuthenticatedJuristRoute: typeof AuthenticatedJuristRoute
   AuthenticatedKalenderRoute: typeof AuthenticatedKalenderRoute
   AuthenticatedKalendrarRoute: typeof AuthenticatedKalendrarRoute
@@ -317,6 +337,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAttgoraRoute: AuthenticatedAttgoraRoute,
   AuthenticatedBarnRoute: AuthenticatedBarnRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedHandlaRoute: AuthenticatedHandlaRoute,
   AuthenticatedJuristRoute: AuthenticatedJuristRoute,
   AuthenticatedKalenderRoute: AuthenticatedKalenderRoute,
   AuthenticatedKalendrarRoute: AuthenticatedKalendrarRoute,
@@ -338,13 +359,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
