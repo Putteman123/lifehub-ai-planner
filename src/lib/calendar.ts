@@ -26,6 +26,30 @@ export function timeRange(event: EventRow) {
   return `${fmt(event.starts_at, "HH:mm")}–${fmt(event.ends_at, "HH:mm")}`;
 }
 
+/**
+ * Klassificerar ett jobbpass som natt- eller kvällspass utifrån tiderna.
+ * Natt: startar 21:00 eller senare och slutar nästa dygn.
+ * Kväll: startar 13:00–20:59 och slutar samma dygn.
+ */
+export function shiftType(event: EventRow): ShiftType | null {
+  if (event.category !== "jobb" || event.all_day) return null;
+  const start = new Date(event.starts_at);
+  const end = new Date(event.ends_at);
+  const startHour = start.getHours() + start.getMinutes() / 60;
+  const crossesMidnight = !isSameDay(start, end);
+  if (startHour >= 21 && crossesMidnight) return "natt";
+  if (startHour >= 13 && startHour < 21 && !crossesMidnight) return "kvall";
+  return null;
+}
+
+/** Stil för en händelse: passtyp om jobbpass, annars kategorifärg. */
+export function shiftMeta(event: EventRow) {
+  const type = shiftType(event);
+  if (type) return { ...SHIFT_STYLES[type], shift: type };
+  return { ...categoryMeta(event.category), shift: null as ShiftType | null };
+}
+
+
 export function weekDays(reference: Date) {
   const start = startOfWeek(reference, { weekStartsOn: 1 });
   return Array.from({ length: 7 }, (_, i) => addDays(start, i));
