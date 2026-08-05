@@ -128,3 +128,27 @@ export const exportToSheet = createServerFn({ method: "POST" })
     const { sheetsExport } = await import("./google.server");
     return sheetsExport(data.title, data.rows);
   });
+
+/** Statusrapport för varje Google-tjänst med senaste synktid och eventuella fel. */
+export const getGoogleHealth = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { GOOGLE_CONNECTORS, checkGoogleService } = await import("./google.server");
+    const services = Object.keys(GOOGLE_CONNECTORS) as Array<keyof typeof GOOGLE_CONNECTORS>;
+    const health = await Promise.all(services.map((s) => checkGoogleService(s)));
+
+    const { data: cals } = await context.supabase
+      .from("calendars")
+      .select("name, last_synced_at")
+      .eq("source", "google")
+      .order("last_synced_at", { ascending: false, nullsFirst: false });
+
+    const lastCalendarSync = cals?.find((c) => c.last_synced_at)?.last_synced_at ?? null;
+
+    return {
+      checkedAt: new Date().toISOString(),
+      lastCalendarSync,
+      calendars: (cals ?? []).map((c) => ({ name: c.name, lastSyncedAt: c.last_synced_at })),
+      services: health,
+    };
+  });

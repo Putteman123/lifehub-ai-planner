@@ -364,3 +364,58 @@ export async function mailQueryWithRules(base: string): Promise<string> {
     return base;
   }
 }
+
+/* ---------------- Status / hälsa ---------------- */
+
+export type GoogleHealth = {
+  service: GoogleService;
+  label: string;
+  connected: boolean;
+  ok: boolean;
+  error: string | null;
+  latencyMs: number | null;
+};
+
+/** Verifierar en tjänsts credentials mot gatewayen utan att röra användardata. */
+export async function checkGoogleService(service: GoogleService): Promise<GoogleHealth> {
+  const { label, env } = GOOGLE_CONNECTORS[service];
+  const lovableKey = process.env["LOVABLE_API_KEY"];
+  const connectorKey = process.env[env];
+  if (!lovableKey || !connectorKey) {
+    return { service, label, connected: false, ok: false, error: "Inte kopplad", latencyMs: null };
+  }
+  const started = Date.now();
+  try {
+    const res = await fetch(`${GATEWAY}/api/v1/verify_credentials`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${lovableKey}`,
+        "X-Connection-Api-Key": connectorKey,
+      },
+    });
+    const text = await res.text();
+    const latencyMs = Date.now() - started;
+    if (!res.ok) {
+      return { service, label, connected: true, ok: false, error: `${res.status}: ${text.slice(0, 200)}`, latencyMs };
+    }
+    const body = text ? (JSON.parse(text) as { outcome?: string; error?: string }) : {};
+    const ok = body.outcome !== "failed";
+    return {
+      service,
+      label,
+      connected: true,
+      ok,
+      error: ok ? null : (body.error ?? "Verifiering misslyckades"),
+      latencyMs,
+    };
+  } catch (e) {
+    return {
+      service,
+      label,
+      connected: true,
+      ok: false,
+      error: e instanceof Error ? e.message : "Okänt fel",
+      latencyMs: Date.now() - started,
+    };
+  }
+}
