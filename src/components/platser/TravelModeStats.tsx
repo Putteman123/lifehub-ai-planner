@@ -95,6 +95,38 @@ export function TravelModeStats() {
           })}
         </ul>
       )}
+
+      {stats.length > 0 ? (
+        <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="flex items-center gap-2 text-sm font-medium">
+              <Sparkles className="size-4 text-primary" /> Andreas reseinsikt
+            </span>
+            <button
+              type="button"
+              onClick={() => insight.mutate()}
+              disabled={insight.isPending}
+              className="rounded-lg border border-border/60 px-2 py-1 text-xs hover:bg-muted disabled:opacity-60"
+            >
+              {insight.isPending
+                ? "Analyserar…"
+                : insight.data?.text
+                  ? "Uppdatera"
+                  : "Skapa insikt"}
+            </button>
+          </div>
+          {insight.data?.text ? (
+            <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
+              {insight.data.text}
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Låt Andrea sammanfatta dina färdsätt och föreslå hur du kan optimera resorna.
+            </p>
+          )}
+        </div>
+      ) : null}
     </section>
+
   );
 }
