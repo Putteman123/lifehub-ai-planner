@@ -279,6 +279,13 @@ function PlacesPage() {
     }
   }
 
+  // Hämta den privata adressen direkt vid laddning så hela länken alltid syns.
+  useEffect(() => {
+    void showIngest();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+
   async function wipe() {
     if (!confirm("Radera all platshistorik? Detta går inte att ångra.")) return;
     await clearHistory({});
