@@ -235,6 +235,7 @@ function DayView({ events, day, onSelect }: { events: EventRow[]; day: Date; onS
             );
           })
         )}
+        <OverlapWarning events={events} day={day} />
       </div>
     </div>
   );
