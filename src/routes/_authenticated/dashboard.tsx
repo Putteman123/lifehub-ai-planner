@@ -9,6 +9,8 @@ import { InboxCard } from "@/components/google/InboxCard";
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSwipe } from "@/hooks/use-swipe";
+
 import { categoryMeta, SHIFT_STYLES, type EventRow } from "@/lib/categories";
 import {
   addDays,
@@ -158,6 +160,13 @@ function Dashboard() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [tab, setTab] = useState("idag");
+  const swipe = useSwipe({
+    onSwipeLeft: () =>
+      setTab((t) => (t === "idag" ? "kalender" : t === "kalender" ? "statistik" : t)),
+    onSwipeRight: () =>
+      setTab((t) => (t === "statistik" ? "kalender" : t === "kalender" ? "idag" : t)),
+  });
+
   const [selected, setSelected] = useState<EventRow | null>(null);
 
   const events = useMemo(() => mergeDuplicates(rawEvents), [rawEvents]);
@@ -448,16 +457,20 @@ function Dashboard() {
               Statistik
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="idag" className="view-enter mt-4 space-y-4">
-            {idagGroup}
-          </TabsContent>
-          <TabsContent value="kalender" className="view-enter mt-4 space-y-4">
-            {kalenderGroup}
-          </TabsContent>
-          <TabsContent value="statistik" className="view-enter mt-4 space-y-4">
-            {statistikGroup}
-          </TabsContent>
+          {/* Svep i sidled för att byta flik på mobil. */}
+          <div className="min-w-0 touch-pan-y" {...swipe}>
+            <TabsContent key={tab} value="idag" className="view-enter mt-4 space-y-4">
+              {idagGroup}
+            </TabsContent>
+            <TabsContent key={`${tab}-k`} value="kalender" className="view-enter mt-4 space-y-4">
+              {kalenderGroup}
+            </TabsContent>
+            <TabsContent key={`${tab}-s`} value="statistik" className="view-enter mt-4 space-y-4">
+              {statistikGroup}
+            </TabsContent>
+          </div>
         </Tabs>
+
 
         {/* Dator: allt i två kolumner som tidigare. */}
         <div className="hidden min-w-0 gap-5 lg:grid lg:grid-cols-12">
