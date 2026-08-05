@@ -102,6 +102,8 @@ export function AppShell({
           </Link>
         ))}
       </nav>
+
+      <Andrea />
     </div>
   );
 }
