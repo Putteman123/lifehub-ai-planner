@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedAttgoraRouteImport } from './routes/_authenticated/attgora'
 import { Route as AuthenticatedBarnRouteImport } from './routes/_authenticated/barn'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedJuristRouteImport } from './routes/_authenticated/jurist'
@@ -35,6 +36,11 @@ const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAttgoraRoute = AuthenticatedAttgoraRouteImport.update({
+  id: '/attgora',
+  path: '/attgora',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedBarnRoute = AuthenticatedBarnRouteImport.update({
   id: '/barn',
@@ -85,6 +91,7 @@ const ApiPublicPlatsRoute = ApiPublicPlatsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/attgora': typeof AuthenticatedAttgoraRoute
   '/barn': typeof AuthenticatedBarnRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/jurist': typeof AuthenticatedJuristRoute
@@ -98,6 +105,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/attgora': typeof AuthenticatedAttgoraRoute
   '/barn': typeof AuthenticatedBarnRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/jurist': typeof AuthenticatedJuristRoute
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/attgora': typeof AuthenticatedAttgoraRoute
   '/_authenticated/barn': typeof AuthenticatedBarnRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/jurist': typeof AuthenticatedJuristRoute
@@ -128,6 +137,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/attgora'
     | '/barn'
     | '/dashboard'
     | '/jurist'
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/attgora'
     | '/barn'
     | '/dashboard'
     | '/jurist'
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/attgora'
     | '/_authenticated/barn'
     | '/_authenticated/dashboard'
     | '/_authenticated/jurist'
@@ -197,6 +209,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/attgora': {
+      id: '/_authenticated/attgora'
+      path: '/attgora'
+      fullPath: '/attgora'
+      preLoaderRoute: typeof AuthenticatedAttgoraRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/barn': {
       id: '/_authenticated/barn'
@@ -265,6 +284,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAttgoraRoute: typeof AuthenticatedAttgoraRoute
   AuthenticatedBarnRoute: typeof AuthenticatedBarnRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedJuristRoute: typeof AuthenticatedJuristRoute
@@ -274,6 +294,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAttgoraRoute: AuthenticatedAttgoraRoute,
   AuthenticatedBarnRoute: AuthenticatedBarnRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedJuristRoute: AuthenticatedJuristRoute,
@@ -296,13 +317,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
