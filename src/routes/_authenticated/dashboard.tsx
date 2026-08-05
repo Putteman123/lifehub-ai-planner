@@ -194,17 +194,6 @@ function Dashboard() {
     setDialogOpen(true);
   }
 
-  return (
-    <AppShell
-      title="Översikt"
-      subtitle={fmt(today, "EEEE d MMMM yyyy")}
-      actions={
-        <Button size="sm" onClick={() => open(null)}>
-          <Plus className="size-4" /> Ny händelse
-        </Button>
-      }
-    >
-      <DataGate queries={[eventsQ, tasksQ, remindersQ, todosQ]}>
     const idagGroup = (
       <>
             <section className="card-soft bg-accent/40 p-5">
@@ -433,6 +422,17 @@ function Dashboard() {
       </>
     );
 
+  return (
+    <AppShell
+      title="Översikt"
+      subtitle={fmt(today, "EEEE d MMMM yyyy")}
+      actions={
+        <Button size="sm" onClick={() => open(null)}>
+          <Plus className="size-4" /> Ny händelse
+        </Button>
+      }
+    >
+      <DataGate queries={[eventsQ, tasksQ, remindersQ, todosQ]}>
         {/* Mobil: flikar så varje vy får full bredd och läsbar text. */}
         <Tabs value={tab} onValueChange={setTab} className="min-w-0 lg:hidden">
           <TabsList className="grid w-full grid-cols-3">
