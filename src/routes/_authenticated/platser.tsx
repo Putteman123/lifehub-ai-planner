@@ -111,7 +111,9 @@ function PlacesPage() {
   const deletePlace = useDeleteRow("places", "Plats borttagen");
   const deleteVisit = useDeleteRow("visits", "Besök borttaget");
 
+  const [mapTarget, setMapTarget] = useState<MapTarget | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+
   const [live, setLive] = useState(false);
   const [ingestUrl, setIngestUrl] = useState<string | null>(null);
   const [ingestError, setIngestError] = useState<string | null>(null);
