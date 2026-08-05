@@ -737,7 +737,9 @@ function PlacesPage() {
 
         <div className="mt-4">
           <WeeklyTravelPlan />
+        </div>
 
+        <div className="mt-4">
           <TravelModeStats />
         </div>
 
