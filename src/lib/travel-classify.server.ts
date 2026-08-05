@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
-import { estimateRouteMeters, distanceMatches, type PlaceRow, type VisitRow } from "@/lib/geo";
+import { distanceMatches, type PlaceRow, type VisitRow } from "@/lib/geo";
 import { endpointKey, weekdayIndex } from "@/lib/route-key";
 
 type Client = SupabaseClient<Database>;
