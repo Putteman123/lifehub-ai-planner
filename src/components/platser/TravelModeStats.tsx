@@ -1,5 +1,8 @@
-import { Bike, Bus, Car, HelpCircle, type LucideIcon } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Bike, Bus, Car, HelpCircle, Sparkles, type LucideIcon } from "lucide-react";
 import { useMemo } from "react";
+import { toast } from "sonner";
 
 import { useVisits } from "@/lib/db";
 import {
@@ -10,6 +13,8 @@ import {
   visitMinutes,
   type TravelMode,
 } from "@/lib/geo";
+import { getTravelInsight } from "@/lib/travel-insight.functions";
+
 
 const DAYS = 90;
 
