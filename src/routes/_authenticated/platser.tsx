@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import {
-  
+  Car,
   Loader2,
   LogOut,
   MapPin,
@@ -47,12 +47,15 @@ import {
   PLACE_KINDS,
   type PlaceKind,
   type PlaceRow,
+  formatDistance,
   formatDuration,
+  isTravel,
   kindLabel,
   minutesByKind,
   startOfDay,
   startOfWeek,
   timeLabel,
+  travelStats,
   visitLabel,
   visitMinutes,
 } from "@/lib/geo";
@@ -353,6 +356,8 @@ function PlacesPage() {
 
   const today = minutesByKind(visits, places, todayStart, now, now);
   const week = minutesByKind(visits, places, weekStart, now, now);
+  const todayTravel = travelStats(visits, todayStart, now, now);
+  const weekTravel = travelStats(visits, weekStart, now, now);
 
   const todayEvents = events.filter((e) => {
     const start = new Date(e.starts_at);
@@ -407,53 +412,87 @@ function PlacesPage() {
                   const place = visit.place_id
                     ? places.find((p) => p.id === visit.place_id)
                     : undefined;
+                  const travel = isTravel(visit);
+                  const span = `${timeLabel(visit.arrived_at)}${
+                    visit.left_at ? `–${timeLabel(visit.left_at)}` : "–nu"
+                  }`;
                   return (
                   <li
                     key={visit.id}
-                    className="group flex items-center gap-3 rounded-xl border border-border/70 px-3 py-2"
+                    className={`group flex items-center gap-3 rounded-xl border px-3 py-2 ${
+                      travel ? "border-dashed border-border/60 bg-muted/30" : "border-border/70"
+                    }`}
                   >
                     <button
                       type="button"
                       className="flex min-w-0 flex-1 items-center gap-3 text-left"
-                      aria-label={`Visa ${visitLabel(visit, places)} på karta`}
-                      onClick={() =>
-                        place
-                          ? setMapTarget({
-                          title: visitLabel(visit, places),
-                          subtitle: `${timeLabel(visit.arrived_at)}${
-                            visit.left_at ? `–${timeLabel(visit.left_at)}` : "–nu"
-                          } · ${formatDuration(visitMinutes(visit, now))}`,
-                          lat: visit.lat ?? place.lat,
-                          lng: visit.lng ?? place.lng,
-                            })
-                          : setNameTarget({
-                              visitId: visit.id,
-                              subtitle: `${timeLabel(visit.arrived_at)}${
-                                visit.left_at ? `–${timeLabel(visit.left_at)}` : "–nu"
-                              } · ${formatDuration(visitMinutes(visit, now))}`,
-                              lat: visit.lat,
-                              lng: visit.lng,
-                              label: visit.label,
-                              note: visit.note,
-                            })
+                      aria-label={
+                        travel
+                          ? "Visa resans slutpunkt på karta"
+                          : `Visa ${visitLabel(visit, places)} på karta`
                       }
+                      onClick={() => {
+                        if (travel) {
+                          const endLat = visit.end_lat ?? visit.lat;
+                          const endLng = visit.end_lng ?? visit.lng;
+                          if (endLat != null && endLng != null) {
+                            setMapTarget({
+                              title: "Resa",
+                              subtitle: `${span} · ${formatDistance(visit.distance_m ?? 0)}`,
+                              lat: endLat,
+                              lng: endLng,
+                            });
+                          }
+                          return;
+                        }
+                        if (place) {
+                          setMapTarget({
+                            title: visitLabel(visit, places),
+                            subtitle: `${span} · ${formatDuration(visitMinutes(visit, now))}`,
+                            lat: visit.lat ?? place.lat,
+                            lng: visit.lng ?? place.lng,
+                          });
+                          return;
+                        }
+                        setNameTarget({
+                          visitId: visit.id,
+                          subtitle: `${span} · ${formatDuration(visitMinutes(visit, now))}`,
+                          lat: visit.lat,
+                          lng: visit.lng,
+                          label: visit.label,
+                          note: visit.note,
+                        });
+                      }}
                     >
                       <span className="w-24 shrink-0 text-xs tabular-nums text-muted-foreground">
-                        {timeLabel(visit.arrived_at)}
-                        {visit.left_at ? `–${timeLabel(visit.left_at)}` : "–nu"}
+                        {span}
                       </span>
                       <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                        {visitLabel(visit, places)}
-                        {visit.note ? (
-                          <span className="ml-2 text-xs font-normal text-muted-foreground">
-                            {visit.note}
+                        {travel ? (
+                          <span className="inline-flex items-center gap-1.5">
+                            <Car className="size-3.5 text-muted-foreground" />
+                            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                              Resa
+                            </span>
+                            <span className="text-xs font-normal text-muted-foreground">
+                              {formatDistance(visit.distance_m ?? 0)}
+                            </span>
                           </span>
-                        ) : null}
-                        {!place && !visit.note ? (
-                          <span className="ml-2 text-xs font-normal text-primary">
-                            Namnge
-                          </span>
-                        ) : null}
+                        ) : (
+                          <>
+                            {visitLabel(visit, places)}
+                            {visit.note ? (
+                              <span className="ml-2 text-xs font-normal text-muted-foreground">
+                                {visit.note}
+                              </span>
+                            ) : null}
+                            {!place && !visit.note ? (
+                              <span className="ml-2 text-xs font-normal text-primary">
+                                Namnge
+                              </span>
+                            ) : null}
+                          </>
+                        )}
                       </span>
                       <span className="shrink-0 text-xs text-muted-foreground">
                         {formatDuration(visitMinutes(visit, now))}
@@ -470,6 +509,7 @@ function PlacesPage() {
                   </li>
                   );
                 })}
+
 
               </ol>
             )}
@@ -520,6 +560,17 @@ function PlacesPage() {
                   </li>
                 ))}
               </ul>
+              <div className="mt-3 flex items-center justify-between rounded-xl bg-muted/40 px-3 py-2 text-sm">
+                <span className="flex items-center gap-2">
+                  <Car className="size-3.5 text-muted-foreground" />
+                  Resor i dag
+                </span>
+                <span className="tabular-nums text-muted-foreground">
+                  {todayTravel.count} st · {formatDistance(todayTravel.meters)} ·{" "}
+                  {formatDuration(todayTravel.minutes)}
+                </span>
+              </div>
+
               <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Denna vecka
               </h3>
@@ -535,7 +586,18 @@ function PlacesPage() {
                 {PLACE_KINDS.every((k) => week[k.value] === 0) ? (
                   <li className="text-sm text-muted-foreground">Inget registrerat än.</li>
                 ) : null}
+                {weekTravel.count > 0 ? (
+                  <li className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2">
+                      <Car className="size-3.5 text-muted-foreground" /> Resor
+                    </span>
+                    <span className="tabular-nums text-muted-foreground">
+                      {weekTravel.count} st · {formatDistance(weekTravel.meters)}
+                    </span>
+                  </li>
+                ) : null}
               </ul>
+
             </div>
 
             <div className="rounded-2xl border border-border bg-card p-4">
@@ -607,7 +669,10 @@ function PlacesPage() {
                     type="button"
                     aria-label="Ta bort plats"
                     className="text-muted-foreground hover:text-destructive"
-                    onClick={() => deletePlace.mutate(place.id)}
+                    onClick={() => {
+                      if (confirm(`Ta bort platsen "${place.name}"? Besöken finns kvar i loggen.`))
+                        deletePlace.mutate(place.id);
+                    }}
                   >
                     <Trash2 className="size-3.5" />
                   </button>

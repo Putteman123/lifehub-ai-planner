@@ -1,8 +1,15 @@
 import { useChat } from "@ai-sdk/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { DefaultChatTransport, type UIMessage } from "ai";
+import {
+  DefaultChatTransport,
+  lastAssistantMessageIsCompleteWithApprovalResponses,
+  type UIMessage,
+} from "ai";
+
 import {
   ArrowRight,
+  Check,
   Loader2,
   Mic,
   MicOff,
@@ -48,6 +55,150 @@ function textOf(m: UIMessage) {
     .map((p) => (p as { text: string }).text)
     .join("");
 }
+
+/** Verktyg som ändrar data i appen och därför måste godkännas. */
+const ACTION_LABELS: Record<string, string> = {
+  create_event: "Lägga in en händelse i kalendern",
+  update_event: "Ändra en kalenderhändelse",
+  delete_event: "Ta bort en kalenderhändelse",
+  create_todo: "Lägga till en uppgift i Att göra",
+  complete_todo: "Bocka av en uppgift",
+  delete_todo: "Ta bort en uppgift",
+  create_reminder: "Skapa en påminnelse",
+  create_case: "Skapa ett juristärende",
+  create_case_task: "Lägga till en juristuppgift",
+  create_child: "Lägga till ett barn",
+  create_place: "Spara en ny plats",
+  update_place: "Ändra en plats",
+  delete_place: "Ta bort en plats",
+  name_visit: "Namnge ett besök",
+  delete_visit: "Ta bort en post i platsloggen",
+  check_in: "Checka in på en plats",
+  end_visit: "Avsluta pågående besök",
+};
+
+type ToolPart = {
+  type: string;
+  state?: string;
+  input?: Record<string, unknown>;
+  output?: { message?: string };
+  errorText?: string;
+  approval?: { id: string };
+};
+
+function actionName(part: ToolPart) {
+  const name = part.type.startsWith("tool-") ? part.type.slice(5) : part.type;
+  return name in ACTION_LABELS ? name : null;
+}
+
+function isActionPart(part: ToolPart) {
+  const name = actionName(part);
+  if (!name) return false;
+  return (
+    part.state === "approval-requested" ||
+    part.state === "output-available" ||
+    part.state === "output-error" ||
+    part.state === "output-denied"
+  );
+}
+
+function ActionCard({
+  part,
+  onRespond,
+}: {
+  part: ToolPart;
+  onRespond: (approved: boolean) => void;
+}) {
+  const name = actionName(part);
+  const label = name ? ACTION_LABELS[name] : "Åtgärd";
+
+  if (part.state === "approval-requested") {
+    return (
+      <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs">
+        <p className="font-medium text-foreground">{label}?</p>
+        <ActionDetails input={part.input} />
+        <div className="mt-2.5 flex gap-2">
+          <Button size="sm" className="h-8 flex-1 text-xs" onClick={() => onRespond(true)}>
+            <Check className="mr-1 size-3.5" /> Godkänn
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 flex-1 text-xs"
+            onClick={() => onRespond(false)}
+          >
+            <X className="mr-1 size-3.5" /> Avbryt
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (part.state === "output-denied") {
+    return (
+      <p className="rounded-xl border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+        {label} – avbruten.
+      </p>
+    );
+  }
+
+  if (part.state === "output-error") {
+    return (
+      <p className="rounded-xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+        {label} misslyckades. {part.errorText ?? ""}
+      </p>
+    );
+  }
+
+  return (
+    <p className="flex items-start gap-1.5 rounded-xl border border-cat-ledig/40 bg-cat-ledig/10 px-3 py-2 text-xs text-foreground">
+      <Check className="mt-0.5 size-3.5 shrink-0 text-cat-ledig" />
+      <span>{part.output?.message ?? `${label} – klart.`}</span>
+    </p>
+  );
+}
+
+const FIELD_LABELS: Record<string, string> = {
+  title: "Titel",
+  starts_at: "Från",
+  ends_at: "Till",
+  category: "Kategori",
+  location: "Plats",
+  description: "Beskrivning",
+  due_date: "Senast",
+  remind_at: "Påminn",
+  notes: "Anteckning",
+  note: "Anteckning",
+  label: "Namn",
+  name: "Namn",
+  kind: "Typ",
+  radius_m: "Radie (m)",
+  client_name: "Klient",
+  address: "Adress",
+  birth_date: "Födelsedatum",
+  all_day: "Heldag",
+  delete_visits: "Radera besök",
+};
+
+function ActionDetails({ input }: { input?: Record<string, unknown> | undefined }) {
+  const rows = Object.entries(input ?? {}).filter(
+    ([key, value]) => key in FIELD_LABELS && value !== null && value !== undefined && value !== "",
+  );
+  if (rows.length === 0) return null;
+  return (
+    <dl className="mt-1.5 space-y-0.5 text-muted-foreground">
+      {rows.map(([key, value]) => (
+        <div key={key} className="flex gap-2">
+          <dt className="shrink-0">{FIELD_LABELS[key]}:</dt>
+          <dd className="min-w-0 break-words text-foreground">
+            {typeof value === "boolean" ? (value ? "Ja" : "Nej") : String(value)}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 
 export function Andrea() {
   const [open, setOpen] = useState(false);
@@ -96,11 +247,25 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
   ).current;
 
   const initial = useRef(loadHistory()).current;
-  const { messages, sendMessage, status, error, setMessages, stop } = useChat({
+  const queryClient = useQueryClient();
+  const {
+    messages,
+    sendMessage,
+    status,
+    error,
+    setMessages,
+    stop,
+    addToolApprovalResponse,
+  } = useChat({
     id: "andrea-lifehub",
     messages: initial,
     transport,
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
+    onFinish: () => {
+      void queryClient.invalidateQueries();
+    },
   });
+
 
   const [input, setInput] = useState("");
   const taRef = useRef<HTMLTextAreaElement>(null);
@@ -273,6 +438,10 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
                 (p as { state?: string }).state === "output-available",
             ) as unknown as { output?: { route?: string; reason?: string } }[];
 
+            const actions = m.parts.filter((p) =>
+              isActionPart(p as ToolPart),
+            ) as unknown as ToolPart[];
+
             if (m.role === "user") {
               return (
                 <div key={m.id} className="flex justify-end">
@@ -291,9 +460,22 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
                   className={`mt-0.5 size-8 shrink-0 rounded-full object-cover ${thinking ? "andrea-thinking" : ""}`}
                 />
                 <div className="min-w-0 max-w-[85%] space-y-2">
-                  <div className="rounded-2xl rounded-bl-md bg-muted/60 px-4 py-2.5 text-sm leading-relaxed [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_ul]:mb-2 [&_ul]:space-y-1">
-                    <ReactMarkdown>{text}</ReactMarkdown>
-                  </div>
+                  {text ? (
+                    <div className="rounded-2xl rounded-bl-md bg-muted/60 px-4 py-2.5 text-sm leading-relaxed [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_ul]:mb-2 [&_ul]:space-y-1">
+                      <ReactMarkdown>{text}</ReactMarkdown>
+                    </div>
+                  ) : null}
+
+                  {actions.map((part, k) => (
+                    <ActionCard
+                      key={k}
+                      part={part}
+                      onRespond={(approved) =>
+                        addToolApprovalResponse({ id: part.approval!.id, approved })
+                      }
+                    />
+                  ))}
+
                   {gotos.map((g, k) =>
                     g.output?.route ? (
                       <button
@@ -310,6 +492,7 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
                     ) : null,
                   )}
                 </div>
+
               </div>
             );
           })}
