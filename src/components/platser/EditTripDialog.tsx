@@ -229,6 +229,24 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
           </div>
 
           <div className="space-y-1.5">
+            <Label htmlFor="trip-mode">Färdsätt</Label>
+            <select
+              id="trip-mode"
+              value={mode}
+              onChange={(e) => setMode(e.target.value as TravelMode)}
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
+            >
+              {TRAVEL_MODES.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+
+
+          <div className="space-y-1.5">
             <Label htmlFor="trip-km">Avstånd (km)</Label>
             <Input
               id="trip-km"
