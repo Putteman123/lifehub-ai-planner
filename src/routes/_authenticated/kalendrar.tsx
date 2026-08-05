@@ -79,23 +79,52 @@ function CalendarsPage() {
 
 
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [provider, setProvider] = useState<string>("ics");
   const [url, setUrl] = useState("");
   const [category, setCategory] = useState<Category>("privat");
 
-  async function save() {
-    if (!name.trim()) return;
-    await upsert.mutateAsync({
-      name: name.trim(),
-      source: provider as "apple" | "family" | "google" | "ics" | "local" | "outlook" | "school" | "sports",
-      ics_url: url || null,
-      color: category,
-    });
+  function openCreate() {
+    setEditingId(null);
     setName("");
     setUrl("");
+    setProvider("ics");
+    setCategory("privat");
+    setOpen(true);
+  }
+
+  function openEdit(calendar: (typeof calendars)[number]) {
+    setEditingId(calendar.id);
+    setName(calendar.name);
+    setUrl(calendar.ics_url ?? "");
+    setProvider(calendar.source);
+    setCategory(calendar.color as Category);
+    setOpen(true);
+  }
+
+  async function save() {
+    if (!name.trim()) return;
+    if (editingId) {
+      await upsert.mutateAsync({
+        id: editingId,
+        name: name.trim(),
+        color: category,
+      });
+    } else {
+      await upsert.mutateAsync({
+        name: name.trim(),
+        source: provider as "apple" | "family" | "google" | "ics" | "local" | "outlook" | "school" | "sports",
+        ics_url: url || null,
+        color: category,
+      });
+    }
+    setName("");
+    setUrl("");
+    setEditingId(null);
     setOpen(false);
   }
+
 
   return (
     <AppShell
