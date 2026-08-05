@@ -586,7 +586,18 @@ function PlacesPage() {
                 {PLACE_KINDS.every((k) => week[k.value] === 0) ? (
                   <li className="text-sm text-muted-foreground">Inget registrerat än.</li>
                 ) : null}
+                {weekTravel.count > 0 ? (
+                  <li className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2">
+                      <Car className="size-3.5 text-muted-foreground" /> Resor
+                    </span>
+                    <span className="tabular-nums text-muted-foreground">
+                      {weekTravel.count} st · {formatDistance(weekTravel.meters)}
+                    </span>
+                  </li>
+                ) : null}
               </ul>
+
             </div>
 
             <div className="rounded-2xl border border-border bg-card p-4">
