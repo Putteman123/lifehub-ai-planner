@@ -12,9 +12,10 @@ const STORAGE_KEY = "andrea_lifehub_v1";
 
 const SUGGESTIONS = [
   "Sammanfatta min dag",
-  "När är jag ledig fyra timmar?",
-  "Finns det några krockar i veckan?",
+  "När kan jag träna 90 min?",
+  "Finns det krockar i veckan?",
   "Hjälp mig planera om morgondagen",
+  "Vad har barnen denna vecka?",
 ];
 
 function loadHistory(): UIMessage[] {
@@ -137,7 +138,7 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
               <div className="card-soft p-4">
                 <p className="text-sm font-medium">Hej! Jag håller koll på din tid.</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Fråga om dagen, luckor, krockar eller be mig öppna en vy.
+                  Jag kan varna för krockar, hitta ledig tid och öppna rätt vy åt dig.
                 </p>
               </div>
               <div className="space-y-1.5">
