@@ -20,6 +20,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { CATEGORIES, type Category, type EventRow } from "@/lib/categories";
+import { suggestCategory } from "@/lib/calendar";
 import { useCalendars, useCases, useChildren, useDeleteRow, useUpsertRow } from "@/lib/db";
 
 const NONE = "__none__";
