@@ -23,7 +23,7 @@ import {
   totalHours,
   weekDays,
 } from "@/lib/calendar";
-import { useCaseTasks, useEvents, usePlaces, useReminders, useVisits } from "@/lib/db";
+import { useCaseTasks, useEvents, usePlaces, useReminders, useTodos, useVisits } from "@/lib/db";
 import {
   PLACE_KINDS,
   formatDuration,
