@@ -355,20 +355,22 @@ function YearView({
       {months.map((m) => {
         const days = monthGrid(m);
         return (
-          <button
-            key={m.toISOString()}
-            onClick={() => onPick(m)}
-            className="card-soft p-3 text-left hover:bg-accent/40"
-          >
-            <span className="text-xs font-semibold capitalize">{fmt(m, "MMMM")}</span>
+          <div key={m.toISOString()} className="card-soft p-3 text-left">
+            <button
+              onClick={() => onPick(m)}
+              className="text-xs font-semibold capitalize hover:text-primary"
+            >
+              {fmt(m, "MMMM")}
+            </button>
             <div className="mt-2 grid grid-cols-7 gap-0.5">
               {days.map((d) => {
                 const load = dayLoad(events, d);
                 const other = d.getMonth() !== m.getMonth();
                 return (
-                  <span
+                  <button
                     key={d.toISOString()}
-                    className={`flex aspect-square items-center justify-center rounded-[3px] text-[9px] ${
+                    onClick={() => onPick(d)}
+                    className={`flex aspect-square items-center justify-center rounded-[3px] text-[9px] transition-colors hover:ring-1 hover:ring-primary/50 ${
                       other ? "opacity-30" : ""
                     } ${
                       load === "full"
@@ -379,13 +381,14 @@ function YearView({
                     }`}
                   >
                     {fmt(d, "d")}
-                  </span>
+                  </button>
                 );
               })}
             </div>
-          </button>
+          </div>
         );
       })}
+
     </div>
   );
 }
