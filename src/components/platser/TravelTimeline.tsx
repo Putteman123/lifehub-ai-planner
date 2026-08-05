@@ -1,17 +1,20 @@
-import { BadgeCheck, Car, ExternalLink, MapPin, Pencil } from "lucide-react";
+import { BadgeCheck, Car, ExternalLink, Pencil } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { EditTripDialog } from "@/components/platser/EditTripDialog";
+import { MODE_ICONS } from "@/components/platser/TravelModeStats";
 import { useVisits } from "@/lib/db";
 import {
   formatDistance,
   formatDuration,
   isTravel,
   timeLabel,
+  travelModeLabel,
   visitMinutes,
   type PlaceRow,
   type VisitRow,
 } from "@/lib/geo";
+
 
 
 const DAYS = 90;
@@ -194,7 +197,17 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
                           </span>
                           <span className="min-w-0 flex-1 truncate text-sm">
                             <span className="inline-flex min-w-0 items-center gap-1.5">
-                              <MapPin className="size-3.5 shrink-0 text-muted-foreground" />
+                              {(() => {
+                                const ModeIcon =
+                                  MODE_ICONS[trip.visit.travel_mode ?? "okant"];
+                                return (
+                                  <ModeIcon
+                                    className="size-3.5 shrink-0 text-muted-foreground"
+                                    aria-label={travelModeLabel(trip.visit.travel_mode)}
+                                  />
+                                );
+                              })()}
+
                               <span className="truncate">
                                 {trip.visit.label
                                   ? `${trip.visit.label} · `

@@ -16,9 +16,12 @@ import {
   distanceMatches,
   estimateRouteMeters,
   haversineMeters,
+  TRAVEL_MODES,
   type PlaceRow,
+  type TravelMode,
   type VisitRow,
 } from "@/lib/geo";
+
 
 
 /** ISO -> värde för <input type="datetime-local"> i lokal tid. */
@@ -53,6 +56,8 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
   const [verified, setVerified] = useState(false);
   const [kmTouched, setKmTouched] = useState(false);
   const [verifiedTouched, setVerifiedTouched] = useState(false);
+  const [mode, setMode] = useState<TravelMode>("bil");
+
 
   useEffect(() => {
     if (!trip) return;
@@ -78,6 +83,8 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
     setLabel(trip.label ?? "");
     setKm(((trip.distance_m ?? 0) / 1000).toFixed(1).replace(".", ","));
     setVerified(trip.distance_verified ?? false);
+    setMode(trip.travel_mode ?? "bil");
+
     setKmTouched(false);
     setVerifiedTouched(false);
   }, [trip, places]);
@@ -137,6 +144,8 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
       label: label.trim() || null,
       distance_m: meters,
       distance_verified: verified,
+      travel_mode: mode,
+
       is_manual: true,
     });
     onClose();
@@ -218,6 +227,24 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
               placeholder="T.ex. Pendling, Klientmöte, Barnhämtning"
             />
           </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="trip-mode">Färdsätt</Label>
+            <select
+              id="trip-mode"
+              value={mode}
+              onChange={(e) => setMode(e.target.value as TravelMode)}
+              className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm"
+            >
+              {TRAVEL_MODES.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+
 
           <div className="space-y-1.5">
             <Label htmlFor="trip-km">Avstånd (km)</Label>
