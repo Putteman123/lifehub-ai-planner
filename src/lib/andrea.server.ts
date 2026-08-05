@@ -68,13 +68,13 @@ export async function buildAndreaContext() {
       .gte("ends_at", new Date(now.getTime() - 86400000).toISOString())
       .lte("starts_at", until.toISOString())
       .order("starts_at"),
-    supabaseAdmin.from("children").select("name"),
-    supabaseAdmin.from("legal_cases").select("title, client_name, status"),
-    supabaseAdmin.from("case_tasks").select("title, due_date, is_done"),
-    supabaseAdmin.from("reminders").select("title, remind_at, is_done"),
+    supabaseAdmin.from("children").select("id, name"),
+    supabaseAdmin.from("legal_cases").select("id, title, client_name, status"),
+    supabaseAdmin.from("case_tasks").select("id, title, due_date, is_done"),
+    supabaseAdmin.from("reminders").select("id, title, remind_at, is_done"),
   ]);
 
-  const todosRes = await supabaseAdmin.from("todos").select("title, due_date, is_done");
+  const todosRes = await supabaseAdmin.from("todos").select("id, title, due_date, is_done");
 
   const weekStart = startOfWeek(now);
   const [placesRes, visitsRes] = await Promise.all([
@@ -100,41 +100,46 @@ export async function buildAndreaContext() {
 
   return [
     `Nu: ${now.toLocaleString("sv-SE")}`,
-    `Barn: ${(childrenRes.data ?? []).map((c) => c.name).join(", ") || "inga registrerade"}`,
+    `Barn: ${(childrenRes.data ?? []).map((c) => `${c.name} [id=${c.id}]`).join(", ") || "inga registrerade"}`,
     "",
     "Händelser (kommande 21 dagar):",
     ...(events.length
       ? events.map(
           (e) =>
-            `- ${fmtDate(e.starts_at, e.all_day)}–${fmtDate(e.ends_at, e.all_day)} | ${e.category} | ${e.title}${e.location ? ` (${e.location})` : ""}`,
+            `- ${fmtDate(e.starts_at, e.all_day)}–${fmtDate(e.ends_at, e.all_day)} | ${e.category} | ${e.title}${e.location ? ` (${e.location})` : ""} [id=${e.id}]`,
         )
       : ["- inga händelser"]),
     "",
     "Juristärenden:",
-    ...(casesRes.data ?? []).map((c) => `- ${c.title} (${c.client_name ?? "–"}, ${c.status})`),
+    ...(casesRes.data ?? []).map((c) => `- ${c.title} (${c.client_name ?? "–"}, ${c.status}) [id=${c.id}]`),
     "",
     "Att göra (juristuppgifter):",
     ...(tasksRes.data ?? [])
       .filter((t) => !t.is_done)
-      .map((t) => `- ${t.title}${t.due_date ? ` (senast ${fmtDate(t.due_date, false)})` : ""}`),
+      .map((t) => `- ${t.title}${t.due_date ? ` (senast ${fmtDate(t.due_date, false)})` : ""} [id=${t.id}]`),
     "",
     "Att göra-listan:",
     ...((todosRes.data ?? []).filter((t) => !t.is_done).length
       ? (todosRes.data ?? [])
           .filter((t) => !t.is_done)
-          .map((t) => `- ${t.title}${t.due_date ? ` (senast ${fmtDate(t.due_date, false)})` : ""}`)
+          .map((t) => `- ${t.title}${t.due_date ? ` (senast ${fmtDate(t.due_date, false)})` : ""} [id=${t.id}]`)
       : ["- inga uppgifter"]),
     "",
     "Påminnelser:",
     ...(remindersRes.data ?? [])
       .filter((r) => !r.is_done)
-      .map((r) => `- ${r.title} ${fmtDate(r.remind_at, false)}`),
+      .map((r) => `- ${r.title} ${fmtDate(r.remind_at, false)} [id=${r.id}]`),
+    "",
+    "Mina sparade platser:",
+    ...(places.length
+      ? places.map((p) => `- ${p.name} (${p.kind}, ${p.radius_m} m) [id=${p.id}]`)
+      : ["- inga sparade platser"]),
     "",
     "Platslogg idag:",
     ...(todayVisits.length
       ? todayVisits.map(
           (v) =>
-            `- ${visitLabel(v, places)} ${new Date(v.arrived_at).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" })}–${v.left_at ? new Date(v.left_at).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" }) : "pågår"} (${formatDuration(visitMinutes(v, now))})`,
+            `- ${visitLabel(v, places)} ${new Date(v.arrived_at).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" })}–${v.left_at ? new Date(v.left_at).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" }) : "pågår"} (${formatDuration(visitMinutes(v, now))}) [id=${v.id}]`,
         )
       : ["- ingen plats registrerad idag"]),
     `Tid idag per typ: ${PLACE_KINDS.map((k) => `${k.label} ${formatDuration(todayMinutes[k.value])}`).join(", ")}`,
