@@ -54,14 +54,23 @@ export async function updateEvent(
   userId: string,
   input: { event_id: string } & Partial<EventInput>,
 ) {
-  const patch: Record<string, unknown> = {};
-  if (input.title !== undefined) patch["title"] = input.title;
-  if (input.starts_at !== undefined) patch["starts_at"] = iso(input.starts_at);
-  if (input.ends_at !== undefined) patch["ends_at"] = iso(input.ends_at);
-  if (input.category !== undefined) patch["category"] = input.category;
-  if (input.all_day !== undefined) patch["all_day"] = input.all_day;
-  if (input.location !== undefined) patch["location"] = input.location;
-  if (input.description !== undefined) patch["description"] = input.description;
+  const patch: {
+    title?: string;
+    starts_at?: string;
+    ends_at?: string;
+    category?: EventInput["category"];
+    all_day?: boolean;
+    location?: string;
+    description?: string;
+  } = {};
+  if (input.title !== undefined) patch.title = input.title;
+  if (input.starts_at !== undefined) patch.starts_at = iso(input.starts_at);
+  if (input.ends_at !== undefined) patch.ends_at = iso(input.ends_at);
+  if (input.category !== undefined) patch.category = input.category;
+  if (input.all_day !== undefined) patch.all_day = input.all_day;
+  if (input.location !== undefined) patch.location = input.location;
+  if (input.description !== undefined) patch.description = input.description;
+
   if (Object.keys(patch).length === 0) throw new Error("Inget att ändra.");
 
   const { error } = await supabaseAdmin
