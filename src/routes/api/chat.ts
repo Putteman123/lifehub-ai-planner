@@ -243,6 +243,33 @@ export const Route = createFileRoute("/api/chat")({
               needsApproval: true,
               execute: async () => agent.endVisit(userId),
             }),
+            mark_travel: tool({
+              description:
+                "Markera ett besök i platsloggen som resa. Appen räknar själv ut start, slut, sträcka och färdsätt.",
+              inputSchema: z.object({ visit_id: z.string(), label: z.string() }),
+              needsApproval: true,
+              execute: async ({ visit_id }) => agent.markTravel(userId, visit_id),
+            }),
+            merge_travels: tool({
+              description:
+                "Slå ihop flera reseposter i följd till en enda resa med total sträcka och tid.",
+              inputSchema: z.object({ visit_ids: z.array(z.string()).min(2) }),
+              needsApproval: true,
+              execute: async ({ visit_ids }) => agent.mergeTravels(userId, visit_ids),
+            }),
+            save_travel_preference: tool({
+              description:
+                "Spara prefererat färdsätt för en rutt (route_key som 'Jobb→Hem') eller en veckodag (0=måndag).",
+              inputSchema: z.object({
+                kind: z.enum(["rutt", "veckodag"]),
+                route_key: z.string().optional(),
+                weekday: z.number().min(0).max(6).optional(),
+                preferred_mode: z.enum(["bil", "kollektivt", "gang_cykel", "okant"]),
+              }),
+              needsApproval: true,
+              execute: async (input) => agent.saveTravelPreference(userId, input),
+            }),
+
           },
         });
 
