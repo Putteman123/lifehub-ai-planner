@@ -64,20 +64,24 @@ export const Route = createFileRoute("/api/chat")({
                   const lines = eventsMatch[1].split("\n").filter((l) => l.startsWith("- "));
                   for (const line of lines) {
                     const m = line.match(/- (.+?) \| (\w+) \| (.+)/);
-                    if (m) {
-                      const [_, timePart, category, title] = m;
+                    if (m && m[1] && m[2] && m[3]) {
+                      const timePart = m[1];
+                      const category = m[2];
+                      const title = m[3];
                       const [start, end] = timePart.split("–");
-                      events.push({
-                        starts_at: new Date(start!).toISOString(),
-                        ends_at: new Date(end!).toISOString(),
-                        all_day: !timePart.includes(":"),
-                        category: category!,
-                        title: title!,
-                      });
+                      if (start && end) {
+                        events.push({
+                          starts_at: new Date(start).toISOString(),
+                          ends_at: new Date(end).toISOString(),
+                          all_day: !timePart.includes(":"),
+                          category,
+                          title,
+                        });
+                      }
                     }
                   }
                 }
-                const slot = findFreeSlot(events as any, minutes, new Date(), 14);
+                const slot = findFreeSlot(events as never, minutes, new Date(), 14);
                 return { found: !!slot, slot, reason };
               },
             }),
