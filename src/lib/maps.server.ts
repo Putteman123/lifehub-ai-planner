@@ -17,7 +17,7 @@ export type ResolvedLeg = {
 export async function resolveLeg(input: {
   origin: Point;
   destination: Point;
-  mode?: TravelKind;
+  mode?: TravelKind | undefined;
 }): Promise<ResolvedLeg> {
   if (!hasGoogle("maps")) return null;
   try {
