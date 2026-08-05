@@ -459,7 +459,7 @@ function AgendaView({
           </h3>
           <div className="mt-3 space-y-2">
             {items.map((e) => {
-              const meta = categoryMeta(e.category);
+              const meta = shiftMeta(e);
               return (
                 <button
                   key={e.id}
@@ -470,6 +470,11 @@ function AgendaView({
                     {timeRange(e)}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm">{e.title}</span>
+                  {meta.shift ? (
+                    <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${meta.chip}`}>
+                      {meta.label}
+                    </span>
+                  ) : null}
                 </button>
               );
             })}
