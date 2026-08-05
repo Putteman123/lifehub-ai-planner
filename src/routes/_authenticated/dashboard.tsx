@@ -56,7 +56,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="card-soft p-3">
-      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 text-xl font-semibold tracking-tight">{value}</p>
     </div>
   );
@@ -76,10 +76,10 @@ function PlaceCard() {
   return (
     <section className="card-soft p-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Platslogg idag</h2>
+        <h2 className="text-[15px] font-semibold">Platslogg idag</h2>
         <QuickLink to="/platser">Öppna</QuickLink>
       </div>
-      <p className="mt-2 text-sm text-muted-foreground">
+      <p className="mt-2 text-[15px] text-muted-foreground">
         {openVisit
           ? `Just nu: ${visitLabel(openVisit, places)} · ${formatDuration(visitMinutes(openVisit, now))}`
           : "Ingen pågående plats registrerad."}
@@ -116,12 +116,12 @@ function TopPlacesCard() {
   return (
     <section className="card-soft p-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Mest besökta platser</h2>
+        <h2 className="text-[15px] font-semibold">Mest besökta platser</h2>
         <QuickLink to="/platser">Öppna</QuickLink>
       </div>
-      <p className="mt-1 text-[11px] text-muted-foreground">Senaste 90 dagarna</p>
+      <p className="mt-1 text-xs text-muted-foreground">Senaste 90 dagarna</p>
       {top.length === 0 ? (
-        <p className="mt-3 text-sm text-muted-foreground">Inga besök registrerade än.</p>
+        <p className="mt-3 text-[15px] text-muted-foreground">Inga besök registrerade än.</p>
       ) : (
         <ol className="mt-3 space-y-2">
           {top.map((stat, i) => (
@@ -201,7 +201,7 @@ function Dashboard() {
             <section className="card-soft bg-accent/40 p-5">
               <div className="flex items-center gap-2 text-primary">
                 <Sparkles className="size-4" />
-                <h2 className="text-sm font-semibold">Andreas lägesbild</h2>
+                <h2 className="text-[15px] font-semibold">Andreas lägesbild</h2>
               </div>
               <MorningSummary
                 today={today}
@@ -214,7 +214,7 @@ function Dashboard() {
 
             <section className="card-soft p-5">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold">Idag</h2>
+                <h2 className="text-[15px] font-semibold">Idag</h2>
                 {overlaps.length > 0 ? (
                   <span className="flex items-center gap-1 text-xs font-medium text-destructive">
                     <AlertTriangle className="size-3.5" /> {overlaps.length} krock
@@ -223,7 +223,7 @@ function Dashboard() {
               </div>
               <div className="mt-3 space-y-2">
                 {todayEvents.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Inga aktiviteter idag.</p>
+                  <p className="text-[15px] text-muted-foreground">Inga aktiviteter idag.</p>
                 ) : (
                   todayEvents.map((e) => <TodayRow key={e.id} event={e} onClick={() => open(e)} />)
                 )}
@@ -231,10 +231,10 @@ function Dashboard() {
             </section>
 
             <section className="card-soft p-5">
-              <h2 className="text-sm font-semibold">Ledig tid idag</h2>
+              <h2 className="text-[15px] font-semibold">Ledig tid idag</h2>
               <ul className="mt-3 space-y-2">
                 {gaps.length === 0 ? (
-                  <li className="text-sm text-muted-foreground">Ingen lucka hittad.</li>
+                  <li className="text-[15px] text-muted-foreground">Ingen lucka hittad.</li>
                 ) : (
                   gaps.map((g) => (
                     <li
@@ -252,10 +252,10 @@ function Dashboard() {
             </section>
 
             <section className="card-soft p-5">
-              <h2 className="text-sm font-semibold">Kommande</h2>
+              <h2 className="text-[15px] font-semibold">Kommande</h2>
               <ul className="mt-3 space-y-2">
                 {upcoming.length === 0 ? (
-                  <li className="text-sm text-muted-foreground">Inget planerat framåt.</li>
+                  <li className="text-[15px] text-muted-foreground">Inget planerat framåt.</li>
                 ) : (
                   upcoming.map((e) => (
                     <li key={e.id} className="flex items-center gap-2 text-sm">
@@ -271,10 +271,10 @@ function Dashboard() {
             </section>
 
             <section className="card-soft p-5">
-              <h2 className="text-sm font-semibold">Deadlines</h2>
+              <h2 className="text-[15px] font-semibold">Deadlines</h2>
               <ul className="mt-3 space-y-2">
                 {deadlines.length === 0 ? (
-                  <li className="text-sm text-muted-foreground">Inga tidsfrister.</li>
+                  <li className="text-[15px] text-muted-foreground">Inga tidsfrister.</li>
                 ) : (
                   deadlines.map((t) => (
                     <li key={t.id} className="flex items-center justify-between text-sm">
@@ -289,10 +289,10 @@ function Dashboard() {
             </section>
 
             <section className="card-soft p-5">
-              <h2 className="text-sm font-semibold">Påminnelser</h2>
+              <h2 className="text-[15px] font-semibold">Påminnelser</h2>
               <ul className="mt-3 space-y-2">
                 {openReminders.length === 0 ? (
-                  <li className="text-sm text-muted-foreground">Inga påminnelser.</li>
+                  <li className="text-[15px] text-muted-foreground">Inga påminnelser.</li>
                 ) : (
                   openReminders.map((r) => (
                     <li key={r.id} className="flex items-center justify-between text-sm">
@@ -311,7 +311,7 @@ function Dashboard() {
     const kalenderGroup = (
       <>
             <section className="card-soft p-5">
-              <h2 className="text-sm font-semibold">Veckans tidslinje</h2>
+              <h2 className="text-[15px] font-semibold">Veckans tidslinje</h2>
               <div className="mt-3 grid grid-cols-7 gap-1 sm:gap-2">
                 {week.map((day) => {
                   const load = dayLoad(events, day);
@@ -326,16 +326,16 @@ function Dashboard() {
                         isToday ? "border-primary/40 bg-primary/5" : "border-border bg-surface"
                       }`}
                     >
-                      <span className="text-[10px] font-medium capitalize text-muted-foreground sm:text-[11px]">
+                      <span className="text-xs font-medium capitalize text-muted-foreground sm:text-xs">
                         <span className="sm:hidden">{fmt(day, "EEEEE")}</span>
                         <span className="hidden sm:inline">{fmt(day, "EEE d/M")}</span>
                       </span>
-                      <span className="mt-0.5 text-[10px] text-muted-foreground sm:hidden">
+                      <span className="mt-0.5 text-xs text-muted-foreground sm:hidden">
                         {fmt(day, "d")}
                       </span>
                       <div className="mt-1.5 flex items-center gap-1.5 sm:mt-2">
                         <span className={`size-2 shrink-0 rounded-full ${LOAD_STYLES[load].dot}`} />
-                        <span className={`hidden text-[11px] sm:inline ${LOAD_STYLES[load].text}`}>
+                        <span className={`hidden text-xs sm:inline ${LOAD_STYLES[load].text}`}>
                           {LOAD_STYLES[load].label}
                         </span>
                       </div>
@@ -347,7 +347,7 @@ function Dashboard() {
                           />
                         ))}
                         {items.length > 4 ? (
-                          <span className="text-[9px] text-muted-foreground">+</span>
+                          <span className="text-xs text-muted-foreground">+</span>
                         ) : null}
                       </div>
 
@@ -358,8 +358,8 @@ function Dashboard() {
             </section>
 
             <section className="card-soft p-5">
-              <h2 className="text-sm font-semibold capitalize">{fmt(today, "MMMM yyyy")}</h2>
-              <div className="mt-3 grid grid-cols-7 gap-1 text-center text-[11px] text-muted-foreground">
+              <h2 className="text-[15px] font-semibold capitalize">{fmt(today, "MMMM yyyy")}</h2>
+              <div className="mt-3 grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
                 {["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"].map((d) => (
                   <span key={d}>{d}</span>
                 ))}
@@ -374,7 +374,7 @@ function Dashboard() {
                       key={day.toISOString()}
                       to="/kalender"
                       search={{ vy: "dag", datum: fmt(day, "yyyy-MM-dd") }}
-                      className={`aspect-square rounded-lg p-1 text-[11px] transition-colors hover:ring-1 hover:ring-primary/40 ${
+                      className={`min-h-11 rounded-lg p-1.5 text-[13px] font-medium transition-colors hover:ring-1 hover:ring-primary/40 ${
                         isToday ? "bg-primary/10 font-semibold text-primary" : "bg-surface"
                       } ${otherMonth ? "opacity-40" : ""}`}
                     >
@@ -491,13 +491,17 @@ function TodayRow({ event, onClick }: { event: EventRow; onClick: () => void }) 
   return (
     <button
       onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-lg border-l-2 bg-surface px-3 py-2.5 text-left transition-colors hover:bg-accent ${meta.bar}`}
+      className={`grid w-full min-h-[52px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 rounded-xl border-l-2 bg-surface px-3 py-2.5 text-left transition-colors hover:bg-accent sm:flex sm:items-center ${meta.bar}`}
     >
-      <span className="w-24 shrink-0 text-xs tabular-nums text-muted-foreground">
+      <span className="order-2 col-span-2 text-[13px] tabular-nums text-muted-foreground sm:order-none sm:col-span-1 sm:w-24 sm:shrink-0">
         {timeRange(event)}
       </span>
-      <span className="min-w-0 flex-1 truncate text-sm font-medium">{event.title}</span>
-      <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] ${meta.chip}`}>
+      <span className="order-1 min-w-0 truncate text-[15px] font-medium sm:order-none sm:flex-1">
+        {event.title}
+      </span>
+      <span
+        className={`order-1 shrink-0 self-start rounded-full px-2 py-0.5 text-xs sm:order-none sm:self-auto ${meta.chip}`}
+      >
         {meta.label}
       </span>
     </button>
@@ -557,7 +561,7 @@ function MorningSummary({
 
   return (
     <div className="mt-3 space-y-2">
-      <p className="text-sm leading-relaxed text-foreground">{parts.join(" ")}</p>
+      <p className="text-[15px] leading-relaxed text-foreground">{parts.join(" ")}</p>
       <div className="flex flex-wrap gap-2 pt-1">
         <QuickLink to="/kalender" search={{ vy: "dag", datum: fmt(today, "yyyy-MM-dd") }}>
           <Calendar className="size-3.5" /> Öppna dagen
@@ -631,13 +635,13 @@ function ShiftSummaryCard({ events }: { events: EventRow[] }) {
   return (
     <section className="card-soft p-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold">Pass på schemat</h2>
+        <h2 className="text-[15px] font-semibold">Pass på schemat</h2>
         <QuickLink to="/kalender">Kalender</QuickLink>
       </div>
       <div className="mt-3 grid grid-cols-[1fr_auto_auto] items-center gap-x-3 gap-y-2 text-sm">
         <span />
-        <span className="text-[11px] text-muted-foreground">{fmt(now, "MMM")}</span>
-        <span className="text-[11px] text-muted-foreground">Kommande</span>
+        <span className="text-xs text-muted-foreground">{fmt(now, "MMM")}</span>
+        <span className="text-xs text-muted-foreground">Kommande</span>
         {rows.map((r) => (
           <Fragment key={r.label}>
             <span className="flex items-center gap-2">
