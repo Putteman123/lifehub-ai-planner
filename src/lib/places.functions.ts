@@ -182,3 +182,33 @@ export const mergeVisitTravels = createServerFn({ method: "POST" })
     return mergeTravelVisits(context.supabase, context.userId, data.visitIds);
   });
 
+const snapshotRowSchema = z.object({
+  id: z.string().uuid(),
+  place_id: z.string().uuid().nullable(),
+  label: z.string().nullable(),
+  lat: z.number().nullable(),
+  lng: z.number().nullable(),
+  end_lat: z.number().nullable(),
+  end_lng: z.number().nullable(),
+  arrived_at: z.string(),
+  left_at: z.string().nullable(),
+  source: z.string(),
+  is_manual: z.boolean(),
+  note: z.string().nullable(),
+  entry_kind: z.enum(["besok", "resa"]),
+  distance_m: z.number(),
+  distance_verified: z.boolean(),
+  travel_mode: z.enum(["bil", "kollektivt", "gang_cykel", "okant"]),
+});
+
+const undoMergeSchema = z.object({ snapshot: z.array(snapshotRowSchema).min(2).max(20) });
+
+/** Ångrar en sammanslagning och återställer originalresorna. */
+export const undoVisitTravelMerge = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => undoMergeSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { undoMergeTravelVisits } = await import("@/lib/travel-classify.server");
+    return undoMergeTravelVisits(context.supabase, context.userId, data.snapshot);
+  });
+

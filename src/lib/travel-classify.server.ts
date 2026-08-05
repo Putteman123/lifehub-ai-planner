@@ -261,5 +261,45 @@ export async function mergeTravelVisits(supabase: Client, userId: string, visitI
     { field: "left_at", old_value: first.left_at, new_value: last.left_at },
   ]);
 
-  return { ok: true, visitId: first.id, distance_m: distance, minutes, travel_mode: mode };
+  return {
+    ok: true,
+    visitId: first.id,
+    distance_m: distance,
+    minutes,
+    travel_mode: mode,
+    // Ögonblicksbild av originalposterna så att sammanslagningen kan ångras.
+    snapshot: trips.map((t) => ({
+      id: t.id,
+      place_id: t.place_id,
+      label: t.label,
+      lat: t.lat,
+      lng: t.lng,
+      end_lat: t.end_lat,
+      end_lng: t.end_lng,
+      arrived_at: t.arrived_at,
+      left_at: t.left_at,
+      source: t.source,
+      is_manual: t.is_manual,
+      note: t.note,
+      entry_kind: t.entry_kind,
+      distance_m: t.distance_m,
+      distance_verified: t.distance_verified,
+      travel_mode: t.travel_mode,
+    })),
+  };
+}
+
+export type MergeSnapshotRow = Awaited<ReturnType<typeof mergeTravelVisits>>["snapshot"][number];
+
+/** Återställer originalposterna efter en sammanslagning. */
+export async function undoMergeTravelVisits(
+  supabase: Client,
+  userId: string,
+  snapshot: MergeSnapshotRow[],
+) {
+  if (snapshot.length < 2) throw new Error("Ingen sammanslagning att ångra.");
+  const rows = snapshot.map((row) => ({ ...row, user_id: userId }));
+  const { error } = await supabase.from("visits").upsert(rows, { onConflict: "id" });
+  if (error) throw new Error(error.message);
+  return { ok: true, restored: rows.length };
 }
