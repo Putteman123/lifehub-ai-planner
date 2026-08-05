@@ -5,6 +5,8 @@ import { Plus, Sparkles, AlertTriangle, Clock, Calendar } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { DataGate } from "@/components/DataGate";
 import { EventDialog } from "@/components/EventDialog";
+import { InboxCard } from "@/components/google/InboxCard";
+
 import { Button } from "@/components/ui/button";
 import { categoryMeta, type EventRow } from "@/lib/categories";
 import {
@@ -339,8 +341,11 @@ function Dashboard() {
               />
             </div>
 
+            <InboxCard />
             <PlaceCard />
             <TopPlacesCard />
+
+
 
             <section className="card-soft p-5">
               <h2 className="text-sm font-semibold">Ledig tid idag</h2>

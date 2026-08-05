@@ -5,6 +5,8 @@ import { Plus, Check, Briefcase, CalendarDays, ListTodo } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { DataGate } from "@/components/DataGate";
 import { EventDialog } from "@/components/EventDialog";
+import { DriveDocsPanel } from "@/components/google/DriveDocsPanel";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -293,7 +295,10 @@ function LegalPage() {
         </DialogContent>
       </Dialog>
 
+      <DriveDocsPanel />
+
       <EventDialog
+
         open={eventOpen}
         onOpenChange={setEventOpen}
         event={selectedEvent}
