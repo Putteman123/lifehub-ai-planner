@@ -491,13 +491,30 @@ function PlacesPage() {
                   <button
                     type="button"
                     className="flex-1 truncate text-left text-sm font-medium"
-                    onClick={() => openEdit(place)}
+                    aria-label={`Visa ${place.name} på karta`}
+                    onClick={() =>
+                      setMapTarget({
+                        title: place.name,
+                        subtitle: `${kindLabel(place.kind)} · radie ${place.radius_m} m`,
+                        lat: place.lat,
+                        lng: place.lng,
+                      })
+                    }
                   >
                     {place.name}
                     <span className="ml-2 text-xs font-normal text-muted-foreground">
                       {kindLabel(place.kind)} · {place.radius_m} m
                     </span>
                   </button>
+                  <button
+                    type="button"
+                    aria-label="Redigera plats"
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={() => openEdit(place)}
+                  >
+                    <Pencil className="size-3.5" />
+                  </button>
+
                   <button
                     type="button"
                     aria-label="Ta bort plats"
