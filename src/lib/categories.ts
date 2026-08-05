@@ -64,6 +64,27 @@ export function categoryMeta(category: Category) {
   return CATEGORIES.find((c) => c.value === category) ?? CATEGORIES[4]!;
 }
 
+export type ShiftType = "natt" | "kvall";
+
+export const SHIFT_STYLES: Record<
+  ShiftType,
+  { label: string; dot: string; chip: string; bar: string }
+> = {
+  natt: {
+    label: "Natt",
+    dot: "bg-cat-natt",
+    chip: "bg-cat-natt/12 text-cat-natt",
+    bar: "border-l-cat-natt",
+  },
+  kvall: {
+    label: "Kväll",
+    dot: "bg-cat-kvall",
+    chip: "bg-cat-kvall/14 text-cat-kvall",
+    bar: "border-l-cat-kvall",
+  },
+};
+
+
 export const CALENDAR_SOURCES: { value: CalendarRow["source"]; label: string }[] = [
   { value: "local", label: "Lokal kalender" },
   { value: "google", label: "Google Calendar" },

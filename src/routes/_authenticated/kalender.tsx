@@ -7,7 +7,7 @@ import { DataGate } from "@/components/DataGate";
 import { EventDialog } from "@/components/EventDialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CATEGORIES, categoryMeta, type Category, type EventRow } from "@/lib/categories";
+import { CATEGORIES, type Category, type EventRow } from "@/lib/categories";
 import {
   addDays,
   dayLoad,
@@ -17,6 +17,7 @@ import {
   mergeDuplicates,
   monthGrid,
   overlapsOnDay,
+  shiftMeta,
   timeRange,
   weekDays,
 } from "@/lib/calendar";
@@ -196,7 +197,7 @@ function OverlapWarning({ events, day }: { events: EventRow[]; day: Date }) {
 }
 
 function EventChip({ event, onSelect }: { event: EventRow; onSelect: SelectFn }) {
-  const meta = categoryMeta(event.category);
+  const meta = shiftMeta(event);
   return (
     <button
       onClick={(e) => {
@@ -225,7 +226,7 @@ function DayView({ events, day, onSelect }: { events: EventRow[]; day: Date; onS
           <p className="text-sm text-muted-foreground">Inga aktiviteter denna dag.</p>
         ) : (
           items.map((e) => {
-            const meta = categoryMeta(e.category);
+            const meta = shiftMeta(e);
             return (
               <button
                 key={e.id}
@@ -236,7 +237,14 @@ function DayView({ events, day, onSelect }: { events: EventRow[]; day: Date; onS
                   {timeRange(e)}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">{e.title}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="min-w-0 truncate text-sm font-medium">{e.title}</span>
+                    {meta.shift ? (
+                      <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${meta.chip}`}>
+                        {meta.label}
+                      </span>
+                    ) : null}
+                  </span>
                   {e.location ? (
                     <span className="block truncate text-xs text-muted-foreground">
                       {e.location}
@@ -451,7 +459,7 @@ function AgendaView({
           </h3>
           <div className="mt-3 space-y-2">
             {items.map((e) => {
-              const meta = categoryMeta(e.category);
+              const meta = shiftMeta(e);
               return (
                 <button
                   key={e.id}
@@ -462,6 +470,11 @@ function AgendaView({
                     {timeRange(e)}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm">{e.title}</span>
+                  {meta.shift ? (
+                    <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${meta.chip}`}>
+                      {meta.label}
+                    </span>
+                  ) : null}
                 </button>
               );
             })}
