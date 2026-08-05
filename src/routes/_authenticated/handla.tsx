@@ -20,6 +20,7 @@ import {
   useDeletePantryItem,
   usePantry,
   useShoppingItems,
+  useShoppingRealtime,
   useToggleItem,
 } from "@/lib/shopping";
 import { completeShoppingList, suggestShoppingItems } from "@/lib/shopping.functions";
