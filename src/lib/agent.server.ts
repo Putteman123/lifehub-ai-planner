@@ -26,9 +26,9 @@ export type EventInput = {
   starts_at: string;
   ends_at: string;
   category: "jobb" | "ledig" | "jurist" | "barn" | "privat" | "viktigt";
-  all_day?: boolean;
-  location?: string;
-  description?: string;
+  all_day?: boolean | undefined;
+  location?: string | undefined;
+  description?: string | undefined;
 };
 
 export async function createEvent(userId: string, input: EventInput) {
@@ -55,13 +55,13 @@ export async function updateEvent(
   input: { event_id: string } & Partial<EventInput>,
 ) {
   const patch: {
-    title?: string;
-    starts_at?: string;
-    ends_at?: string;
-    category?: EventInput["category"];
-    all_day?: boolean;
-    location?: string;
-    description?: string;
+    title?: string | undefined;
+    starts_at?: string | undefined;
+    ends_at?: string | undefined;
+    category?: EventInput["category"] | undefined;
+    all_day?: boolean | undefined;
+    location?: string | undefined;
+    description?: string | undefined;
   } = {};
   if (input.title !== undefined) patch.title = input.title;
   if (input.starts_at !== undefined) patch.starts_at = iso(input.starts_at);
@@ -205,8 +205,8 @@ export async function createPlace(
     lat: number;
     lng: number;
     kind: "jobb" | "jurist" | "hem" | "barn" | "annat";
-    radius_m?: number;
-    address?: string;
+    radius_m?: number | undefined;
+    address?: string | undefined;
   },
 ) {
   const { PLACE_KINDS } = await import("@/lib/geo");
@@ -232,15 +232,15 @@ export async function updatePlace(
   userId: string,
   input: {
     place_id: string;
-    name?: string;
-    kind?: "jobb" | "jurist" | "hem" | "barn" | "annat";
-    radius_m?: number;
+    name?: string | undefined;
+    kind?: "jobb" | "jurist" | "hem" | "barn" | "annat" | undefined;
+    radius_m?: number | undefined;
   },
 ) {
   const patch: {
-    name?: string;
-    kind?: "jobb" | "jurist" | "hem" | "barn" | "annat";
-    radius_m?: number;
+    name?: string | undefined;
+    kind?: "jobb" | "jurist" | "hem" | "barn" | "annat" | undefined;
+    radius_m?: number | undefined;
   } = {};
   if (input.name !== undefined) patch.name = input.name;
   if (input.kind !== undefined) patch.kind = input.kind;
