@@ -23,7 +23,16 @@ import {
   totalHours,
   weekDays,
 } from "@/lib/calendar";
-import { useCaseTasks, useEvents, useReminders } from "@/lib/db";
+import { useCaseTasks, useEvents, usePlaces, useReminders, useVisits } from "@/lib/db";
+import {
+  PLACE_KINDS,
+  formatDuration,
+  minutesByKind,
+  startOfDay as dayStart,
+  startOfWeek,
+  visitLabel,
+  visitMinutes,
+} from "@/lib/geo";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
