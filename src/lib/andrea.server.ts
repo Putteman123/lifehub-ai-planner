@@ -1,4 +1,4 @@
-import { findFreeSlot, fmt, overlapsOnDay } from "@/lib/calendar";
+import { findFreeSlot, overlapsOnDay } from "@/lib/calendar";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   PLACE_KINDS,
@@ -9,6 +9,7 @@ import {
   visitLabel,
   visitMinutes,
 } from "@/lib/geo";
+import { dateLocal, dayKey, fmtLocal, timeLocal, weekdayLocal } from "@/lib/tz";
 
 export const ANDREA_SYSTEM = `Du är **Andrea**, Patricks personliga AI-guide och assistent i LifeHub AI – en app för kalender, familj och juristuppdrag.
 
@@ -37,7 +38,8 @@ DU FÅR ÄNDRA I APPEN. Du har verktyg för att skapa, ändra och ta bort:
 Regler för åtgärder:
 - Användaren får alltid godkänna varje åtgärd i chatten innan den utförs – be därför inte om extra bekräftelse i texten, kör verktyget direkt.
 - Använd id:n exakt som de står i underlaget (id=...). Gissa aldrig ett id; saknas det, fråga eller sök i underlaget.
-- Tider skickas som ISO 8601 i lokal tid, t.ex. 2026-08-06T18:00. Räkna ut riktiga datum utifrån "Nu:" i underlaget.
+- ALLA tider – både i underlaget och i det du skriver eller skickar till verktyg – är svensk lokaltid (Europe/Stockholm). Skriv tider som ISO 8601 utan tidszon, t.ex. 2026-08-06T18:00. Räkna alltid ut datum utifrån "Nu:" i underlaget, och lita på klockslagen som står där – räkna aldrig om dem.
+- Underlaget är grupperat per dag ([IDAG], [IMORGON], veckodag). Använd de rubrikerna när du sammanfattar, och nämn inte händelser märkta "(avslutad)" som kommande.
 - Om användaren ber om flera saker – kör flera verktyg i följd.
 - Efter en utförd åtgärd: bekräfta kort vad som gjordes.
 
@@ -54,10 +56,15 @@ Svara alltid på svenska.`;
 
 
 function fmtDate(value: string, allDay: boolean) {
-  const d = new Date(value);
-  return allDay
-    ? d.toLocaleDateString("sv-SE")
-    : d.toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" });
+  return allDay ? dateLocal(value) : fmtLocal(value);
+}
+
+/** Idag / Imorgon / veckodag – alltid svensk tid. */
+function bucketLabel(iso: string, now: Date) {
+  const key = dayKey(iso);
+  if (key === dayKey(now)) return "IDAG";
+  if (key === dayKey(new Date(now.getTime() + 86400000))) return "IMORGON";
+  return weekdayLocal(iso).toUpperCase();
 }
 
 export async function buildAndreaContext() {
@@ -101,17 +108,31 @@ export async function buildAndreaContext() {
   const todayOverlaps = overlapsOnDay(events, now);
   const freeSlot = findFreeSlot(events, 60, now, 7);
 
+  // Gruppera händelser per svensk kalenderdag och markera läge.
+  const eventLines: string[] = [];
+  let lastBucket = "";
+  for (const e of events) {
+    const bucket = bucketLabel(e.starts_at, now);
+    if (bucket !== lastBucket) {
+      eventLines.push(`  [${bucket}]`);
+      lastBucket = bucket;
+    }
+    const start = new Date(e.starts_at).getTime();
+    const end = new Date(e.ends_at).getTime();
+    const state =
+      end < now.getTime() ? " (avslutad)" : start <= now.getTime() ? " (PÅGÅR NU)" : "";
+    eventLines.push(
+      `  - ${fmtDate(e.starts_at, e.all_day)}–${fmtDate(e.ends_at, e.all_day)} | ${e.category} | ${e.title}${e.location ? ` (${e.location})` : ""}${state} [id=${e.id}]`,
+    );
+  }
+
+
   return [
-    `Nu: ${now.toLocaleString("sv-SE")}`,
+    `Nu: ${weekdayLocal(now)} ${timeLocal(now)} (${fmtLocal(now)}, tidszon Europe/Stockholm)`,
     `Barn: ${(childrenRes.data ?? []).map((c) => `${c.name} [id=${c.id}]`).join(", ") || "inga registrerade"}`,
     "",
-    "Händelser (kommande 21 dagar):",
-    ...(events.length
-      ? events.map(
-          (e) =>
-            `- ${fmtDate(e.starts_at, e.all_day)}–${fmtDate(e.ends_at, e.all_day)} | ${e.category} | ${e.title}${e.location ? ` (${e.location})` : ""} [id=${e.id}]`,
-        )
-      : ["- inga händelser"]),
+    "Händelser (kommande 21 dagar, svensk tid):",
+    ...(eventLines.length ? eventLines : ["  - inga händelser"]),
     "",
     "Juristärenden:",
     ...(casesRes.data ?? []).map((c) => `- ${c.title} (${c.client_name ?? "–"}, ${c.status}) [id=${c.id}]`),
@@ -142,7 +163,7 @@ export async function buildAndreaContext() {
     ...(todayVisits.length
       ? todayVisits.map(
           (v) =>
-            `- ${visitLabel(v, places)} ${new Date(v.arrived_at).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" })}–${v.left_at ? new Date(v.left_at).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" }) : "pågår"} (${formatDuration(visitMinutes(v, now))}) [id=${v.id}]`,
+            `- ${visitLabel(v, places)} ${timeLocal(v.arrived_at)}–${v.left_at ? timeLocal(v.left_at) : "pågår"} (${formatDuration(visitMinutes(v, now))}) [id=${v.id}]`,
         )
       : ["- ingen plats registrerad idag"]),
     `Tid idag per typ: ${PLACE_KINDS.map((k) => `${k.label} ${formatDuration(todayMinutes[k.value])}`).join(", ")}`,
@@ -153,7 +174,7 @@ export async function buildAndreaContext() {
       ? `- Krockar idag: ${todayOverlaps.map(([a, b]) => `${a.title} / ${b.title}`).join("; ")}`
       : "- Inga krockar idag",
     freeSlot
-      ? `- Nästa lediga timme: ${fmt(freeSlot.start, "EEEE d MMMM HH:mm")}`
+      ? `- Nästa lediga timme: ${weekdayLocal(freeSlot.start)} ${timeLocal(freeSlot.start)}`
       : "- Ingen ledig timme hittad de närmaste 7 dagarna",
   ].join("\n");
 }

@@ -1,4 +1,4 @@
-import { ANDREA_MODEL } from "@/lib/ai-models";
+import { ANDREA_FAST_MODEL } from "@/lib/ai-models";
 
 type JsonSchema = { name: string; schema: Record<string, unknown> };
 
@@ -21,7 +21,7 @@ export async function completeText(opts: {
       "X-Lovable-AIG-SDK": "fetch",
     },
     body: JSON.stringify({
-      model: opts.model ?? ANDREA_MODEL,
+      model: opts.model ?? ANDREA_FAST_MODEL,
       stream: true,
       messages: [
         { role: "system", content: opts.system },

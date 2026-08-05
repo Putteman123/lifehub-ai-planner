@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import type { TablesUpdate } from "@/integrations/supabase/types";
+import { parseLocal } from "@/lib/tz";
 
 /**
  * Åtgärder som Andrea får utföra i appen. Alla körningar sker mot ägarens
@@ -16,8 +17,9 @@ function fail(error: { message: string } | null) {
   if (error) throw new Error(error.message);
 }
 
+/** Tider utan tidszon tolkas som svensk lokaltid, inte serverns UTC. */
 function iso(value: string) {
-  const d = new Date(value);
+  const d = parseLocal(value);
   if (Number.isNaN(d.getTime())) throw new Error(`Ogiltigt datum: ${value}`);
   return d.toISOString();
 }
