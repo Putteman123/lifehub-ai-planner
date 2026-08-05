@@ -5,6 +5,8 @@ import {
   ArrowRight,
   Loader2,
   Mic,
+  MicOff,
+
   Send,
   Square,
   Trash2,
