@@ -12,7 +12,7 @@ import {
 } from "date-fns";
 import { sv } from "date-fns/locale";
 
-import type { EventRow } from "./categories";
+import { categoryMeta, SHIFT_STYLES, type EventRow, type ShiftType } from "./categories";
 
 export const svLocale = sv;
 
