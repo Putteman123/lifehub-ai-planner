@@ -1,9 +1,10 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { BadgeCheck, Car, ExternalLink, Loader2, Merge, Pencil, Sparkles, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
+import { GoogleMap } from "@/components/GoogleMap";
 import { EditTripDialog } from "@/components/platser/EditTripDialog";
 import { MODE_ICONS } from "@/components/platser/TravelModeStats";
 import {
@@ -29,6 +30,7 @@ import {
   type VisitRow,
 } from "@/lib/geo";
 import { suggestTravelMerges } from "@/lib/merge-suggestions";
+import { routeBetween } from "@/lib/maps.functions";
 import { mergeVisitTravels, undoVisitTravelMerge } from "@/lib/places.functions";
 
 
@@ -41,22 +43,6 @@ function dayKey(iso: string) {
     day: "numeric",
     month: "long",
   });
-}
-
-/** Kartutsnitt som rymmer både start och slut. */
-function bboxFor(points: { lat: number; lng: number }[]) {
-  const lats = points.map((p) => p.lat);
-  const lngs = points.map((p) => p.lng);
-  const padLat = Math.max(0.004, (Math.max(...lats) - Math.min(...lats)) * 0.35);
-  const padLng = Math.max(0.006, (Math.max(...lngs) - Math.min(...lngs)) * 0.35);
-  return [
-    Math.min(...lngs) - padLng,
-    Math.min(...lats) - padLat,
-    Math.max(...lngs) + padLng,
-    Math.max(...lats) + padLat,
-  ]
-    .map((v) => v.toFixed(5))
-    .join("%2C");
 }
 
 type Trip = {
@@ -132,6 +118,40 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
 
   const points = selected ? [selected.start, selected.end].filter(Boolean) : [];
   const hasMap = points.length > 0;
+
+  // Verklig körrutt från Google Maps för den markerade resan.
+  const fetchRoute = useServerFn(routeBetween);
+  const routeQ = useQuery({
+    queryKey: [
+      "maps-route",
+      selected?.start?.lat ?? null,
+      selected?.start?.lng ?? null,
+      selected?.end?.lat ?? null,
+      selected?.end?.lng ?? null,
+      selected?.visit.travel_mode ?? "bil",
+    ],
+    enabled: Boolean(selected?.start && selected?.end),
+    staleTime: 1000 * 60 * 60 * 24,
+    queryFn: () => {
+      const mode = selected!.visit.travel_mode;
+      return fetchRoute({
+        data: {
+          origin: selected!.start!,
+          destination: selected!.end!,
+          mode: mode && mode !== "okant" ? mode : "bil",
+        },
+      });
+    },
+  });
+
+  const mapMarkers = selected
+    ? [
+        ...(selected.start
+          ? [{ ...selected.start, role: "start" as const, title: "Start" }]
+          : []),
+        ...(selected.end ? [{ ...selected.end, role: "slut" as const, title: "Mål" }] : []),
+      ]
+    : [];
 
   // Sammanfattning av de markerade resorna, sorterade i tidsordning.
   const pickedTrips = useMemo(() => {
@@ -318,16 +338,10 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
             {hasMap && selected ? (
               <>
                 <div className="overflow-hidden rounded-xl border border-border">
-                  <iframe
-                    title="Karta över vald resa"
-                    className="h-56 w-full border-0 md:h-64"
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${bboxFor(
-                      points as { lat: number; lng: number }[],
-                    )}&layer=mapnik&marker=${(selected.end ?? selected.start)!.lat}%2C${
-                      (selected.end ?? selected.start)!.lng
-                    }`}
+                  <GoogleMap
+                    className="h-56 w-full md:h-64"
+                    markers={mapMarkers}
+                    polyline={routeQ.data?.polyline ?? null}
                   />
                 </div>
                 <div className="flex items-center justify-between gap-3">
@@ -337,12 +351,12 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
                   </p>
                   {selected.start && selected.end ? (
                     <a
-                      href={`https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${selected.start.lat}%2C${selected.start.lng}%3B${selected.end.lat}%2C${selected.end.lng}`}
+                      href={`https://www.google.com/maps/dir/?api=1&origin=${selected.start.lat}%2C${selected.start.lng}&destination=${selected.end.lat}%2C${selected.end.lng}&travelmode=driving`}
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-surface px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
                     >
-                      <ExternalLink className="size-3.5" /> Visa rutt
+                      <ExternalLink className="size-3.5" /> Visa i Google Maps
                     </a>
                   ) : null}
                 </div>
