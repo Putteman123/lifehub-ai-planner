@@ -1,17 +1,20 @@
-import { BadgeCheck, Car, ExternalLink, MapPin, Pencil } from "lucide-react";
+import { BadgeCheck, Car, ExternalLink, Pencil } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { EditTripDialog } from "@/components/platser/EditTripDialog";
+import { MODE_ICONS } from "@/components/platser/TravelModeStats";
 import { useVisits } from "@/lib/db";
 import {
   formatDistance,
   formatDuration,
   isTravel,
   timeLabel,
+  travelModeLabel,
   visitMinutes,
   type PlaceRow,
   type VisitRow,
 } from "@/lib/geo";
+
 
 
 const DAYS = 90;
