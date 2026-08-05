@@ -91,6 +91,13 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
   const visitsQ = useVisits(sinceIso);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<VisitRow | null>(null);
+  const [mergeMode, setMergeMode] = useState(false);
+  const [picked, setPicked] = useState<string[]>([]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [merging, setMerging] = useState(false);
+  const qc = useQueryClient();
+  const mergeTravels = useServerFn(mergeVisitTravels);
+
 
 
   const trips = useMemo<Trip[]>(() => {
