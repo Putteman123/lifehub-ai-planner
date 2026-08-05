@@ -18,6 +18,7 @@ import { AppShell } from "@/components/AppShell";
 import { DataGate } from "@/components/DataGate";
 import { OwnTracksGuide } from "@/components/platser/OwnTracksGuide";
 import { MapDialog, type MapTarget } from "@/components/platser/MapDialog";
+import { TravelTimeline } from "@/components/platser/TravelTimeline";
 import {
   NameVisitDialog,
   type NameVisitTarget,
@@ -615,6 +616,12 @@ function PlacesPage() {
             </div>
           </section>
         </div>
+
+        <div className="mt-4">
+          <TravelTimeline places={places} />
+        </div>
+
+
 
         <section className="mt-4 rounded-2xl border border-border bg-card p-4">
           <div className="flex items-center justify-between">
