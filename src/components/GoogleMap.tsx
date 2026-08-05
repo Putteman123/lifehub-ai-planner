@@ -57,11 +57,20 @@ export function GoogleMap({
   polyline = null,
   className = "h-64 w-full",
   zoom = 15,
+  accuracy = null,
+  follow = false,
+  onUserPan,
 }: {
   markers: MapMarker[];
   polyline?: string | null;
   className?: string;
   zoom?: number;
+  /** Radie i meter för positionens osäkerhet (ritas som cirkel runt första markören). */
+  accuracy?: number | null;
+  /** Håll kartan centrerad på första markören. */
+  follow?: boolean;
+  /** Anropas när användaren själv drar i kartan. */
+  onUserPan?: () => void;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
