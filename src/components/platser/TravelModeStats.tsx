@@ -53,6 +53,24 @@ export function TravelModeStats() {
 
   const totalMeters = stats.reduce((sum, s) => sum + s.meters, 0);
 
+  const fetchInsight = useServerFn(getTravelInsight);
+  const insight = useMutation({
+    mutationFn: () =>
+      fetchInsight({
+        data: {
+          modes: stats.map((s) => ({
+            label: s.label,
+            trips: s.trips,
+            km: s.meters / 1000,
+            minutes: s.minutes,
+          })),
+        },
+      }),
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+
+
   return (
     <section className="rounded-2xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
