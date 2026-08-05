@@ -24,24 +24,24 @@ export function assertClientData(
 /** DER-kodad ECDSA-signatur → rå r||s (64 byte) som WebCrypto kräver. */
 function derToRaw(der: Uint8Array): Uint8Array {
   let offset = 2;
-  if (der[1] !== undefined && der[1] > 0x80) offset = 3;
-  const readInt = () => {
-    offset += 1; // 0x02
-    let length = der[offset++] ?? 0;
-    let start = offset;
-    while (length > 0 && der[start] === 0) {
-      start += 1;
-      length -= 1;
-    }
-    const value = der.slice(start, offset + (der[offset - 1] ?? 0) - (start - offset));
-    offset = start + length;
-    return value;
+  const headerLength = der[1] ?? 0;
+  if (headerLength & 0x80) offset = 2 + (headerLength & 0x7f);
+
+  const readInteger = (): Uint8Array => {
+    if (der[offset] !== 0x02) throw new Error("Ogiltig signatur.");
+    offset += 1;
+    const length = der[offset] ?? 0;
+    offset += 1;
+    const value = der.slice(offset, offset + length);
+    offset += length;
+    return value.length > 32 ? value.slice(value.length - 32) : value;
   };
-  const r = readInt();
-  const s = readInt();
+
+  const r = readInteger();
+  const s = readInteger();
   const out = new Uint8Array(64);
-  out.set(r.slice(-32), 32 - Math.min(32, r.length));
-  out.set(s.slice(-32), 64 - Math.min(32, s.length));
+  out.set(r, 32 - r.length);
+  out.set(s, 64 - s.length);
   return out;
 }
 
