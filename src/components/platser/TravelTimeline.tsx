@@ -1,6 +1,7 @@
-import { Car, ExternalLink, MapPin } from "lucide-react";
+import { BadgeCheck, Car, ExternalLink, MapPin, Pencil } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { EditTripDialog } from "@/components/platser/EditTripDialog";
 import { useVisits } from "@/lib/db";
 import {
   formatDistance,
@@ -11,6 +12,7 @@ import {
   type PlaceRow,
   type VisitRow,
 } from "@/lib/geo";
+
 
 const DAYS = 90;
 
