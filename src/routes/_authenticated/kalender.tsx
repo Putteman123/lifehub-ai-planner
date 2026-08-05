@@ -197,7 +197,7 @@ function OverlapWarning({ events, day }: { events: EventRow[]; day: Date }) {
 }
 
 function EventChip({ event, onSelect }: { event: EventRow; onSelect: SelectFn }) {
-  const meta = categoryMeta(event.category);
+  const meta = shiftMeta(event);
   return (
     <button
       onClick={(e) => {
