@@ -63,6 +63,7 @@ import {
   startOfDay,
   startOfWeek,
   timeLabel,
+  travelModeLabel,
   travelStats,
   visitLabel,
   visitMinutes,
@@ -71,8 +72,10 @@ import {
   clearLocationHistory,
   endMyVisit,
   getIngestInfo,
+  markVisitTravel,
   nameVisit,
   recordMyPosition,
+  undoVisitTravel,
 } from "@/lib/places.functions";
 
 export const Route = createFileRoute("/_authenticated/platser")({
