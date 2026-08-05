@@ -1,8 +1,22 @@
-import { BadgeCheck, Car, ExternalLink, Pencil } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { BadgeCheck, Car, ExternalLink, Loader2, Merge, Pencil, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { EditTripDialog } from "@/components/platser/EditTripDialog";
 import { MODE_ICONS } from "@/components/platser/TravelModeStats";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useVisits } from "@/lib/db";
 import {
   formatDistance,
@@ -14,6 +28,7 @@ import {
   type PlaceRow,
   type VisitRow,
 } from "@/lib/geo";
+import { mergeVisitTravels } from "@/lib/places.functions";
 
 
 
