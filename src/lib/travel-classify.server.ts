@@ -100,8 +100,12 @@ export async function markVisitAsTravel(supabase: Client, userId: string, visitI
       ? { lat: visit.end_lat, lng: visit.end_lng }
       : start);
 
-  const estimate =
-    start && end ? estimateRouteMeters(start.lat, start.lng, end.lat, end.lng) : 0;
+  // Verklig körsträcka från Google Maps, annars uppskattning.
+  let estimate = 0;
+  if (start && end) {
+    const { routeMetersOrEstimate } = await import("./maps.server");
+    estimate = (await routeMetersOrEstimate(start, end)).meters;
+  }
   const distance = estimate > 0 ? estimate : (visit.distance_m ?? 0);
 
   const startMs = new Date(visit.arrived_at).getTime();
