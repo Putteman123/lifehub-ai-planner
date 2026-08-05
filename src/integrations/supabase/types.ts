@@ -416,6 +416,10 @@ export type Database = {
         Row: {
           arrived_at: string
           created_at: string
+          distance_m: number
+          end_lat: number | null
+          end_lng: number | null
+          entry_kind: Database["public"]["Enums"]["visit_kind"]
           id: string
           is_manual: boolean
           label: string | null
@@ -431,6 +435,10 @@ export type Database = {
         Insert: {
           arrived_at: string
           created_at?: string
+          distance_m?: number
+          end_lat?: number | null
+          end_lng?: number | null
+          entry_kind?: Database["public"]["Enums"]["visit_kind"]
           id?: string
           is_manual?: boolean
           label?: string | null
@@ -446,6 +454,10 @@ export type Database = {
         Update: {
           arrived_at?: string
           created_at?: string
+          distance_m?: number
+          end_lat?: number | null
+          end_lng?: number | null
+          entry_kind?: Database["public"]["Enums"]["visit_kind"]
           id?: string
           is_manual?: boolean
           label?: string | null
@@ -493,6 +505,7 @@ export type Database = {
         | "privat"
         | "viktigt"
       place_kind: "jobb" | "jurist" | "hem" | "barn" | "annat"
+      visit_kind: "besok" | "resa"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -632,6 +645,7 @@ export const Constants = {
       ],
       event_category: ["jobb", "ledig", "jurist", "barn", "privat", "viktigt"],
       place_kind: ["jobb", "jurist", "hem", "barn", "annat"],
+      visit_kind: ["besok", "resa"],
     },
   },
 } as const
