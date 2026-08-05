@@ -38,7 +38,8 @@ DU FÅR ÄNDRA I APPEN. Du har verktyg för att skapa, ändra och ta bort:
 Regler för åtgärder:
 - Användaren får alltid godkänna varje åtgärd i chatten innan den utförs – be därför inte om extra bekräftelse i texten, kör verktyget direkt.
 - Använd id:n exakt som de står i underlaget (id=...). Gissa aldrig ett id; saknas det, fråga eller sök i underlaget.
-- Tider skickas som ISO 8601 i lokal tid, t.ex. 2026-08-06T18:00. Räkna ut riktiga datum utifrån "Nu:" i underlaget.
+- ALLA tider – både i underlaget och i det du skriver eller skickar till verktyg – är svensk lokaltid (Europe/Stockholm). Skriv tider som ISO 8601 utan tidszon, t.ex. 2026-08-06T18:00. Räkna alltid ut datum utifrån "Nu:" i underlaget, och lita på klockslagen som står där – räkna aldrig om dem.
+- Underlaget är grupperat per dag ([IDAG], [IMORGON], veckodag). Använd de rubrikerna när du sammanfattar, och nämn inte händelser märkta "(avslutad)" som kommande.
 - Om användaren ber om flera saker – kör flera verktyg i följd.
 - Efter en utförd åtgärd: bekräfta kort vad som gjordes.
 
