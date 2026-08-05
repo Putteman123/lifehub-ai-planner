@@ -162,7 +162,7 @@ export async function buildAndreaContext() {
     ...(todayVisits.length
       ? todayVisits.map(
           (v) =>
-            `- ${visitLabel(v, places)} ${new Date(v.arrived_at).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" })}–${v.left_at ? new Date(v.left_at).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" }) : "pågår"} (${formatDuration(visitMinutes(v, now))}) [id=${v.id}]`,
+            `- ${visitLabel(v, places)} ${timeLocal(v.arrived_at)}–${v.left_at ? timeLocal(v.left_at) : "pågår"} (${formatDuration(visitMinutes(v, now))}) [id=${v.id}]`,
         )
       : ["- ingen plats registrerad idag"]),
     `Tid idag per typ: ${PLACE_KINDS.map((k) => `${k.label} ${formatDuration(todayMinutes[k.value])}`).join(", ")}`,
