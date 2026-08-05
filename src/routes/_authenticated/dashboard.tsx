@@ -176,7 +176,12 @@ function Dashboard() {
                 const load = dayLoad(events, day);
                 const items = eventsOnDay(events, day);
                 return (
-                  <div key={day.toISOString()} className="rounded-lg bg-surface p-3">
+                  <Link
+                    key={day.toISOString()}
+                    to="/kalender"
+                    search={{ vy: "dag", datum: fmt(day, "yyyy-MM-dd") }}
+                    className="rounded-lg bg-surface p-3 transition-colors hover:bg-accent"
+                  >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium capitalize">
                         {fmt(day, "EEEE d/M")}
@@ -199,9 +204,10 @@ function Dashboard() {
                         <li className="text-xs text-muted-foreground">Ledig</li>
                       ) : null}
                     </ul>
-                  </div>
+                  </Link>
                 );
               })}
+
             </div>
           </section>
 
