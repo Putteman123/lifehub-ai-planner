@@ -83,7 +83,7 @@ export function overlapMinutes(
   return Math.max(0, Math.round((end - start) / 60000));
 }
 
-/** Summerar minuter per platstyp inom ett intervall. */
+/** Summerar minuter per platstyp inom ett intervall (resor räknas inte). */
 export function minutesByKind(
   visits: VisitRow[],
   places: PlaceRow[],
@@ -100,6 +100,7 @@ export function minutesByKind(
     annat: 0,
   };
   for (const visit of visits) {
+    if (isTravel(visit)) continue;
     const minutes = overlapMinutes(visit, from, to, now);
     if (!minutes) continue;
     const kind = (visit.place_id ? byId.get(visit.place_id)?.kind : undefined) ?? "annat";
@@ -108,13 +109,95 @@ export function minutesByKind(
   return totals;
 }
 
+/** Hastighetsgräns då förflyttning tolkas som resa (~8 km/h). */
+export const TRAVEL_SPEED_MS = 2.2;
+/** Kortare resor än så här kastas. */
+export const MIN_TRAVEL_METERS = 500;
+export const MIN_TRAVEL_MINUTES = 3;
+
+export function isTravel(visit: Pick<VisitRow, "entry_kind">) {
+  return visit.entry_kind === "resa";
+}
+
+export function formatDistance(meters: number) {
+  if (!meters || meters < 0) return "0 km";
+  if (meters < 1000) return `${Math.round(meters)} m`;
+  return `${(meters / 1000).toFixed(1)} km`.replace(".", ",");
+}
+
+/** Restid och sträcka inom ett intervall. */
+export function travelStats(visits: VisitRow[], from: Date, to: Date, now = new Date()) {
+  let minutes = 0;
+  let meters = 0;
+  let count = 0;
+  for (const visit of visits) {
+    if (!isTravel(visit)) continue;
+    const overlap = overlapMinutes(visit, from, to, now);
+    if (!overlap) continue;
+    const total = visitMinutes(visit, now) || 1;
+    minutes += overlap;
+    meters += (visit.distance_m ?? 0) * (overlap / total);
+    count += 1;
+  }
+  return { minutes, meters, count };
+}
+
+export type PlaceStat = {
+  key: string;
+  name: string;
+  kind: PlaceKind;
+  color: string;
+  visits: number;
+  minutes: number;
+};
+
+/** Topplista: antal besök och total tid per plats inom ett intervall. */
+export function placeTotals(
+  visits: VisitRow[],
+  places: PlaceRow[],
+  from: Date,
+  to: Date,
+  now = new Date(),
+): PlaceStat[] {
+  const byId = new Map(places.map((p) => [p.id, p]));
+  const stats = new Map<string, PlaceStat>();
+
+  for (const visit of visits) {
+    if (isTravel(visit)) continue;
+    const minutes = overlapMinutes(visit, from, to, now);
+    if (!minutes) continue;
+    const place = visit.place_id ? byId.get(visit.place_id) : undefined;
+    const name = place?.name ?? visit.label ?? "Okänd plats";
+    const key = place?.id ?? `label:${name}`;
+    const current =
+      stats.get(key) ??
+      ({
+        key,
+        name,
+        kind: place?.kind ?? "annat",
+        color: place?.color ?? "#64748b",
+        visits: 0,
+        minutes: 0,
+      } satisfies PlaceStat);
+    current.visits += 1;
+    current.minutes += minutes;
+    stats.set(key, current);
+  }
+
+  return [...stats.values()].sort(
+    (a, b) => b.visits - a.visits || b.minutes - a.minutes,
+  );
+}
+
 export function visitLabel(visit: VisitRow, places: PlaceRow[]) {
+  if (isTravel(visit)) return visit.label ?? "Resa";
   if (visit.place_id) {
     const place = places.find((p) => p.id === visit.place_id);
     if (place) return place.name;
   }
   return visit.label ?? "Okänd plats";
 }
+
 
 export function startOfDay(date: Date) {
   const d = new Date(date);
