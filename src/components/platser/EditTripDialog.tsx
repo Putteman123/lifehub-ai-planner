@@ -345,7 +345,34 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
             Avståndet stämmer (kontrollerat)
           </label>
 
+          <div className="rounded-xl border border-border/60 p-3">
+            <p className="text-xs font-medium text-muted-foreground">Ändringshistorik</p>
+            {history.data && history.data.length > 0 ? (
+              <ul className="mt-2 max-h-40 space-y-1.5 overflow-y-auto text-xs">
+                {history.data.map((h) => (
+                  <li key={h.id} className="flex flex-wrap items-baseline gap-1">
+                    <span className="text-muted-foreground">
+                      {new Date(h.created_at).toLocaleString("sv-SE", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
+                    </span>
+                    <span className="font-medium">{tripFieldLabel(h.field)}:</span>
+                    <span className="text-muted-foreground line-through">
+                      {h.old_value ?? "–"}
+                    </span>
+                    <span aria-hidden>→</span>
+                    <span>{h.new_value ?? "–"}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-1 text-xs text-muted-foreground">Inga ändringar registrerade än.</p>
+            )}
+          </div>
+
         </div>
+
 
         <DialogFooter>
           <Button variant="ghost" onClick={onClose}>
