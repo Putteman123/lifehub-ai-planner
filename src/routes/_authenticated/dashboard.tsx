@@ -123,7 +123,18 @@ function Dashboard() {
   const upcoming = events
     .filter((e) => new Date(e.starts_at) > today)
     .slice(0, 5);
-  const deadlines = tasks.filter((t) => !t.is_done && t.due_date).slice(0, 4);
+  const todoDeadlines = todos
+    .filter((t) => !t.is_done && t.due_date)
+    .map((t) => ({ id: t.id, title: t.title, due_date: t.due_date }));
+  const deadlines = [
+    ...tasks
+      .filter((t) => !t.is_done && t.due_date)
+      .map((t) => ({ id: t.id, title: t.title, due_date: t.due_date })),
+    ...todoDeadlines,
+  ]
+    .sort((a, b) => (a.due_date ?? "").localeCompare(b.due_date ?? ""))
+    .slice(0, 5);
+
   const openReminders = reminders.filter((r) => !r.is_done).slice(0, 4);
 
   function open(event: EventRow | null) {
