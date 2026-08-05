@@ -28,6 +28,7 @@ import {
   PLACE_KINDS,
   formatDuration,
   minutesByKind,
+  placeTotals,
   startOfDay as dayStart,
   startOfWeek,
   visitLabel,
@@ -339,6 +340,7 @@ function Dashboard() {
             </div>
 
             <PlaceCard />
+            <TopPlacesCard />
 
             <section className="card-soft p-5">
               <h2 className="text-sm font-semibold">Ledig tid idag</h2>
