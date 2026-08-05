@@ -29,7 +29,7 @@ import {
   type VisitRow,
 } from "@/lib/geo";
 import { suggestTravelMerges } from "@/lib/merge-suggestions";
-import { mergeVisitTravels } from "@/lib/places.functions";
+import { mergeVisitTravels, undoVisitTravelMerge } from "@/lib/places.functions";
 
 
 
@@ -99,6 +99,7 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const qc = useQueryClient();
   const mergeTravels = useServerFn(mergeVisitTravels);
+  const undoMerge = useServerFn(undoVisitTravelMerge);
 
 
 
@@ -183,6 +184,25 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
       await qc.invalidateQueries({ queryKey: ["visits"] });
       toast.success(
         `Sammanslagen resa: ${formatDistance(res.distance_m)} · ${formatDuration(res.minutes)}`,
+        {
+          duration: 12000,
+          action: {
+            label: "Ångra",
+            onClick: () => {
+              void (async () => {
+                try {
+                  await undoMerge({ data: { snapshot: res.snapshot } });
+                  await qc.invalidateQueries({ queryKey: ["visits"] });
+                  toast.success("Sammanslagningen är ångrad.");
+                } catch (err) {
+                  toast.error(
+                    err instanceof Error ? err.message : "Kunde inte ångra sammanslagningen.",
+                  );
+                }
+              })();
+            },
+          },
+        },
       );
       setConfirmOpen(false);
       exitMergeMode();
