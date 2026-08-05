@@ -7,7 +7,8 @@ import { DataGate } from "@/components/DataGate";
 import { EventDialog } from "@/components/EventDialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CATEGORIES, type Category, type EventRow } from "@/lib/categories";
+import { ShiftLegend } from "@/components/calendar/ShiftLegend";
+import { CATEGORIES, SHIFT_STYLES, type Category, type EventRow } from "@/lib/categories";
 import {
   addDays,
   dayLoad,
@@ -18,6 +19,7 @@ import {
   monthGrid,
   overlapsOnDay,
   shiftMeta,
+  shiftType,
   timeRange,
   weekDays,
 } from "@/lib/calendar";
@@ -157,6 +159,10 @@ function CalendarPage() {
             {c.label}
           </button>
         ))}
+      </div>
+
+      <div className="mt-3">
+        <ShiftLegend showLoad={view === "ar"} />
       </div>
 
       <div className="mt-5">
@@ -401,11 +407,14 @@ function YearView({
               {days.map((d) => {
                 const load = dayLoad(events, d);
                 const other = d.getMonth() !== m.getMonth();
+                const dayEvents = eventsOnDay(events, d);
+                const hasNatt = dayEvents.some((e) => shiftType(e) === "natt");
+                const hasKvall = dayEvents.some((e) => shiftType(e) === "kvall");
                 return (
                   <button
                     key={d.toISOString()}
                     onClick={() => onPick(d)}
-                    className={`flex aspect-square items-center justify-center rounded-[3px] text-[9px] transition-colors hover:ring-1 hover:ring-primary/50 ${
+                    className={`relative flex aspect-square items-center justify-center rounded-[3px] text-[9px] transition-colors hover:ring-1 hover:ring-primary/50 ${
                       other ? "opacity-30" : ""
                     } ${
                       load === "full"
@@ -416,10 +425,21 @@ function YearView({
                     }`}
                   >
                     {fmt(d, "d")}
+                    {hasNatt || hasKvall ? (
+                      <span className="absolute bottom-0.5 flex gap-0.5">
+                        {hasNatt ? (
+                          <span className={`size-1 rounded-full ${SHIFT_STYLES.natt.dot}`} />
+                        ) : null}
+                        {hasKvall ? (
+                          <span className={`size-1 rounded-full ${SHIFT_STYLES.kvall.dot}`} />
+                        ) : null}
+                      </span>
+                    ) : null}
                   </button>
                 );
               })}
             </div>
+
           </div>
         );
       })}
