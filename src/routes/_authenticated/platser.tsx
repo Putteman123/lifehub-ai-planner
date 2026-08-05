@@ -20,6 +20,8 @@ import { OwnTracksGuide } from "@/components/platser/OwnTracksGuide";
 import { MapDialog, type MapTarget } from "@/components/platser/MapDialog";
 import { FrequentRoutes } from "@/components/platser/FrequentRoutes";
 import { TravelModeStats } from "@/components/platser/TravelModeStats";
+import { TravelTrendChart } from "@/components/platser/TravelTrendChart";
+
 import { TravelTimeline } from "@/components/platser/TravelTimeline";
 
 import {
@@ -627,6 +629,11 @@ function PlacesPage() {
         <div className="mt-4">
           <TravelModeStats />
         </div>
+
+        <div className="mt-4">
+          <TravelTrendChart />
+        </div>
+
 
         <div className="mt-4">
           <FrequentRoutes places={places} />
