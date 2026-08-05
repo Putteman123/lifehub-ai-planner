@@ -1,58 +1,63 @@
-# Apple Hälsa i LifeHub (via Health Auto Export)
+# Förenkla LifeHub: fokus på AI, kalender och vardag
 
-Apple Hälsa har inget öppet webb-API. Lösningen: iOS-appen **Health Auto Export** skickar automatiskt din hälsodata till en webhook i LifeHub. Data som hämtas: sömn, träning & steg, puls & återhämtning.
+Apple Hälsa / Health Auto Export / Sleep Cycle läggs på is. Istället förenklar vi gränssnittet och låter Andrea bli mer proaktiv.
 
-## Så fungerar det
+## Mål
 
-```text
-iPhone (Hälsa)  ->  Health Auto Export  ->  https://lifehub-ai-planner.lovable.app/api/public/health
-                                              -> sparas i databasen -> Dashboard + Andrea
-```
+- Ett renare, enklare gränssnitt som känns mer "Apple/Linear".
+- Andrea ska agera mer som en riktig assistent: varna, föreslå och förbereda.
+- Smartare kalender utan nya externa integrationer.
 
 ## Vad som byggs
 
-### 1. Databas
-Ny tabell `health_metrics`:
-- datum, typ (sömn / steg / träning / puls / HRV / vilopuls), värde, enhet, källa, rådata
-- unik nyckel på (datum, typ) så att omsända dagar uppdateras i stället för att dubbleras
-- RLS på, endast serverkod skriver
+### 1. Förenkla dashboard
 
-### 2. Webhook-endpoint
-`src/routes/api/public/health.ts` (POST):
-- skyddas med en hemlig token som skickas som header från Health Auto Export
-- validerar JSON med Zod, tål Health Auto Exports "metrics"-format
-- normaliserar till rader i `health_metrics` och gör upsert
-- svarar med antal sparade mätvärden
+- Ett enda sammanhållet flöde istället för många små kort.
+- Överst: dagens agenda med klickbara tider → öppnar dagvyn.
+- Därefter: Andrea-sammanfattning av dagen (proaktiv text, inte bara lista).
+- Veckokortet blir en horisontell tidslinje istället för 7 separata rutor.
+- Månadsminiatyren blir större och klickbar.
+- Dölj eller flytta mindre viktiga widgets (deadlines/påminnelser) till sidopanel.
 
-En hemlig token genereras och sparas som projekthemlighet (`HEALTH_WEBHOOK_TOKEN`).
+### 2. Gör Andrea proaktiv
 
-### 3. Hälsovy i appen
-Ny sida `/halsa` i menyn:
-- Sömn senaste 14 dagarna (timmar, snitt, trend)
-- Steg och träningspass per dag
-- Vilopuls och HRV som återhämtningskurva
-- "Återhämtningsstatus" i grön/gul/röd, samma språk som kalenderns lediga tid
-- Instruktionskort med webhook-URL och token att klistra in i Health Auto Export
+- Andrea skickar varje morgon en kort sammanfattning:
+  - "Du har 4 möten idag, en krock mellan lunch och juristmötet, och du har barnen 15–18."
+  - Förslag: "Vill du att jag föreslår en ny tid för juristmötet?"
+- Andrea varnar när något ser konstigt ut:
+  - två aktiviteter krockar,
+  - för lite sömn (om användaren fyller i det manuellt senare),
+  - hög arbetsbelastning flera dagar i rad.
+- Snabbval under Andrea-bubblan:
+  - "Visa min lediga tid"
+  - "Planera om dagen"
+  - "Vad har barnen denna vecka?"
+  - "Sammanfatta veckan"
 
-### 4. Dashboard
-Ett litet hälsokort överst: sömn i natt, steg idag, återhämtningsstatus. Klickbart till `/halsa`.
+### 3. Smartare kalender
 
-### 5. Andrea får hälsokontext
-`andrea.server.ts` utökas med senaste dagarnas sömn/puls/aktivitet, så hon kan säga saker som:
-"Du sov 5h och har juristmöte 18:00 plus Benjamins träning – vill du att jag flyttar något?"
-Hon får också väga in återhämtning när hon föreslår mötestider och planerar om dagar.
+- Markera krockar visuellt (röd varningsikon).
+- "Ledig tid"-sökare: användaren skriver "när kan jag träna 90 min?" och Andrea svarar med förslag.
+- Auto-taggning: nya händelser föreslås kategori baserat på titel (AI i bakgrunden).
 
-## Vad du gör i telefonen (engångs)
-1. Installera Health Auto Export från App Store.
-2. Skapa en automation: REST API, POST, JSON.
-3. Klistra in URL och token som visas på sidan `/halsa`.
-4. Välj datatyper (sömn, steg, träning, vilopuls, HRV) och intervall (t.ex. varje timme).
+### 4. Juristvyn
+
+- Tydligare översikt: aktiva ärenden, kommande tidsfrister, nästa möte.
+- Knapp för att snabbt skapa ärende + första uppgift i ett steg.
+
+### 5. Barnvyn
+
+- Kommande 14 dagarna: vem har barnen, träningar, läkarbesök, lov.
+- Möjlighet att lägga till aktivitet direkt från barnvyn.
 
 ## Tekniska detaljer
-- Endpoint under `/api/public/*` så att Health Auto Export når den utan inloggning; skyddas i stället av token med timing-säker jämförelse.
-- Skrivningar sker med service-role-klient som laddas inuti handlern.
-- Migration inkluderar GRANT + RLS enligt projektets mönster.
-- Hälsohooks läggs i `src/lib/db.ts` med React Query, vyn använder befintlig `DataGate` för laddning/fel.
-- Sidan använder samma designtokens och svenska datumhjälpare som resten av appen.
 
-Jag åtgärdar också ett hydreringsfel på låsskärmen i samma svep.
+- Inga nya externa API:er eller betalappar.
+- Använder befintliga tabeller: events, children, legal_cases, case_tasks, reminders.
+- Andrea bygger på befintlig `andrea.server.ts` och `/api/chat.ts`.
+- UI använder samma Tailwind-tokens; inga nya färger.
+
+## Uteslutet
+
+- Apple Health, Health Auto Export, Sleep Cycle, manuell hälsoruta.
+- Nya betalintegrationer eller externa kalenderkällor.
