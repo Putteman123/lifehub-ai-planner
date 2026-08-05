@@ -158,3 +158,17 @@
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-soft);
 }
+
+@keyframes andrea-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-primary) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in oklab, var(--color-primary) 0%, transparent);
+  }
+}
+
+@utility andrea-thinking {
+  animation: andrea-pulse 1.6s ease-in-out infinite;
+}
