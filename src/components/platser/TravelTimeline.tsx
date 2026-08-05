@@ -172,7 +172,7 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
                   {dayTrips.map((trip) => {
                     const active = selected?.visit.id === trip.visit.id;
                     return (
-                      <li key={trip.visit.id} className="relative">
+                      <li key={trip.visit.id} className="relative flex items-center gap-1">
                         <span
                           className={`absolute -left-[1.03rem] top-3 size-2 rounded-full ${
                             active ? "bg-primary" : "bg-muted-foreground/40"
@@ -182,7 +182,7 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
                           type="button"
                           onClick={() => setSelectedId(trip.visit.id)}
                           aria-pressed={active}
-                          className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-left transition-colors ${
+                          className={`flex min-w-0 flex-1 items-center gap-2 rounded-xl border px-3 py-2 text-left transition-colors ${
                             active
                               ? "border-primary/40 bg-primary/5"
                               : "border-border/60 hover:bg-muted/50"
@@ -193,20 +193,39 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
                             {trip.visit.left_at ? `–${timeLabel(trip.visit.left_at)}` : "–nu"}
                           </span>
                           <span className="min-w-0 flex-1 truncate text-sm">
-                            <span className="inline-flex items-center gap-1.5">
+                            <span className="inline-flex min-w-0 items-center gap-1.5">
                               <MapPin className="size-3.5 shrink-0 text-muted-foreground" />
-                              {endpointName(trip.start, places, "Okänd start")} →{" "}
-                              {endpointName(trip.end, places, "Okänt mål")}
+                              <span className="truncate">
+                                {trip.visit.label
+                                  ? `${trip.visit.label} · `
+                                  : ""}
+                                {endpointName(trip.start, places, "Okänd start")} →{" "}
+                                {endpointName(trip.end, places, "Okänt mål")}
+                              </span>
                             </span>
                           </span>
                           <span className="shrink-0 text-right text-xs tabular-nums">
-                            <span className="block font-medium">
+                            <span className="flex items-center justify-end gap-1 font-medium">
+                              {trip.visit.distance_verified ? (
+                                <BadgeCheck
+                                  className="size-3.5 text-emerald-500"
+                                  aria-label="Avståndet är kontrollerat"
+                                />
+                              ) : null}
                               {formatDistance(trip.visit.distance_m ?? 0)}
                             </span>
                             <span className="block text-muted-foreground">
                               {formatDuration(visitMinutes(trip.visit))}
                             </span>
                           </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditing(trip.visit)}
+                          aria-label="Redigera resa"
+                          className="shrink-0 rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        >
+                          <Pencil className="size-3.5" />
                         </button>
                       </li>
                     );
@@ -217,6 +236,9 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
           </ol>
         </div>
       )}
+
+      <EditTripDialog trip={editing} places={places} onClose={() => setEditing(null)} />
     </section>
+
   );
 }
