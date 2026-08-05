@@ -33,7 +33,7 @@ export function InboxCard() {
   const data = query.data;
 
   return (
-    <section className="card-soft p-5">
+    <section className="card-soft p-4 sm:p-5">
       <div className="flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <Mail className="size-4 text-[hsl(var(--cat-jobb))]" /> Inkorg

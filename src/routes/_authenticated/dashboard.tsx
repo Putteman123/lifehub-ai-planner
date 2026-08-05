@@ -55,9 +55,9 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="card-soft p-3">
+    <div className="card-soft p-3.5">
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-xl font-semibold tracking-tight">{value}</p>
+      <p className="mt-1 text-[22px] font-semibold tracking-tight">{value}</p>
     </div>
   );
 }
@@ -74,7 +74,7 @@ function PlaceCard() {
   const active = PLACE_KINDS.filter((k) => todayMinutes[k.value] > 0);
 
   return (
-    <section className="card-soft p-5">
+    <section className="card-soft p-4 sm:p-5">
       <div className="flex items-center justify-between">
         <h2 className="text-[15px] font-semibold">Platslogg idag</h2>
         <QuickLink to="/platser">Öppna</QuickLink>
@@ -114,7 +114,7 @@ function TopPlacesCard() {
   const top = placeTotals(visits, places, from, now, now).slice(0, 5);
 
   return (
-    <section className="card-soft p-5">
+    <section className="card-soft p-4 sm:p-5">
       <div className="flex items-center justify-between">
         <h2 className="text-[15px] font-semibold">Mest besökta platser</h2>
         <QuickLink to="/platser">Öppna</QuickLink>
@@ -198,7 +198,7 @@ function Dashboard() {
 
     const idagGroup = (
       <>
-            <section className="card-soft bg-accent/40 p-5">
+            <section className="card-soft bg-accent/40 p-4 sm:p-5">
               <div className="flex items-center gap-2 text-primary">
                 <Sparkles className="size-4" />
                 <h2 className="text-[15px] font-semibold">Andreas lägesbild</h2>
@@ -212,7 +212,7 @@ function Dashboard() {
               />
             </section>
 
-            <section className="card-soft p-5">
+            <section className="card-soft p-4 sm:p-5">
               <div className="flex items-center justify-between">
                 <h2 className="text-[15px] font-semibold">Idag</h2>
                 {overlaps.length > 0 ? (
@@ -230,7 +230,7 @@ function Dashboard() {
               </div>
             </section>
 
-            <section className="card-soft p-5">
+            <section className="card-soft p-4 sm:p-5">
               <h2 className="text-[15px] font-semibold">Ledig tid idag</h2>
               <ul className="mt-3 space-y-2">
                 {gaps.length === 0 ? (
@@ -251,7 +251,7 @@ function Dashboard() {
               </ul>
             </section>
 
-            <section className="card-soft p-5">
+            <section className="card-soft p-4 sm:p-5">
               <h2 className="text-[15px] font-semibold">Kommande</h2>
               <ul className="mt-3 space-y-2">
                 {upcoming.length === 0 ? (
@@ -270,7 +270,7 @@ function Dashboard() {
               </ul>
             </section>
 
-            <section className="card-soft p-5">
+            <section className="card-soft p-4 sm:p-5">
               <h2 className="text-[15px] font-semibold">Deadlines</h2>
               <ul className="mt-3 space-y-2">
                 {deadlines.length === 0 ? (
@@ -288,7 +288,7 @@ function Dashboard() {
               </ul>
             </section>
 
-            <section className="card-soft p-5">
+            <section className="card-soft p-4 sm:p-5">
               <h2 className="text-[15px] font-semibold">Påminnelser</h2>
               <ul className="mt-3 space-y-2">
                 {openReminders.length === 0 ? (
@@ -310,7 +310,7 @@ function Dashboard() {
 
     const kalenderGroup = (
       <>
-            <section className="card-soft p-5">
+            <section className="card-soft p-4 sm:p-5">
               <h2 className="text-[15px] font-semibold">Veckans tidslinje</h2>
               <div className="mt-3 grid grid-cols-7 gap-1 sm:gap-2">
                 {week.map((day) => {
@@ -357,7 +357,7 @@ function Dashboard() {
               </div>
             </section>
 
-            <section className="card-soft p-5">
+            <section className="card-soft p-4 sm:p-5">
               <h2 className="text-[15px] font-semibold capitalize">{fmt(today, "MMMM yyyy")}</h2>
               <div className="mt-3 grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
                 {["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"].map((d) => (
@@ -633,7 +633,7 @@ function ShiftSummaryCard({ events }: { events: EventRow[] }) {
   ];
 
   return (
-    <section className="card-soft p-5">
+    <section className="card-soft p-4 sm:p-5">
       <div className="flex items-center justify-between">
         <h2 className="text-[15px] font-semibold">Pass på schemat</h2>
         <QuickLink to="/kalender">Kalender</QuickLink>
