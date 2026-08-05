@@ -27,9 +27,10 @@ export const Route = createFileRoute("/auth")({
   // Ren klientvy (Face ID/pinkod) – ingen SSR, undviker hydreringsfel.
   ssr: false,
   // `next` används av OAuth-samtycket så man kommer tillbaka dit efter upplåsning.
-  validateSearch: (s: Record<string, unknown>) => ({
-    next: typeof s["next"] === "string" && s["next"].startsWith("/") ? s["next"] : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>): { next?: string } => {
+    const next = s["next"];
+    return typeof next === "string" && next.startsWith("/") ? { next } : {};
+  },
   component: PinGate,
 });
 
