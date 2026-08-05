@@ -47,6 +47,9 @@ type Props = {
 /** Redigera en registrerad resa: tider, start-/slutplats, tagg och avstånd. */
 export function EditTripDialog({ trip, places, onClose }: Props) {
   const upsert = useUpsertRow("visits", "Resan uppdaterad");
+  const logEdits = useLogTripEdits();
+  const history = useTripHistory(trip?.id ?? null);
+
   const [startAt, setStartAt] = useState("");
   const [endAt, setEndAt] = useState("");
   const [startPlace, setStartPlace] = useState("");
