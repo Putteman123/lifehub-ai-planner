@@ -29,7 +29,12 @@ export function FloatingNav({ onLock }: { onLock: () => void }) {
     <nav
       aria-label="Huvudmeny"
       className="fixed left-2 top-1/2 z-40 -translate-y-1/2 rounded-3xl border border-border/70 bg-background/70 p-1.5 shadow-[var(--shadow-soft)] backdrop-blur-xl sm:left-3 sm:p-2"
-      style={{ paddingLeft: "max(0.375rem, env(safe-area-inset-left, 0px))" }}
+      style={{
+        paddingLeft: "max(0.375rem, env(safe-area-inset-left, 0px))",
+        marginTop: "calc(env(safe-area-inset-top, 0px) / 2)",
+        maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 1rem)",
+        overflowY: "auto",
+      }}
     >
       <ul className="flex flex-col gap-1">
         {NAV.map((item) => (

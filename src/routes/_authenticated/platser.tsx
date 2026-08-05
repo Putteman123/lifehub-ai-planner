@@ -63,6 +63,7 @@ import {
   startOfDay,
   startOfWeek,
   timeLabel,
+  travelModeLabel,
   travelStats,
   visitLabel,
   visitMinutes,
@@ -71,8 +72,11 @@ import {
   clearLocationHistory,
   endMyVisit,
   getIngestInfo,
+  markVisitTravel,
+  mergeVisitTravels,
   nameVisit,
   recordMyPosition,
+  undoVisitTravel,
 } from "@/lib/places.functions";
 
 export const Route = createFileRoute("/_authenticated/platser")({
@@ -163,6 +167,42 @@ function PlacesPage() {
       setNamingBusy(false);
     }
   }
+
+  const markTravel = useServerFn(markVisitTravel);
+  const undoTravelFn = useServerFn(undoVisitTravel);
+  const mergeTravels = useServerFn(mergeVisitTravels);
+  const [travelBusy, setTravelBusy] = useState<string | null>(null);
+
+  async function handleMarkTravel(visitId: string) {
+    setTravelBusy(visitId);
+    try {
+      const res = await markTravel({ data: { visitId } });
+      await qc.invalidateQueries({ queryKey: ["visits"] });
+      toast.success(`Resa: ${res.label}`, {
+        description: `${formatDistance(res.distance_m)} · ${formatDuration(res.minutes)} · ${travelModeLabel(
+          res.travel_mode,
+        )}${res.distance_verified ? " · avstånd verifierat" : ""}`,
+        action: {
+          label: "Ångra",
+          onClick: async () => {
+            try {
+              await undoTravelFn({ data: { visitId, previous: res.previous } });
+              await qc.invalidateQueries({ queryKey: ["visits"] });
+              toast.success("Resemarkeringen är ångrad.");
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "Kunde inte ångra.");
+            }
+          },
+        },
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Kunde inte markera som resa.");
+    } finally {
+      setTravelBusy(null);
+    }
+  }
+
+
 
 
   const [live, setLive] = useState(false);
@@ -355,6 +395,37 @@ function PlacesPage() {
     .filter((v) => new Date(v.left_at ?? now).getTime() >= todayStart.getTime())
     .sort((a, b) => a.arrived_at.localeCompare(b.arrived_at));
   const openVisit = visits.find((v) => !v.left_at) ?? null;
+
+  // Längsta serie av resor i följd i dag – kan slås ihop till en resa.
+  const mergeGroup = (() => {
+    let best: typeof todayVisits = [];
+    let run: typeof todayVisits = [];
+    for (const visit of todayVisits) {
+      if (isTravel(visit)) {
+        run = [...run, visit];
+        if (run.length > best.length) best = run;
+      } else {
+        run = [];
+      }
+    }
+    return best.length >= 2 ? best : null;
+  })();
+
+  async function handleMergeTravels(ids: string[]) {
+    setTravelBusy("merge");
+    try {
+      const res = await mergeTravels({ data: { visitIds: ids } });
+      await qc.invalidateQueries({ queryKey: ["visits"] });
+      toast.success(
+        `Sammanslagen resa: ${formatDistance(res.distance_m)} · ${formatDuration(res.minutes)}`,
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Kunde inte slå ihop resorna.");
+    } finally {
+      setTravelBusy(null);
+    }
+  }
+
   const lastPingMs = visits.reduce((acc, v) => {
     const t = new Date(v.left_at ?? v.arrived_at).getTime();
     return t > acc ? t : acc;
@@ -409,6 +480,24 @@ function PlacesPage() {
                 </span>
               ) : null}
             </div>
+
+            {mergeGroup ? (
+              <button
+                type="button"
+                disabled={travelBusy === "merge"}
+                onClick={() => handleMergeTravels(mergeGroup.map((v) => v.id))}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary disabled:opacity-60"
+              >
+                {travelBusy === "merge" ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Car className="size-3.5" />
+                )}
+                Slå ihop {mergeGroup.length} resor till en
+              </button>
+            ) : null}
+
+
 
             {todayVisits.length === 0 ? (
               <p className="mt-4 text-sm text-muted-foreground">
@@ -506,6 +595,22 @@ function PlacesPage() {
                         {formatDuration(visitMinutes(visit, now))}
                       </span>
                     </button>
+                    {!travel ? (
+                      <button
+                        type="button"
+                        aria-label="Markera som resa"
+                        disabled={travelBusy === visit.id}
+                        className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border/70 px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:opacity-60"
+                        onClick={() => handleMarkTravel(visit.id)}
+                      >
+                        {travelBusy === visit.id ? (
+                          <Loader2 className="size-3 animate-spin" />
+                        ) : (
+                          <Car className="size-3" />
+                        )}
+                        Resa
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       aria-label="Ta bort besök"
@@ -514,6 +619,7 @@ function PlacesPage() {
                     >
                       <Trash2 className="size-3.5" />
                     </button>
+
                   </li>
                   );
                 })}

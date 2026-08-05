@@ -318,3 +318,58 @@ export async function endVisit(userId: string) {
   const closed = await closeOpenVisit(userId);
   return ok(closed ? "Besöket är avslutat." : "Det fanns inget pågående besök.");
 }
+
+/** Markerar ett besök som resa och låter appen fylla i sträcka och färdsätt. */
+export async function markTravel(userId: string, visitId: string) {
+  const { markVisitAsTravel } = await import("@/lib/travel-classify.server");
+  const result = await markVisitAsTravel(supabaseAdmin, userId, visitId);
+  return ok(
+    `Markerad som resa: ${result.label}, ${(result.distance_m / 1000)
+      .toFixed(1)
+      .replace(".", ",")} km, ${result.minutes} min.`,
+    result.visitId,
+  );
+}
+
+/** Slår ihop flera reseposter i följd till en resa. */
+export async function mergeTravels(userId: string, visitIds: string[]) {
+  const { mergeTravelVisits } = await import("@/lib/travel-classify.server");
+  const result = await mergeTravelVisits(supabaseAdmin, userId, visitIds);
+  return ok(
+    `Slog ihop ${visitIds.length} poster till en resa på ${(result.distance_m / 1000)
+      .toFixed(1)
+      .replace(".", ",")} km.`,
+    result.visitId,
+  );
+}
+
+/** Sparar ett prefererat färdsätt för en rutt eller veckodag. */
+export async function saveTravelPreference(
+  userId: string,
+  input: {
+    kind: "rutt" | "veckodag";
+    route_key?: string | undefined;
+    weekday?: number | undefined;
+    preferred_mode: "bil" | "kollektivt" | "gang_cykel" | "okant";
+  },
+) {
+  const routeKey = input.route_key ?? null;
+  const weekday = input.weekday ?? null;
+  let del = supabaseAdmin
+    .from("travel_preferences")
+    .delete()
+    .eq("user_id", userId)
+    .eq("kind", input.kind);
+  del = routeKey ? del.eq("route_key", routeKey) : del.is("route_key", null);
+  del = weekday != null ? del.eq("weekday", weekday) : del.is("weekday", null);
+  await del;
+  const { error } = await supabaseAdmin.from("travel_preferences").insert({
+    user_id: userId,
+    kind: input.kind,
+    route_key: routeKey,
+    weekday,
+    preferred_mode: input.preferred_mode,
+  });
+  fail(error);
+  return ok("Preferensen är sparad.");
+}
