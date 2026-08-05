@@ -52,10 +52,11 @@ function ChildrenPage() {
     [rawEvents, filter],
   );
 
-  const days = Array.from({ length: 21 }, (_, i) => addDays(new Date(), i));
+  const days = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i));
   const upcoming = days
     .map((d) => ({ day: d, items: eventsOnDay(events, d) }))
     .filter((d) => d.items.length > 0);
+  const totalActivities = upcoming.reduce((sum, d) => sum + d.items.length, 0);
 
   async function saveChild() {
     if (!name.trim()) return;
