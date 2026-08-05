@@ -68,42 +68,18 @@ export const Route = createFileRoute("/api/chat")({
                 reason: z.string().describe("Vad luckan ska användas till."),
               }),
               execute: async ({ minutes, reason }) => {
-                const { buildAndreaContext: build } = await import("@/lib/andrea.server");
-                const ctxText = await build();
-                const eventsMatch = ctxText.match(
-                  /Händelser \(kommande 21 dagar\):([\s\S]*?)(?=\n\n|$)/,
-                );
-                const events: {
-                  starts_at: string;
-                  ends_at: string;
-                  all_day: boolean;
-                  category: string;
-                  title: string;
-                }[] = [];
-                if (eventsMatch && eventsMatch[1]) {
-                  const lines = eventsMatch[1].split("\n").filter((l) => l.startsWith("- "));
-                  for (const line of lines) {
-                    const m = line.match(/- (.+?) \| (\w+) \| (.+)/);
-                    if (m && m[1] && m[2] && m[3]) {
-                      const timePart = m[1];
-                      const category = m[2];
-                      const title = m[3];
-                      const [start, end] = timePart.split("–");
-                      if (start && end) {
-                        events.push({
-                          starts_at: new Date(start).toISOString(),
-                          ends_at: new Date(end).toISOString(),
-                          all_day: !timePart.includes(":"),
-                          category,
-                          title,
-                        });
-                      }
-                    }
-                  }
-                }
-                const slot = findFreeSlot(events as never, minutes, new Date(), 14);
+                const now = new Date();
+                const { data: events } = await supabaseAdmin
+                  .from("events")
+                  .select("*")
+                  .eq("user_id", userId)
+                  .gte("ends_at", now.toISOString())
+                  .lte("starts_at", new Date(now.getTime() + 21 * 86400000).toISOString())
+                  .order("starts_at");
+                const slot = findFreeSlot(events ?? [], minutes, now, 14);
                 return { found: !!slot, slot, reason };
               },
+
             }),
             suggest_category: tool({
               description: "Föreslå en kategori för en ny händelse baserat på titeln.",
