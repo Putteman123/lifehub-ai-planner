@@ -4,6 +4,7 @@ import { Plus, Sparkles, AlertTriangle, Clock, Calendar, ChevronDown } from "luc
 
 
 import { AppShell } from "@/components/AppShell";
+import { LiveLocationCard } from "@/components/LiveLocationCard";
 import { DataGate } from "@/components/DataGate";
 import { EventDialog } from "@/components/EventDialog";
 import { InboxCard } from "@/components/google/InboxCard";
@@ -250,6 +251,7 @@ function Dashboard() {
 
     const idagGroup = (
       <>
+        <LiveLocationCard />
         {/* 1. Dagens agenda först – det viktigaste utan scroll. */}
         <section className="card-soft p-3.5 sm:p-5">
           <div className="flex min-h-11 items-center justify-between gap-2">

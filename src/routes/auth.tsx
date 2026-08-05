@@ -24,6 +24,8 @@ export const Route = createFileRoute("/auth")({
       { property: "og:description", content: "Personlig planering skyddad med Face ID och pinkod." },
     ],
   }),
+  // Ren klientvy (Face ID/pinkod) – ingen SSR, undviker hydreringsfel.
+  ssr: false,
   component: PinGate,
 });
 
