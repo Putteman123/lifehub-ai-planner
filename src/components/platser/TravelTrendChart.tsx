@@ -1,4 +1,8 @@
+import { useMutation } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
   Area,
   AreaChart,
@@ -10,8 +14,10 @@ import {
   YAxis,
 } from "recharts";
 
-import { useVisits } from "@/lib/db";
+import { usePlaces, useVisits } from "@/lib/db";
 import { isTravel, TRAVEL_MODES, visitMinutes, type TravelMode } from "@/lib/geo";
+import { getTravelTrendInsight } from "@/lib/travel-insight.functions";
+import { buildTrendStats, summarizeTrend, type TrendStat } from "@/lib/travel-trend";
 
 const DAYS = 180;
 
@@ -46,6 +52,20 @@ export function TravelTrendChart() {
     [],
   );
   const visitsQ = useVisits(sinceIso);
+  const placesQ = usePlaces();
+
+  const stats = useMemo(
+    () => buildTrendStats(visitsQ.data ?? [], placesQ.data ?? []),
+    [visitsQ.data, placesQ.data],
+  );
+
+  const fetchInsight = useServerFn(getTravelTrendInsight);
+  const insight = useMutation({
+    mutationFn: () => fetchInsight({ data: { summary: summarizeTrend(stats) } }),
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const analyzable = stats.filter((s) => s.enoughData);
 
   const { data, activeModes } = useMemo(() => {
     const rows = (visitsQ.data ?? []).filter(isTravel);
@@ -102,6 +122,16 @@ export function TravelTrendChart() {
           <h2 className="text-sm font-semibold">Trend per färdsätt</h2>
           <p className="text-xs text-muted-foreground">Vecka för vecka, senaste 6 månaderna</p>
         </div>
+        <div className="flex items-center gap-2">
+        <button
+          type="button"
+          disabled={!analyzable.length || insight.isPending}
+          onClick={() => insight.mutate()}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary disabled:opacity-50"
+        >
+          <Sparkles className="size-3.5" />
+          {insight.isPending ? "Andrea tänker…" : "Analysera trenden"}
+        </button>
         <div className="flex rounded-lg border border-border/60 p-0.5">
           {METRICS.map((m) => (
             <button
@@ -117,6 +147,7 @@ export function TravelTrendChart() {
               {m.label}
             </button>
           ))}
+        </div>
         </div>
       </div>
 
@@ -185,6 +216,74 @@ export function TravelTrendChart() {
           </ResponsiveContainer>
         </div>
       )}
+
+      {stats.length > 0 && (insight.data || insight.isPending) ? (
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {stats.map((stat) => (
+            <TrendInsightCard
+              key={stat.mode}
+              stat={stat}
+              text={insight.data?.insights.find((i) => i.mode === stat.mode) ?? null}
+              loading={insight.isPending}
+            />
+          ))}
+        </div>
+      ) : null}
     </section>
+  );
+}
+
+function TrendInsightCard({
+  stat,
+  text,
+  loading,
+}: {
+  stat: TrendStat;
+  text: { headline: string; why: string; action: string } | null;
+  loading: boolean;
+}) {
+  const Icon =
+    stat.direction === "ökar" ? ArrowUpRight : stat.direction === "minskar" ? ArrowDownRight : ArrowRight;
+  const tone =
+    stat.direction === "ökar"
+      ? "text-cat-viktigt"
+      : stat.direction === "minskar"
+        ? "text-cat-ledig"
+        : "text-muted-foreground";
+
+  return (
+    <div className="rounded-xl border border-border/70 p-3">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+        <p className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
+          <span
+            className="size-2.5 shrink-0 rounded-full"
+            style={{ background: MODE_COLORS[stat.mode] }}
+          />
+          <span className="truncate">{stat.label}</span>
+        </p>
+        <span className={`inline-flex shrink-0 items-center gap-0.5 text-xs font-medium ${tone}`}>
+          <Icon className="size-3.5" />
+          {stat.deltaKmPct == null ? "ny" : `${stat.deltaKmPct > 0 ? "+" : ""}${stat.deltaKmPct}%`}
+        </span>
+      </div>
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        {stat.recentKm} km senaste 4 v · {stat.previousKm} km innan · {stat.trips} resor totalt
+      </p>
+
+      {!stat.enoughData ? (
+        <p className="mt-2 text-xs text-muted-foreground">För få resor för analys.</p>
+      ) : text ? (
+        <div className="mt-2 space-y-1">
+          <p className="text-xs font-medium">{text.headline}</p>
+          <p className="text-xs leading-relaxed text-muted-foreground">{text.why}</p>
+          <p className="text-xs leading-relaxed">
+            <span className="font-medium">Åtgärd: </span>
+            {text.action}
+          </p>
+        </div>
+      ) : loading ? (
+        <p className="mt-2 text-xs text-muted-foreground">Analyserar…</p>
+      ) : null}
+    </div>
   );
 }

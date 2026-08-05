@@ -419,3 +419,31 @@ export async function planWeekTravel(userId: string, days = 7) {
     plan: summarizePlan(plan),
   };
 }
+
+/** Analysunderlag för resmönster per färdsätt. */
+export async function analyzeTravelTrend(userId: string, days = 180) {
+  const { buildTrendStats, summarizeTrend } = await import("@/lib/travel-trend");
+  const since = new Date(Date.now() - days * 86400000).toISOString();
+
+  const [visits, places, prefs] = await Promise.all([
+    supabaseAdmin.from("visits").select("*").eq("user_id", userId).gte("arrived_at", since),
+    supabaseAdmin.from("places").select("*").eq("user_id", userId),
+    supabaseAdmin.from("travel_preferences").select("*").eq("user_id", userId),
+  ]);
+  fail(visits.error);
+  fail(places.error);
+  fail(prefs.error);
+
+  const stats = buildTrendStats(visits.data ?? [], places.data ?? []);
+  const summary = summarizeTrend(stats, prefs.data ?? []);
+
+  if (!summary.trim()) {
+    return { ok: true as const, message: "För få loggade resor för en trendanalys.", summary: "" };
+  }
+
+  return {
+    ok: true as const,
+    message: `Trendunderlag för ${stats.length} färdsätt de senaste ${days} dagarna.`,
+    summary,
+  };
+}
