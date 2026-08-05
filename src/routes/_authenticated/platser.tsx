@@ -560,6 +560,17 @@ function PlacesPage() {
                   </li>
                 ))}
               </ul>
+              <div className="mt-3 flex items-center justify-between rounded-xl bg-muted/40 px-3 py-2 text-sm">
+                <span className="flex items-center gap-2">
+                  <Car className="size-3.5 text-muted-foreground" />
+                  Resor i dag
+                </span>
+                <span className="tabular-nums text-muted-foreground">
+                  {todayTravel.count} st · {formatDistance(todayTravel.meters)} ·{" "}
+                  {formatDuration(todayTravel.minutes)}
+                </span>
+              </div>
+
               <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Denna vecka
               </h3>
