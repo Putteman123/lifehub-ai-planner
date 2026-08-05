@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Fragment, useMemo, useState } from "react";
-import { Plus, Sparkles, AlertTriangle, Clock, Calendar } from "lucide-react";
+import { Fragment, useMemo, useState, type ReactNode } from "react";
+import { Plus, Sparkles, AlertTriangle, Clock, Calendar, ChevronDown } from "lucide-react";
+
 
 import { AppShell } from "@/components/AppShell";
 import { DataGate } from "@/components/DataGate";
@@ -63,6 +64,35 @@ function Stat({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+/**
+ * Kort som är hopfällt på mobil (minimalt scrollande) men alltid öppet från lg.
+ */
+function FoldCard({
+  title,
+  count,
+  children,
+}: {
+  title: string;
+  count?: number;
+  children: ReactNode;
+}) {
+  return (
+    <details className="group card-soft p-3.5 sm:p-5">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 lg:cursor-default">
+        <h2 className="min-w-0 truncate text-[15px] font-semibold">{title}</h2>
+        <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+          {count !== undefined ? (
+            <span className="rounded-full bg-surface px-2 py-0.5 tabular-nums">{count}</span>
+          ) : null}
+          <ChevronDown className="size-4 transition-transform group-open:rotate-180 lg:hidden" />
+        </span>
+      </summary>
+      <div className="hidden group-open:block lg:block">{children}</div>
+    </details>
+  );
+}
+
 
 function PlaceCard() {
   const placesQ = usePlaces();
@@ -207,115 +237,115 @@ function Dashboard() {
 
     const idagGroup = (
       <>
-            <section className="card-soft bg-accent/40 p-4 sm:p-5">
-              <div className="flex items-center gap-2 text-primary">
-                <Sparkles className="size-4" />
-                <h2 className="text-[15px] font-semibold">Andreas lägesbild</h2>
-              </div>
-              <MorningSummary
-                today={today}
-                events={events}
-                overlaps={overlaps}
-                gaps={gaps}
-                deadlines={deadlines}
-              />
-            </section>
+        {/* 1. Dagens agenda först – det viktigaste utan scroll. */}
+        <section className="card-soft p-3.5 sm:p-5">
+          <div className="flex min-h-11 items-center justify-between gap-2">
+            <h2 className="text-[15px] font-semibold">Idag</h2>
+            {overlaps.length > 0 ? (
+              <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-destructive">
+                <AlertTriangle className="size-3.5" /> {overlaps.length} krock
+              </span>
+            ) : null}
+          </div>
+          <div className="space-y-2">
+            {todayEvents.length === 0 ? (
+              <p className="text-[15px] text-muted-foreground">Inga aktiviteter idag.</p>
+            ) : (
+              todayEvents.map((e) => <TodayRow key={e.id} event={e} onClick={() => open(e)} />)
+            )}
+          </div>
+        </section>
 
-            <section className="card-soft p-4 sm:p-5">
-              <div className="flex items-center justify-between">
-                <h2 className="text-[15px] font-semibold">Idag</h2>
-                {overlaps.length > 0 ? (
-                  <span className="flex items-center gap-1 text-xs font-medium text-destructive">
-                    <AlertTriangle className="size-3.5" /> {overlaps.length} krock
+        {/* 2. Andreas lägesbild – kompakt sammanfattning. */}
+        <section className="card-soft bg-accent/40 p-3.5 sm:p-5">
+          <div className="flex items-center gap-2 text-primary">
+            <Sparkles className="size-4" />
+            <h2 className="text-[15px] font-semibold">Andreas lägesbild</h2>
+          </div>
+          <MorningSummary
+            today={today}
+            events={events}
+            overlaps={overlaps}
+            gaps={gaps}
+            deadlines={deadlines}
+          />
+        </section>
+
+        {/* 3-6. Hopfällda på mobil, öppna på dator. */}
+        <FoldCard title="Ledig tid idag" count={gaps.length}>
+          <ul className="mt-3 space-y-2">
+            {gaps.length === 0 ? (
+              <li className="text-[15px] text-muted-foreground">Ingen lucka hittad.</li>
+            ) : (
+              gaps.map((g) => (
+                <li
+                  key={g.start.toISOString()}
+                  className="flex items-center justify-between rounded-lg bg-surface px-3 py-2 text-sm"
+                >
+                  <span className="tabular-nums">
+                    {fmt(g.start, "HH:mm")}–{fmt(g.end, "HH:mm")}
                   </span>
-                ) : null}
-              </div>
-              <div className="mt-3 space-y-2">
-                {todayEvents.length === 0 ? (
-                  <p className="text-[15px] text-muted-foreground">Inga aktiviteter idag.</p>
-                ) : (
-                  todayEvents.map((e) => <TodayRow key={e.id} event={e} onClick={() => open(e)} />)
-                )}
-              </div>
-            </section>
+                  <span className="text-xs text-muted-foreground">{g.minutes} min</span>
+                </li>
+              ))
+            )}
+          </ul>
+        </FoldCard>
 
-            <section className="card-soft p-4 sm:p-5">
-              <h2 className="text-[15px] font-semibold">Ledig tid idag</h2>
-              <ul className="mt-3 space-y-2">
-                {gaps.length === 0 ? (
-                  <li className="text-[15px] text-muted-foreground">Ingen lucka hittad.</li>
-                ) : (
-                  gaps.map((g) => (
-                    <li
-                      key={g.start.toISOString()}
-                      className="flex items-center justify-between rounded-lg bg-surface px-3 py-2 text-sm"
-                    >
-                      <span className="tabular-nums">
-                        {fmt(g.start, "HH:mm")}–{fmt(g.end, "HH:mm")}
-                      </span>
-                      <span className="text-xs text-muted-foreground">{g.minutes} min</span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </section>
+        <FoldCard title="Påminnelser" count={openReminders.length}>
+          <ul className="mt-3 space-y-2">
+            {openReminders.length === 0 ? (
+              <li className="text-[15px] text-muted-foreground">Inga påminnelser.</li>
+            ) : (
+              openReminders.map((r) => (
+                <li key={r.id} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="min-w-0 truncate">{r.title}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {fmt(r.remind_at, "d MMM HH:mm")}
+                  </span>
+                </li>
+              ))
+            )}
+          </ul>
+        </FoldCard>
 
-            <section className="card-soft p-4 sm:p-5">
-              <h2 className="text-[15px] font-semibold">Kommande</h2>
-              <ul className="mt-3 space-y-2">
-                {upcoming.length === 0 ? (
-                  <li className="text-[15px] text-muted-foreground">Inget planerat framåt.</li>
-                ) : (
-                  upcoming.map((e) => (
-                    <li key={e.id} className="flex items-center gap-2 text-sm">
-                      <span className={`size-2 rounded-full ${categoryMeta(e.category).dot}`} />
-                      <span className="min-w-0 flex-1 truncate">{e.title}</span>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {fmt(e.starts_at, "d MMM HH:mm")}
-                      </span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </section>
+        <FoldCard title="Deadlines" count={deadlines.length}>
+          <ul className="mt-3 space-y-2">
+            {deadlines.length === 0 ? (
+              <li className="text-[15px] text-muted-foreground">Inga tidsfrister.</li>
+            ) : (
+              deadlines.map((t) => (
+                <li key={t.id} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="min-w-0 truncate">{t.title}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {t.due_date ? fmt(t.due_date, "d MMM") : ""}
+                  </span>
+                </li>
+              ))
+            )}
+          </ul>
+        </FoldCard>
 
-            <section className="card-soft p-4 sm:p-5">
-              <h2 className="text-[15px] font-semibold">Deadlines</h2>
-              <ul className="mt-3 space-y-2">
-                {deadlines.length === 0 ? (
-                  <li className="text-[15px] text-muted-foreground">Inga tidsfrister.</li>
-                ) : (
-                  deadlines.map((t) => (
-                    <li key={t.id} className="flex items-center justify-between text-sm">
-                      <span className="min-w-0 truncate">{t.title}</span>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {t.due_date ? fmt(t.due_date, "d MMM") : ""}
-                      </span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </section>
-
-            <section className="card-soft p-4 sm:p-5">
-              <h2 className="text-[15px] font-semibold">Påminnelser</h2>
-              <ul className="mt-3 space-y-2">
-                {openReminders.length === 0 ? (
-                  <li className="text-[15px] text-muted-foreground">Inga påminnelser.</li>
-                ) : (
-                  openReminders.map((r) => (
-                    <li key={r.id} className="flex items-center justify-between text-sm">
-                      <span className="min-w-0 truncate">{r.title}</span>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {fmt(r.remind_at, "d MMM HH:mm")}
-                      </span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </section>
+        <FoldCard title="Kommande" count={upcoming.length}>
+          <ul className="mt-3 space-y-2">
+            {upcoming.length === 0 ? (
+              <li className="text-[15px] text-muted-foreground">Inget planerat framåt.</li>
+            ) : (
+              upcoming.map((e) => (
+                <li key={e.id} className="flex items-center gap-2 text-sm">
+                  <span className={`size-2 shrink-0 rounded-full ${categoryMeta(e.category).dot}`} />
+                  <span className="min-w-0 flex-1 truncate">{e.title}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {fmt(e.starts_at, "d MMM HH:mm")}
+                  </span>
+                </li>
+              ))
+            )}
+          </ul>
+        </FoldCard>
       </>
     );
+
 
     const kalenderGroup = (
       <>
