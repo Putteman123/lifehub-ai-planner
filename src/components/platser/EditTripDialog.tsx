@@ -265,15 +265,19 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
                     ? ` (fågelväg ${(crowMeters / 1000).toFixed(1).replace(".", ",")} km)`
                     : ""}
                 </span>
-                {kmTouched ? (
-                  <button
-                    type="button"
-                    onClick={() => setKmTouched(false)}
-                    className="rounded-md border border-border/60 px-2 py-0.5 text-xs hover:bg-muted"
-                  >
-                    Använd beräknat
-                  </button>
-                ) : null}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setKm((estimateMeters / 1000).toFixed(1).replace(".", ","));
+                    setKmTouched(false);
+                    setVerifiedTouched(false);
+                    setVerified(true);
+                  }}
+                  className="rounded-md border border-border/60 px-2 py-0.5 text-xs font-medium hover:bg-muted"
+                >
+                  Återställ till beräknat
+                </button>
+
               </div>
             ) : null}
             {estimateMeters != null && !autoMatches ? (
