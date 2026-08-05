@@ -552,6 +552,7 @@ export type Database = {
           arrived_at: string
           created_at: string
           distance_m: number
+          distance_verified: boolean
           end_lat: number | null
           end_lng: number | null
           entry_kind: Database["public"]["Enums"]["visit_kind"]
@@ -571,6 +572,7 @@ export type Database = {
           arrived_at: string
           created_at?: string
           distance_m?: number
+          distance_verified?: boolean
           end_lat?: number | null
           end_lng?: number | null
           entry_kind?: Database["public"]["Enums"]["visit_kind"]
@@ -590,6 +592,7 @@ export type Database = {
           arrived_at?: string
           created_at?: string
           distance_m?: number
+          distance_verified?: boolean
           end_lat?: number | null
           end_lng?: number | null
           entry_kind?: Database["public"]["Enums"]["visit_kind"]
