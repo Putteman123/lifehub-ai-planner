@@ -164,6 +164,41 @@ function PlacesPage() {
     }
   }
 
+  const markTravel = useServerFn(markVisitTravel);
+  const undoTravelFn = useServerFn(undoVisitTravel);
+  const [travelBusy, setTravelBusy] = useState<string | null>(null);
+
+  async function handleMarkTravel(visitId: string) {
+    setTravelBusy(visitId);
+    try {
+      const res = await markTravel({ data: { visitId } });
+      await qc.invalidateQueries({ queryKey: ["visits"] });
+      toast.success(`Resa: ${res.label}`, {
+        description: `${formatDistance(res.distance_m)} · ${formatDuration(res.minutes)} · ${travelModeLabel(
+          res.travel_mode,
+        )}${res.distance_verified ? " · avstånd verifierat" : ""}`,
+        action: {
+          label: "Ångra",
+          onClick: async () => {
+            try {
+              await undoTravelFn({ data: { visitId, previous: res.previous } });
+              await qc.invalidateQueries({ queryKey: ["visits"] });
+              toast.success("Resemarkeringen är ångrad.");
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : "Kunde inte ångra.");
+            }
+          },
+        },
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Kunde inte markera som resa.");
+    } finally {
+      setTravelBusy(null);
+    }
+  }
+
+
+
 
   const [live, setLive] = useState(false);
   const [ingestUrl, setIngestUrl] = useState<string | null>(null);
