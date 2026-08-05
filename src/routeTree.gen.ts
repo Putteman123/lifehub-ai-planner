@@ -18,6 +18,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedJuristRouteImport } from './routes/_authenticated/jurist'
 import { Route as AuthenticatedKalenderRouteImport } from './routes/_authenticated/kalender'
 import { Route as AuthenticatedKalendrarRouteImport } from './routes/_authenticated/kalendrar'
+import { Route as AuthenticatedKassaskapRouteImport } from './routes/_authenticated/kassaskap'
 import { Route as AuthenticatedPlatserRouteImport } from './routes/_authenticated/platser'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiTtsRouteImport } from './routes/api/tts'
@@ -67,6 +68,11 @@ const AuthenticatedKalendrarRoute = AuthenticatedKalendrarRouteImport.update({
   path: '/kalendrar',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedKassaskapRoute = AuthenticatedKassaskapRouteImport.update({
+  id: '/kassaskap',
+  path: '/kassaskap',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPlatserRoute = AuthenticatedPlatserRouteImport.update({
   id: '/platser',
   path: '/platser',
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/jurist': typeof AuthenticatedJuristRoute
   '/kalender': typeof AuthenticatedKalenderRoute
   '/kalendrar': typeof AuthenticatedKalendrarRoute
+  '/kassaskap': typeof AuthenticatedKassaskapRoute
   '/platser': typeof AuthenticatedPlatserRoute
   '/api/chat': typeof ApiChatRoute
   '/api/tts': typeof ApiTtsRoute
@@ -111,6 +118,7 @@ export interface FileRoutesByTo {
   '/jurist': typeof AuthenticatedJuristRoute
   '/kalender': typeof AuthenticatedKalenderRoute
   '/kalendrar': typeof AuthenticatedKalendrarRoute
+  '/kassaskap': typeof AuthenticatedKassaskapRoute
   '/platser': typeof AuthenticatedPlatserRoute
   '/api/chat': typeof ApiChatRoute
   '/api/tts': typeof ApiTtsRoute
@@ -127,6 +135,7 @@ export interface FileRoutesById {
   '/_authenticated/jurist': typeof AuthenticatedJuristRoute
   '/_authenticated/kalender': typeof AuthenticatedKalenderRoute
   '/_authenticated/kalendrar': typeof AuthenticatedKalendrarRoute
+  '/_authenticated/kassaskap': typeof AuthenticatedKassaskapRoute
   '/_authenticated/platser': typeof AuthenticatedPlatserRoute
   '/api/chat': typeof ApiChatRoute
   '/api/tts': typeof ApiTtsRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/jurist'
     | '/kalender'
     | '/kalendrar'
+    | '/kassaskap'
     | '/platser'
     | '/api/chat'
     | '/api/tts'
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/jurist'
     | '/kalender'
     | '/kalendrar'
+    | '/kassaskap'
     | '/platser'
     | '/api/chat'
     | '/api/tts'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/_authenticated/jurist'
     | '/_authenticated/kalender'
     | '/_authenticated/kalendrar'
+    | '/_authenticated/kassaskap'
     | '/_authenticated/platser'
     | '/api/chat'
     | '/api/tts'
@@ -252,6 +264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedKalendrarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/kassaskap': {
+      id: '/_authenticated/kassaskap'
+      path: '/kassaskap'
+      fullPath: '/kassaskap'
+      preLoaderRoute: typeof AuthenticatedKassaskapRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/platser': {
       id: '/_authenticated/platser'
       path: '/platser'
@@ -290,6 +309,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedJuristRoute: typeof AuthenticatedJuristRoute
   AuthenticatedKalenderRoute: typeof AuthenticatedKalenderRoute
   AuthenticatedKalendrarRoute: typeof AuthenticatedKalendrarRoute
+  AuthenticatedKassaskapRoute: typeof AuthenticatedKassaskapRoute
   AuthenticatedPlatserRoute: typeof AuthenticatedPlatserRoute
 }
 
@@ -300,6 +320,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedJuristRoute: AuthenticatedJuristRoute,
   AuthenticatedKalenderRoute: AuthenticatedKalenderRoute,
   AuthenticatedKalendrarRoute: AuthenticatedKalendrarRoute,
+  AuthenticatedKassaskapRoute: AuthenticatedKassaskapRoute,
   AuthenticatedPlatserRoute: AuthenticatedPlatserRoute,
 }
 
@@ -317,13 +338,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

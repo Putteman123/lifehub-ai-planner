@@ -8,6 +8,7 @@ import {
   MapPin,
   Scale,
   Settings2,
+  ShieldCheck,
 } from "lucide-react";
 
 const NAV = [
@@ -17,6 +18,7 @@ const NAV = [
   { to: "/barn", label: "Barn", icon: Baby },
   { to: "/jurist", label: "Jurist", icon: Scale },
   { to: "/platser", label: "Platser", icon: MapPin },
+  { to: "/kassaskap", label: "Kassaskåp", icon: ShieldCheck },
   { to: "/kalendrar", label: "Kalendrar", icon: Settings2 },
 ] as const;
 
