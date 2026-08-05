@@ -565,6 +565,7 @@ export type Database = {
           note: string | null
           place_id: string | null
           source: string
+          travel_mode: Database["public"]["Enums"]["travel_mode"]
           updated_at: string
           user_id: string
         }
@@ -585,6 +586,7 @@ export type Database = {
           note?: string | null
           place_id?: string | null
           source?: string
+          travel_mode?: Database["public"]["Enums"]["travel_mode"]
           updated_at?: string
           user_id: string
         }
@@ -605,6 +607,7 @@ export type Database = {
           note?: string | null
           place_id?: string | null
           source?: string
+          travel_mode?: Database["public"]["Enums"]["travel_mode"]
           updated_at?: string
           user_id?: string
         }
@@ -643,6 +646,7 @@ export type Database = {
         | "privat"
         | "viktigt"
       place_kind: "jobb" | "jurist" | "hem" | "barn" | "annat"
+      travel_mode: "bil" | "kollektivt" | "gang_cykel" | "okant"
       vault_kind: "losenord" | "pinkod" | "kod" | "anteckning"
       visit_kind: "besok" | "resa"
     }
@@ -784,6 +788,7 @@ export const Constants = {
       ],
       event_category: ["jobb", "ledig", "jurist", "barn", "privat", "viktigt"],
       place_kind: ["jobb", "jurist", "hem", "barn", "annat"],
+      travel_mode: ["bil", "kollektivt", "gang_cykel", "okant"],
       vault_kind: ["losenord", "pinkod", "kod", "anteckning"],
       visit_kind: ["besok", "resa"],
     },
