@@ -10,6 +10,7 @@ import type {
   EventRow,
   ReminderRow,
 } from "./categories";
+import type { PlaceRow, VisitRow } from "./geo";
 
 function unwrap<T>(res: { data: T | null; error: { message: string } | null }): T {
   if (res.error) throw new Error(res.error.message);
@@ -76,7 +77,37 @@ export function useReminders() {
   });
 }
 
-type TableName = "events" | "calendars" | "children" | "legal_cases" | "case_tasks" | "reminders";
+export function usePlaces() {
+  return useQuery({
+    queryKey: ["places"],
+    queryFn: async () =>
+      unwrap<PlaceRow[]>(
+        await supabase.from("places").select("*").order("name", { ascending: true }),
+      ),
+  });
+}
+
+export function useVisits(sinceIso?: string) {
+  return useQuery({
+    queryKey: ["visits", sinceIso ?? "all"],
+    queryFn: async () => {
+      let query = supabase.from("visits").select("*").order("arrived_at", { ascending: false });
+      if (sinceIso) query = query.gte("arrived_at", sinceIso);
+      return unwrap<VisitRow[]>(await query.limit(500));
+    },
+    refetchInterval: 60000,
+  });
+}
+
+type TableName =
+  | "events"
+  | "calendars"
+  | "children"
+  | "legal_cases"
+  | "case_tasks"
+  | "reminders"
+  | "places"
+  | "visits";
 
 const QUERY_KEY: Record<TableName, string> = {
   events: "events",
@@ -85,6 +116,8 @@ const QUERY_KEY: Record<TableName, string> = {
   legal_cases: "legal_cases",
   case_tasks: "case_tasks",
   reminders: "reminders",
+  places: "places",
+  visits: "visits",
 };
 
 async function currentUserId() {

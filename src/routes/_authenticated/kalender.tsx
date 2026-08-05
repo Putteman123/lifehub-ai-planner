@@ -61,11 +61,15 @@ function CalendarPage() {
   );
 
   useEffect(() => {
-    const params: Record<string, string> = {};
-    if (view !== "vecka") params['vy'] = view;
     const dateStr = fmt(cursor, "yyyy-MM-dd");
-    if (dateStr !== fmt(new Date(), "yyyy-MM-dd")) params['datum'] = dateStr;
-    void navigate({ search: params, replace: true });
+    const isToday = dateStr === fmt(new Date(), "yyyy-MM-dd");
+    void navigate({
+      search: {
+        vy: view === "vecka" ? undefined : view,
+        datum: isToday ? undefined : dateStr,
+      },
+      replace: true,
+    });
   }, [view, cursor, navigate]);
 
   function openDay(date: Date) {

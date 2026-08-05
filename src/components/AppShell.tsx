@@ -4,6 +4,7 @@ import {
   CalendarDays,
   LayoutDashboard,
   Lock,
+  MapPin,
   Scale,
   Settings2,
   Sparkles,
@@ -20,6 +21,7 @@ const NAV = [
   { to: "/kalender", label: "Kalender", icon: CalendarDays },
   { to: "/barn", label: "Barn", icon: Baby },
   { to: "/jurist", label: "Jurist", icon: Scale },
+  { to: "/platser", label: "Platser", icon: MapPin },
   { to: "/kalendrar", label: "Kalendrar", icon: Settings2 },
 ] as const;
 

@@ -23,7 +23,16 @@ import {
   totalHours,
   weekDays,
 } from "@/lib/calendar";
-import { useCaseTasks, useEvents, useReminders } from "@/lib/db";
+import { useCaseTasks, useEvents, usePlaces, useReminders, useVisits } from "@/lib/db";
+import {
+  PLACE_KINDS,
+  formatDuration,
+  minutesByKind,
+  startOfDay as dayStart,
+  startOfWeek,
+  visitLabel,
+  visitMinutes,
+} from "@/lib/geo";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -43,6 +52,47 @@ function Stat({ label, value }: { label: string; value: string }) {
       <p className="text-[11px] text-muted-foreground">{label}</p>
       <p className="mt-1 text-xl font-semibold tracking-tight">{value}</p>
     </div>
+  );
+}
+
+function PlaceCard() {
+  const placesQ = usePlaces();
+  const now = new Date();
+  const weekStart = startOfWeek(now);
+  const visitsQ = useVisits(weekStart.toISOString());
+  const places = placesQ.data ?? [];
+  const visits = visitsQ.data ?? [];
+  const openVisit = visits.find((v) => !v.left_at) ?? null;
+  const todayMinutes = minutesByKind(visits, places, dayStart(now), now, now);
+  const active = PLACE_KINDS.filter((k) => todayMinutes[k.value] > 0);
+
+  return (
+    <section className="card-soft p-5">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Platslogg idag</h2>
+        <QuickLink to="/platser">Öppna</QuickLink>
+      </div>
+      <p className="mt-2 text-sm text-muted-foreground">
+        {openVisit
+          ? `Just nu: ${visitLabel(openVisit, places)} · ${formatDuration(visitMinutes(openVisit, now))}`
+          : "Ingen pågående plats registrerad."}
+      </p>
+      {active.length > 0 ? (
+        <ul className="mt-3 space-y-1.5">
+          {active.map((k) => (
+            <li key={k.value} className="flex items-center justify-between text-sm">
+              <span className="flex items-center gap-2">
+                <span className="size-2 rounded-full" style={{ backgroundColor: k.color }} />
+                {k.label}
+              </span>
+              <span className="tabular-nums text-muted-foreground">
+                {formatDuration(todayMinutes[k.value])}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
   );
 }
 
@@ -224,6 +274,8 @@ function Dashboard() {
                 value={`${events.filter((e) => inWeek(e) && !e.all_day).length}`}
               />
             </div>
+
+            <PlaceCard />
 
             <section className="card-soft p-5">
               <h2 className="text-sm font-semibold">Ledig tid idag</h2>
@@ -409,8 +461,10 @@ function QuickLink({
 }) {
   return (
     <Link
-      to={to}
-      search={search}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      to={to as any}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      search={(search ?? {}) as any}
       className="inline-flex items-center gap-1.5 rounded-lg bg-background px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
     >
       {children}

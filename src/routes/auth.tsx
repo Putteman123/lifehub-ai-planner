@@ -7,7 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { unlockWithPin } from "@/lib/pin.functions";
 
 export const Route = createFileRoute("/auth")({
-  ssr: false,
   head: () => ({
     meta: [
       { title: "Lås upp – LifeHub AI" },
