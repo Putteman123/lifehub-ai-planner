@@ -225,7 +225,17 @@ function DayView({ events, day, onSelect }: { events: EventRow[]; day: Date; onS
   );
 }
 
-function WeekView({ events, day, onSelect }: { events: EventRow[]; day: Date; onSelect: SelectFn }) {
+function WeekView({
+  events,
+  day,
+  onSelect,
+  onOpenDay,
+}: {
+  events: EventRow[];
+  day: Date;
+  onSelect: SelectFn;
+  onOpenDay: (date: Date) => void;
+}) {
   const days = weekDays(day);
   return (
     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-7">
@@ -233,28 +243,55 @@ function WeekView({ events, day, onSelect }: { events: EventRow[]; day: Date; on
         const items = eventsOnDay(events, d);
         const load = dayLoad(events, d);
         return (
-          <button
+          <div
             key={d.toISOString()}
-            onClick={() => onSelect(null, d)}
-            className="card-soft min-h-32 p-3 text-left transition-colors hover:bg-accent/40"
+            role="button"
+            tabIndex={0}
+            onClick={() => onOpenDay(d)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") onOpenDay(d);
+            }}
+            className="card-soft min-h-32 cursor-pointer p-3 text-left transition-colors hover:bg-accent/40"
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium capitalize">{fmt(d, "EEE d/M")}</span>
-              <span className={`size-2 rounded-full ${LOAD_STYLES[load].dot}`} />
+              <div className="flex items-center gap-1.5">
+                <span className={`size-2 rounded-full ${LOAD_STYLES[load].dot}`} />
+                <button
+                  aria-label="Ny händelse"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelect(null, d);
+                  }}
+                  className="text-muted-foreground hover:text-primary"
+                >
+                  <Plus className="size-3.5" />
+                </button>
+              </div>
             </div>
             <div className="mt-2 space-y-1">
               {items.map((e) => (
                 <EventChip key={e.id} event={e} onSelect={onSelect} />
               ))}
             </div>
-          </button>
+          </div>
         );
       })}
     </div>
   );
 }
 
-function MonthView({ events, day, onSelect }: { events: EventRow[]; day: Date; onSelect: SelectFn }) {
+function MonthView({
+  events,
+  day,
+  onSelect,
+  onOpenDay,
+}: {
+  events: EventRow[];
+  day: Date;
+  onSelect: SelectFn;
+  onOpenDay: (date: Date) => void;
+}) {
   const days = monthGrid(day);
   return (
     <div className="card-soft p-3">
@@ -268,10 +305,15 @@ function MonthView({ events, day, onSelect }: { events: EventRow[]; day: Date; o
           const items = eventsOnDay(events, d);
           const otherMonth = d.getMonth() !== day.getMonth();
           return (
-            <button
+            <div
               key={d.toISOString()}
-              onClick={() => onSelect(null, d)}
-              className={`min-h-20 rounded-lg bg-surface p-1.5 text-left align-top hover:bg-accent ${
+              role="button"
+              tabIndex={0}
+              onClick={() => onOpenDay(d)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") onOpenDay(d);
+              }}
+              className={`min-h-20 cursor-pointer rounded-lg bg-surface p-1.5 text-left align-top hover:bg-accent ${
                 otherMonth ? "opacity-45" : ""
               }`}
             >
@@ -286,13 +328,14 @@ function MonthView({ events, day, onSelect }: { events: EventRow[]; day: Date; o
                   </span>
                 ) : null}
               </div>
-            </button>
+            </div>
           );
         })}
       </div>
     </div>
   );
 }
+
 
 function YearView({
   events,
