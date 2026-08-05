@@ -358,21 +358,41 @@ function PlacesPage() {
               </p>
             ) : (
               <ol className="mt-4 space-y-2">
-                {todayVisits.map((visit) => (
+                {todayVisits.map((visit) => {
+                  const place = visit.place_id
+                    ? places.find((p) => p.id === visit.place_id)
+                    : undefined;
+                  return (
                   <li
                     key={visit.id}
                     className="group flex items-center gap-3 rounded-xl border border-border/70 px-3 py-2"
                   >
-                    <span className="w-24 shrink-0 text-xs tabular-nums text-muted-foreground">
-                      {timeLabel(visit.arrived_at)}
-                      {visit.left_at ? `–${timeLabel(visit.left_at)}` : "–nu"}
-                    </span>
-                    <span className="flex-1 truncate text-sm font-medium">
-                      {visitLabel(visit, places)}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatDuration(visitMinutes(visit, now))}
-                    </span>
+                    <button
+                      type="button"
+                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                      aria-label={`Visa ${visitLabel(visit, places)} på karta`}
+                      onClick={() =>
+                        setMapTarget({
+                          title: visitLabel(visit, places),
+                          subtitle: `${timeLabel(visit.arrived_at)}${
+                            visit.left_at ? `–${timeLabel(visit.left_at)}` : "–nu"
+                          } · ${formatDuration(visitMinutes(visit, now))}`,
+                          lat: visit.lat ?? place?.lat ?? null,
+                          lng: visit.lng ?? place?.lng ?? null,
+                        })
+                      }
+                    >
+                      <span className="w-24 shrink-0 text-xs tabular-nums text-muted-foreground">
+                        {timeLabel(visit.arrived_at)}
+                        {visit.left_at ? `–${timeLabel(visit.left_at)}` : "–nu"}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                        {visitLabel(visit, places)}
+                      </span>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {formatDuration(visitMinutes(visit, now))}
+                      </span>
+                    </button>
                     <button
                       type="button"
                       aria-label="Ta bort besök"
@@ -382,7 +402,9 @@ function PlacesPage() {
                       <Trash2 className="size-3.5" />
                     </button>
                   </li>
-                ))}
+                  );
+                })}
+
               </ol>
             )}
 
