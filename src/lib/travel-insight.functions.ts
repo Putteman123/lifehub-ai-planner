@@ -76,3 +76,66 @@ export const getTravelInsight = createServerFn({ method: "POST" })
 
     return { text: text.trim() };
   });
+
+/** Andreas sammanfattning av kommande veckas reseplan. */
+export const getWeeklyTravelPlanInsight = createServerFn({ method: "POST" })
+  .inputValidator((input: { plan: string }) => input)
+  .handler(async ({ data }) => {
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) throw new Error("AI är inte konfigurerat.");
+    if (!data.plan.trim()) return { text: "" };
+
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Lovable-API-Key": apiKey,
+        "X-Lovable-AIG-SDK": "fetch",
+      },
+      body: JSON.stringify({
+        model: "openai/gpt-5.6-sol",
+        stream: true,
+        instructions:
+          "Du är Andrea, en svensk personlig assistent. Svara på svenska, max 5 korta meningar, utan rubriker eller punktlistor. Du får en reseplan för kommande vecka med färdsätt, restid och marginal per aktivitet. Lyft vilket färdsätt som dominerar, peka ut de resor där marginalen är knapp eller negativ (status tight/conflict) med dag och tid, och ge konkreta råd: åk tidigare, byt färdsätt eller flytta aktiviteten.",
+        input: `Reseplan kommande 7 dagar:\n${data.plan}`,
+      }),
+    });
+
+    if (!res.ok || !res.body) {
+      if (res.status === 429) throw new Error("För många AI-förfrågningar, försök snart igen.");
+      if (res.status === 402) throw new Error("AI-krediterna är slut.");
+      throw new Error(`AI-fel (${res.status})`);
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let text = "";
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        if (!line.startsWith("data:")) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === "[DONE]") continue;
+        try {
+          const evt = JSON.parse(payload) as {
+            type?: string;
+            delta?: string;
+            response?: { output_text?: string };
+          };
+          if (evt.type === "response.output_text.delta" && evt.delta) text += evt.delta;
+          if (evt.type === "response.completed" && !text && evt.response?.output_text) {
+            text = evt.response.output_text;
+          }
+        } catch {
+          // ignorera ofullständiga event
+        }
+      }
+    }
+
+    return { text: text.trim() };
+  });

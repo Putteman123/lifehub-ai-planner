@@ -373,3 +373,49 @@ export async function saveTravelPreference(
   fail(error);
   return ok("Preferensen är sparad.");
 }
+
+/** Reseplan för kommande dagar: färdsätt, restid och marginaler. */
+export async function planWeekTravel(userId: string, days = 7) {
+  const { buildTravelPlan, summarizePlan } = await import("@/lib/travel-plan");
+  const since = new Date(Date.now() - 120 * 86400000).toISOString();
+  const until = new Date(Date.now() + days * 86400000).toISOString();
+
+  const [events, places, visits, prefs] = await Promise.all([
+    supabaseAdmin
+      .from("events")
+      .select("*")
+      .eq("user_id", userId)
+      .gte("starts_at", new Date().toISOString())
+      .lte("starts_at", until)
+      .order("starts_at"),
+    supabaseAdmin.from("places").select("*").eq("user_id", userId),
+    supabaseAdmin.from("visits").select("*").eq("user_id", userId).gte("arrived_at", since),
+    supabaseAdmin.from("travel_preferences").select("*").eq("user_id", userId),
+  ]);
+  fail(events.error);
+  fail(places.error);
+  fail(visits.error);
+  fail(prefs.error);
+
+  const plan = buildTravelPlan({
+    events: events.data ?? [],
+    places: places.data ?? [],
+    visits: visits.data ?? [],
+    preferences: prefs.data ?? [],
+    days,
+  });
+
+  if (!plan.length) {
+    return {
+      ok: true as const,
+      message: "Hittade inga kommande aktiviteter med en plats jag känner igen.",
+      plan: "",
+    };
+  }
+
+  return {
+    ok: true as const,
+    message: `Reseplan för ${plan.length} kommande resor.`,
+    plan: summarizePlan(plan),
+  };
+}

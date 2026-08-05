@@ -257,6 +257,12 @@ export const Route = createFileRoute("/api/chat")({
               needsApproval: true,
               execute: async ({ visit_ids }) => agent.mergeTravels(userId, visit_ids),
             }),
+            plan_week_travel: tool({
+              description:
+                "Hämta reseplan för kommande dagar: bästa färdsätt, restid, avresetid och marginal per aktivitet med känd plats. Använd vid frågor om hur användaren tar sig till kommande aktiviteter.",
+              inputSchema: z.object({ days: z.number().min(1).max(14).nullable() }),
+              execute: async ({ days }) => agent.planWeekTravel(userId, days ?? 7),
+            }),
             save_travel_preference: tool({
               description:
                 "Spara prefererat färdsätt för en rutt (route_key som 'Jobb→Hem') eller en veckodag (0=måndag).",

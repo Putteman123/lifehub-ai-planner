@@ -21,6 +21,7 @@ import { MapDialog, type MapTarget } from "@/components/platser/MapDialog";
 import { FrequentRoutes } from "@/components/platser/FrequentRoutes";
 import { PreferredModes } from "@/components/platser/PreferredModes";
 import { TravelModeStats } from "@/components/platser/TravelModeStats";
+import { WeeklyTravelPlan } from "@/components/platser/WeeklyTravelPlan";
 
 import { TravelTrendChart } from "@/components/platser/TravelTrendChart";
 
@@ -732,6 +733,10 @@ function PlacesPage() {
 
         <div className="mt-4">
           <TravelTimeline places={places} />
+        </div>
+
+        <div className="mt-4">
+          <WeeklyTravelPlan />
         </div>
 
         <div className="mt-4">
