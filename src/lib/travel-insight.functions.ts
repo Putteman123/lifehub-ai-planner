@@ -166,7 +166,7 @@ export const getTravelTrendInsight = createServerFn({ method: "POST" })
         model: "openai/gpt-5.6-sol",
         stream: true,
         instructions:
-          "Du är Andrea, en svensk personlig assistent som analyserar resmönster. Du får statistik per färdsätt: senaste 4 veckorna mot de 4 veckorna innan, vardagsandel, vanligaste rutter samt topp- och lågvecka. Skriv ett objekt per färdsätt du fått data för, i samma ordning. Använd exakt det mode-id som står inom hakparenteser. headline: max 6 ord om vad som hänt. why: 1–2 meningar som förklarar förändringen och som ALLTID hänvisar till konkreta siffror eller rutter ur underlaget – gissa aldrig om orsaker som inte syns i datat, säg hellre att orsaken är oklar. action: en konkret, genomförbar åtgärd med tids-, kostnads- eller klimatvinst. Allt på svenska, inga emojis, inga rubriker.",
+          "Du är Andrea, en svensk personlig assistent som analyserar resmönster. Du får statistik per färdsätt: senaste 4 veckorna mot de 4 veckorna innan, vardagsandel, vanligaste rutter samt topp- och lågvecka. Skriv ett objekt per färdsätt du fått data för, i samma ordning. Sätt mode till exakt det id som står inom hakparenteser, men utan hakparenteser (t.ex. bil). headline: max 6 ord om vad som hänt. why: 1–2 meningar som förklarar förändringen och som ALLTID hänvisar till konkreta siffror eller rutter ur underlaget – gissa aldrig om orsaker som inte syns i datat, säg hellre att orsaken är oklar. action: en konkret, genomförbar åtgärd med tids-, kostnads- eller klimatvinst. Allt på svenska, inga emojis, inga rubriker.",
         input: `Resestatistik per färdsätt (senaste 6 månaderna):\n${data.summary}`,
         text: {
           format: {
