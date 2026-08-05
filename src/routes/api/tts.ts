@@ -1,0 +1,55 @@
+import { createFileRoute } from "@tanstack/react-router";
+
+type Body = { text?: unknown };
+
+export const Route = createFileRoute("/api/tts")({
+  server: {
+    handlers: {
+      POST: async ({ request }) => {
+        const body = (await request.json()) as Body;
+        const text = typeof body.text === "string" ? body.text.trim() : "";
+        if (!text) return new Response("text required", { status: 400 });
+
+        const key = process.env["LOVABLE_API_KEY"];
+        if (!key) return new Response("AI är inte konfigurerad.", { status: 500 });
+
+        const authHeader = request.headers.get("authorization");
+        const bearer = authHeader?.toLowerCase().startsWith("bearer ")
+          ? authHeader.slice(7)
+          : null;
+        if (!bearer) return new Response("Unauthorized", { status: 401 });
+
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data: userData } = await supabaseAdmin.auth.getUser(bearer);
+        if (!userData?.user) return new Response("Unauthorized", { status: 401 });
+
+        const input = text.length > 800 ? `${text.slice(0, 800)}…` : text;
+
+        const resp = await fetch("https://ai.gateway.lovable.dev/v1/audio/speech", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${key}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "openai/gpt-4o-mini-tts",
+            input,
+            voice: "shimmer",
+            response_format: "mp3",
+            instructions:
+              "Tala svenska med en varm, lugn och professionell kvinnoröst. Naturligt tempo.",
+          }),
+        });
+
+        if (!resp.ok) {
+          const detail = await resp.text().catch(() => "");
+          return new Response(detail || "TTS misslyckades", { status: resp.status });
+        }
+
+        return new Response(resp.body, {
+          headers: { "Content-Type": "audio/mpeg", "Cache-Control": "no-store" },
+        });
+      },
+    },
+  },
+});
