@@ -111,6 +111,7 @@ function PlacesPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [live, setLive] = useState(false);
   const [ingestUrl, setIngestUrl] = useState<string | null>(null);
+  const [ingestError, setIngestError] = useState<string | null>(null);
   const watchRef = useRef<number | null>(null);
   const lastSent = useRef(0);
 
@@ -264,11 +265,26 @@ function PlacesPage() {
   async function showIngest() {
     try {
       const info = await ingest({});
+      if (!info.configured) {
+        setIngestUrl(null);
+        setIngestError(
+          "Servern saknar en ingest-token, så adressen kan inte visas. Säg till så fixar jag det.",
+        );
+        return;
+      }
       setIngestUrl(info.url);
+      setIngestError(null);
     } catch {
-      toast.error("Kunde inte hämta adressen.");
+      setIngestError("Kunde inte hämta adressen just nu. Ladda om sidan och försök igen.");
     }
   }
+
+  // Hämta den privata adressen direkt vid laddning så hela länken alltid syns.
+  useEffect(() => {
+    void showIngest();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   async function wipe() {
     if (!confirm("Radera all platshistorik? Detta går inte att ångra.")) return;
@@ -505,7 +521,7 @@ function PlacesPage() {
 
           <OwnTracksGuide
             ingestUrl={ingestUrl}
-            onShowIngest={showIngest}
+            error={ingestError}
             lastPingAt={lastPingAt}
           />
 
