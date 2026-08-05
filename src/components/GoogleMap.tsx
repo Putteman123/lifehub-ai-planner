@@ -5,7 +5,7 @@ export type MapMarker = {
   lng: number;
   title?: string;
   /** Färgad markör: "start" | "slut" | undefined (standard). */
-  role?: "start" | "slut";
+  role?: "start" | "slut" | "self";
 };
 
 declare global {
@@ -75,6 +75,7 @@ export function GoogleMap({
   const ref = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const overlaysRef = useRef<Array<{ setMap: (map: google.maps.Map | null) => void }>>([]);
+  const fittedRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
