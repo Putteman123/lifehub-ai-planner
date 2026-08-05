@@ -135,4 +135,54 @@ export function totalHours(events: EventRow[], predicate: (e: EventRow) => boole
   );
 }
 
+/** Returnerar par av händelser som krockar tidsmässigt under en viss dag. */
+export function overlapsOnDay(events: EventRow[], day: Date) {
+  const items = eventsOnDay(events, day).filter((e) => !e.all_day);
+  const pairs: [EventRow, EventRow][] = [];
+  for (let i = 0; i < items.length; i++) {
+    for (let j = i + 1; j < items.length; j++) {
+      const a = items[i]!;
+      const b = items[j]!;
+      const aStart = new Date(a.starts_at).getTime();
+      const aEnd = new Date(a.ends_at).getTime();
+      const bStart = new Date(b.starts_at).getTime();
+      const bEnd = new Date(b.ends_at).getTime();
+      if (aStart < bEnd && bStart < aEnd) pairs.push([a, b]);
+    }
+  }
+  return pairs;
+}
+
+/** Hittar första luckan på minst `durationMinutes` inom `days` dagar framåt. */
+export function findFreeSlot(
+  events: EventRow[],
+  durationMinutes: number,
+  reference: Date,
+  days = 14,
+) {
+  for (let i = 0; i < days; i++) {
+    const day = addDays(reference, i);
+    const gaps = freeGaps(events, day, durationMinutes);
+    for (const gap of gaps) {
+      if (gap.minutes >= durationMinutes) {
+        return { start: gap.start, end: new Date(gap.start.getTime() + durationMinutes * 60000) };
+      }
+    }
+  }
+  return null;
+}
+
+/** Föreslår kategori utifrån en händelsetitel. */
+export function suggestCategory(title: string): EventRow["category"] {
+  const t = title.toLowerCase();
+  if (/\b(jobb|arbete|work|kontor|möte.*klient|företag|uppdra)\b/.test(t)) return "jobb";
+  if (/\b(jurist|domstol|förhandling|möte.*klient|rättegång|advokat|tidsfrist)\b/.test(t))
+    return "jurist";
+  if (/\b(benjamin|barn|fotboll|träning|skola|lov|läkar|föräldr|hämta|lämna)\b/.test(t))
+    return "barn";
+  if (/\b(ledig|semester|resor|resa|friskvård|träna|gym|löp|vila)\b/.test(t)) return "ledig";
+  if (/\b(viktigt|deadline|inlämning|prov|examen|bröllop|begrav)\b/.test(t)) return "viktigt";
+  return "privat";
+}
+
 export { addDays, isSameDay, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth };
