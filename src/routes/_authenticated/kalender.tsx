@@ -344,6 +344,7 @@ function MonthView({
                     +{items.length - 3} till
                   </span>
                 ) : null}
+                <OverlapWarning events={events} day={d} />
               </div>
             </div>
           );
