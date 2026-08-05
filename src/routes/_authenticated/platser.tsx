@@ -448,6 +448,24 @@ function PlacesPage() {
               ) : null}
             </div>
 
+            {mergeGroup ? (
+              <button
+                type="button"
+                disabled={travelBusy === "merge"}
+                onClick={() => handleMergeTravels(mergeGroup.map((v) => v.id))}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary disabled:opacity-60"
+              >
+                {travelBusy === "merge" ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Car className="size-3.5" />
+                )}
+                Slå ihop {mergeGroup.length} resor till en
+              </button>
+            ) : null}
+
+
+
             {todayVisits.length === 0 ? (
               <p className="mt-4 text-sm text-muted-foreground">
                 Inga besök registrerade i dag. Tryck på ”Jag är här” eller slå på live-läget.
