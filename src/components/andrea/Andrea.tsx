@@ -9,6 +9,7 @@ import {
 
 import {
   ArrowRight,
+  Check,
   Loader2,
   Mic,
   MicOff,
@@ -179,7 +180,7 @@ const FIELD_LABELS: Record<string, string> = {
   delete_visits: "Radera besök",
 };
 
-function ActionDetails({ input }: { input?: Record<string, unknown> }) {
+function ActionDetails({ input }: { input?: Record<string, unknown> | undefined }) {
   const rows = Object.entries(input ?? {}).filter(
     ([key, value]) => key in FIELD_LABELS && value !== null && value !== undefined && value !== "",
   );
