@@ -293,6 +293,10 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
                 (p as { state?: string }).state === "output-available",
             ) as unknown as { output?: { route?: string; reason?: string } }[];
 
+            const actions = m.parts.filter((p) =>
+              isActionPart(p as ToolPart),
+            ) as unknown as ToolPart[];
+
             if (m.role === "user") {
               return (
                 <div key={m.id} className="flex justify-end">
@@ -311,9 +315,22 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
                   className={`mt-0.5 size-8 shrink-0 rounded-full object-cover ${thinking ? "andrea-thinking" : ""}`}
                 />
                 <div className="min-w-0 max-w-[85%] space-y-2">
-                  <div className="rounded-2xl rounded-bl-md bg-muted/60 px-4 py-2.5 text-sm leading-relaxed [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_ul]:mb-2 [&_ul]:space-y-1">
-                    <ReactMarkdown>{text}</ReactMarkdown>
-                  </div>
+                  {text ? (
+                    <div className="rounded-2xl rounded-bl-md bg-muted/60 px-4 py-2.5 text-sm leading-relaxed [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_ul]:mb-2 [&_ul]:space-y-1">
+                      <ReactMarkdown>{text}</ReactMarkdown>
+                    </div>
+                  ) : null}
+
+                  {actions.map((part, k) => (
+                    <ActionCard
+                      key={k}
+                      part={part}
+                      onRespond={(approved) =>
+                        addToolApprovalResponse({ id: part.approval!.id, approved })
+                      }
+                    />
+                  ))}
+
                   {gotos.map((g, k) =>
                     g.output?.route ? (
                       <button
@@ -330,6 +347,7 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
                     ) : null,
                   )}
                 </div>
+
               </div>
             );
           })}
