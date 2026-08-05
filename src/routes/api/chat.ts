@@ -231,6 +231,13 @@ export const Route = createFileRoute("/api/chat")({
               needsApproval: true,
               execute: async ({ visit_id }) => agent.deleteVisit(userId, visit_id),
             }),
+            add_shopping_items: tool({
+              description: "Lägg till dagligvaror i den aktiva inköpslistan under Handla.",
+              inputSchema: z.object({ items: z.array(z.string()) }),
+              needsApproval: true,
+              execute: async (input) => agent.addShoppingItems(userId, input),
+            }),
+
             check_in: tool({
               description: "Checka in på en sparad plats.",
               inputSchema: z.object({ place_id: z.string(), name: z.string() }),
