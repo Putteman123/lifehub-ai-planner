@@ -172,6 +172,17 @@ function CalendarPage() {
 
 type SelectFn = (event: EventRow | null, date?: Date) => void;
 
+function OverlapWarning({ events, day }: { events: EventRow[]; day: Date }) {
+  const pairs = overlapsOnDay(events, day);
+  if (pairs.length === 0) return null;
+  return (
+    <div className="mt-2 flex items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-[10px] font-medium text-destructive">
+      <span className="size-1.5 rounded-full bg-destructive" />
+      {pairs.length === 1 ? "Krock i schemat" : `${pairs.length} krockar`}
+    </div>
+  );
+}
+
 function EventChip({ event, onSelect }: { event: EventRow; onSelect: SelectFn }) {
   const meta = categoryMeta(event.category);
   return (
