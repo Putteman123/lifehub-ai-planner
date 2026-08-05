@@ -26,6 +26,10 @@ export const Route = createFileRoute("/auth")({
   }),
   // Ren klientvy (Face ID/pinkod) – ingen SSR, undviker hydreringsfel.
   ssr: false,
+  // `next` används av OAuth-samtycket så man kommer tillbaka dit efter upplåsning.
+  validateSearch: (s: Record<string, unknown>) => ({
+    next: typeof s["next"] === "string" && s["next"].startsWith("/") ? s["next"] : undefined,
+  }),
   component: PinGate,
 });
 
@@ -52,9 +56,15 @@ function PinGate() {
     void checkPasskey({}).then((res) => setFaceAvailable(res.registered));
   }, [checkPasskey]);
 
+  const { next } = Route.useSearch();
+
   const goIn = useCallback(async () => {
+    if (next) {
+      window.location.href = next;
+      return;
+    }
     await navigate({ to: "/dashboard", replace: true });
-  }, [navigate]);
+  }, [navigate, next]);
 
   const signInWithTokenHash = useCallback(async (tokenHash: string) => {
     const { error } = await supabase.auth.verifyOtp({ type: "email", token_hash: tokenHash });

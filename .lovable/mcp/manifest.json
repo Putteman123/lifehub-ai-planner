@@ -1,0 +1,348 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://fkjykosgtyohooiovfnc.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "lifeflow-ai",
+      "version": "0.1.0",
+      "title": "LifeFlow AI"
+    },
+    "tools": [
+      {
+        "name": "list_events",
+        "title": "Lista kalenderhändelser",
+        "description": "Hämta kalenderhändelser för den inloggade användaren inom ett tidsintervall (ISO 8601).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string",
+              "description": "Startdatum/tid i ISO 8601, t.ex. 2026-08-05T00:00:00Z"
+            },
+            "to": {
+              "type": "string",
+              "description": "Slutdatum/tid i ISO 8601"
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "Max antal händelser, standard 50"
+            }
+          },
+          "required": [
+            "from",
+            "to"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_event",
+        "title": "Skapa kalenderhändelse",
+        "description": "Lägg till en ny händelse i användarens kalender.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Rubrik för händelsen"
+            },
+            "starts_at": {
+              "type": "string",
+              "description": "Starttid i ISO 8601"
+            },
+            "ends_at": {
+              "type": "string",
+              "description": "Sluttid i ISO 8601"
+            },
+            "category": {
+              "type": "string",
+              "enum": [
+                "jobb",
+                "ledig",
+                "jurist",
+                "barn",
+                "privat",
+                "viktigt"
+              ],
+              "description": "Kategori för färgkodning"
+            },
+            "all_day": {
+              "type": "boolean",
+              "description": "Heldagshändelse"
+            },
+            "location": {
+              "type": "string",
+              "description": "Plats"
+            },
+            "description": {
+              "type": "string",
+              "description": "Anteckning"
+            }
+          },
+          "required": [
+            "title",
+            "starts_at",
+            "ends_at",
+            "category"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_todos",
+        "title": "Lista uppgifter",
+        "description": "Hämta uppgifter från Att göra-listan, öppna eller avklarade.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "include_done": {
+              "type": "boolean",
+              "description": "Ta med avbockade uppgifter, standard false"
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "Max antal, standard 50"
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_todo",
+        "title": "Skapa uppgift",
+        "description": "Lägg till en uppgift i Att göra-listan.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Vad som ska göras"
+            },
+            "due_date": {
+              "type": "string",
+              "description": "Deadline i ISO 8601"
+            },
+            "notes": {
+              "type": "string",
+              "description": "Anteckning"
+            }
+          },
+          "required": [
+            "title"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "complete_todo",
+        "title": "Bocka av uppgift",
+        "description": "Markera en uppgift som klar eller återöppna den.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "todo_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Uppgiftens id, hämtas med list_todos"
+            },
+            "done": {
+              "type": "boolean",
+              "description": "true = klar (standard), false = återöppna"
+            }
+          },
+          "required": [
+            "todo_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_reminder",
+        "title": "Skapa påminnelse",
+        "description": "Skapa en påminnelse med tidpunkt.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Vad påminnelsen gäller"
+            },
+            "remind_at": {
+              "type": "string",
+              "description": "Tidpunkt i ISO 8601"
+            }
+          },
+          "required": [
+            "title",
+            "remind_at"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_shopping_items",
+        "title": "Visa inköpslistan",
+        "description": "Hämta varorna i den aktiva inköpslistan.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "include_checked": {
+              "type": "boolean",
+              "description": "Ta med redan bockade varor, standard false"
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "add_shopping_items",
+        "title": "Lägg till varor i inköpslistan",
+        "description": "Lägg till en eller flera varor i den aktiva inköpslistan (skapas vid behov).",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "description": "Namn på varorna"
+            }
+          },
+          "required": [
+            "items"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_places",
+        "title": "Lista sparade platser",
+        "description": "Hämta användarens sparade platser med namn, typ och koordinater.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "Max antal platser, standard 100"
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_visits",
+        "title": "Lista besök och resor",
+        "description": "Hämta de senaste posterna i platsloggen (besök och resor) med tider, etikett och sträcka.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "days": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365,
+              "description": "Antal dagar bakåt, standard 7"
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "Max antal poster, standard 50"
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
