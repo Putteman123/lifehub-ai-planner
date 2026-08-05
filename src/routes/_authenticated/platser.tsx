@@ -7,6 +7,7 @@ import {
   Loader2,
   LogOut,
   MapPin,
+  Pencil,
   Plus,
   Radio,
   Trash2,
@@ -16,6 +17,8 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { DataGate } from "@/components/DataGate";
 import { OwnTracksGuide } from "@/components/platser/OwnTracksGuide";
+import { MapDialog, type MapTarget } from "@/components/platser/MapDialog";
+
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
