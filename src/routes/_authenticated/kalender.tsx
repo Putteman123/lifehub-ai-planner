@@ -175,7 +175,10 @@ function EventChip({ event, onSelect }: { event: EventRow; onSelect: SelectFn })
   const meta = categoryMeta(event.category);
   return (
     <button
-      onClick={() => onSelect(event)}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect(event);
+      }}
       className={`w-full truncate rounded-md px-2 py-1 text-left text-[11px] ${meta.chip}`}
     >
       {event.all_day ? "" : `${fmt(event.starts_at, "HH:mm")} `}
