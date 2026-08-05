@@ -280,6 +280,7 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
                 <ul className="mt-2 space-y-1.5 border-l border-border/70 pl-3">
                   {dayTrips.map((trip) => {
                     const active = selected?.visit.id === trip.visit.id;
+                    const isPicked = picked.includes(trip.visit.id);
                     return (
                       <li key={trip.visit.id} className="relative flex items-center gap-1">
                         <span
@@ -287,16 +288,27 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
                             active ? "bg-primary" : "bg-muted-foreground/40"
                           }`}
                         />
+                        {mergeMode ? (
+                          <Checkbox
+                            checked={isPicked}
+                            onCheckedChange={() => togglePick(trip.visit.id)}
+                            aria-label="Markera resa för sammanslagning"
+                            className="shrink-0"
+                          />
+                        ) : null}
                         <button
                           type="button"
-                          onClick={() => setSelectedId(trip.visit.id)}
-                          aria-pressed={active}
+                          onClick={() =>
+                            mergeMode ? togglePick(trip.visit.id) : setSelectedId(trip.visit.id)
+                          }
+                          aria-pressed={mergeMode ? isPicked : active}
                           className={`flex min-w-0 flex-1 items-center gap-2 rounded-xl border px-3 py-2 text-left transition-colors ${
-                            active
+                            (mergeMode ? isPicked : active)
                               ? "border-primary/40 bg-primary/5"
                               : "border-border/60 hover:bg-muted/50"
                           }`}
                         >
+
                           <span className="w-24 shrink-0 text-xs tabular-nums text-muted-foreground">
                             {timeLabel(trip.visit.arrived_at)}
                             {trip.visit.left_at ? `–${timeLabel(trip.visit.left_at)}` : "–nu"}
