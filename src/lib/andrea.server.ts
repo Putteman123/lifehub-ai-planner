@@ -173,7 +173,7 @@ export async function buildAndreaContext() {
       ? `- Krockar idag: ${todayOverlaps.map(([a, b]) => `${a.title} / ${b.title}`).join("; ")}`
       : "- Inga krockar idag",
     freeSlot
-      ? `- Nästa lediga timme: ${fmt(freeSlot.start, "EEEE d MMMM HH:mm")}`
+      ? `- Nästa lediga timme: ${weekdayLocal(freeSlot.start)} ${timeLocal(freeSlot.start)}`
       : "- Ingen ledig timme hittad de närmaste 7 dagarna",
   ].join("\n");
 }
