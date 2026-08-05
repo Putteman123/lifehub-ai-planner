@@ -289,6 +289,7 @@ function WeekView({
               {items.map((e) => (
                 <EventChip key={e.id} event={e} onSelect={onSelect} />
               ))}
+              <OverlapWarning events={events} day={d} />
             </div>
           </div>
         );
