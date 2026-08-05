@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { Plus, Sparkles, AlertTriangle, Clock, Calendar } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
@@ -8,7 +8,7 @@ import { EventDialog } from "@/components/EventDialog";
 import { InboxCard } from "@/components/google/InboxCard";
 
 import { Button } from "@/components/ui/button";
-import { categoryMeta, type EventRow } from "@/lib/categories";
+import { categoryMeta, SHIFT_STYLES, type EventRow } from "@/lib/categories";
 import {
   addDays,
   dayLoad,
@@ -20,6 +20,7 @@ import {
   mergeDuplicates,
   monthGrid,
   overlapsOnDay,
+  shiftType,
   startOfDay,
   timeRange,
   totalHours,
@@ -542,5 +543,66 @@ function QuickLink({
     >
       {children}
     </Link>
+  );
+}
+
+/** Sammanställning av natt- och kvällspass på schemat. */
+function ShiftSummaryCard({ events }: { events: EventRow[] }) {
+  const now = new Date();
+  const stats = useMemo(() => {
+    const monthStart = startOfMonth(now);
+    const monthEnd = endOfMonth(now);
+    const count = (from: Date, to: Date, type: "natt" | "kvall") =>
+      events.filter((e) => {
+        const s = new Date(e.starts_at);
+        return s >= from && s <= to && shiftType(e) === type;
+      }).length;
+    const future = new Date(now.getTime() + 365 * 86400000);
+    return {
+      monthNatt: count(monthStart, monthEnd, "natt"),
+      monthKvall: count(monthStart, monthEnd, "kvall"),
+      comingNatt: count(now, future, "natt"),
+      comingKvall: count(now, future, "kvall"),
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events]);
+
+  const rows = [
+    {
+      label: "Nattpass",
+      dot: SHIFT_STYLES.natt.dot,
+      month: stats.monthNatt,
+      coming: stats.comingNatt,
+    },
+    {
+      label: "Kvällspass",
+      dot: SHIFT_STYLES.kvall.dot,
+      month: stats.monthKvall,
+      coming: stats.comingKvall,
+    },
+  ];
+
+  return (
+    <section className="card-soft p-5">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Pass på schemat</h2>
+        <QuickLink to="/kalender">Kalender</QuickLink>
+      </div>
+      <div className="mt-3 grid grid-cols-[1fr_auto_auto] items-center gap-x-3 gap-y-2 text-sm">
+        <span />
+        <span className="text-[11px] text-muted-foreground">{fmt(now, "MMM")}</span>
+        <span className="text-[11px] text-muted-foreground">Kommande</span>
+        {rows.map((r) => (
+          <Fragment key={r.label}>
+            <span className="flex items-center gap-2">
+              <span className={`size-2.5 rounded-full ${r.dot}`} />
+              {r.label}
+            </span>
+            <span className="text-right tabular-nums font-semibold">{r.month}</span>
+            <span className="text-right tabular-nums font-semibold">{r.coming}</span>
+          </Fragment>
+        ))}
+      </div>
+    </section>
   );
 }
