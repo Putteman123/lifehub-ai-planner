@@ -52,7 +52,7 @@ export async function createEvent(userId: string, input: EventInput) {
 
 export async function updateEvent(
   userId: string,
-  input: { event_id: string } & Partial<EventInput>,
+  input: { event_id: string } & { [K in keyof EventInput]?: EventInput[K] | undefined },
 ) {
   const patch: {
     title?: string | undefined;
@@ -94,7 +94,7 @@ export async function deleteEvent(userId: string, eventId: string) {
 
 export async function createTodo(
   userId: string,
-  input: { title: string; due_date?: string; notes?: string },
+  input: { title: string; due_date?: string | undefined; notes?: string | undefined },
 ) {
   const { data, error } = await supabaseAdmin
     .from("todos")
@@ -145,7 +145,7 @@ export async function createReminder(
 
 export async function createCase(
   userId: string,
-  input: { title: string; client_name?: string; description?: string },
+  input: { title: string; client_name?: string | undefined; description?: string | undefined },
 ) {
   const { data, error } = await supabaseAdmin
     .from("legal_cases")
@@ -163,7 +163,7 @@ export async function createCase(
 
 export async function createCaseTask(
   userId: string,
-  input: { title: string; due_date?: string; case_id?: string; notes?: string },
+  input: { title: string; due_date?: string | undefined; case_id?: string | undefined; notes?: string | undefined },
 ) {
   const { data, error } = await supabaseAdmin
     .from("case_tasks")
@@ -182,7 +182,7 @@ export async function createCaseTask(
 
 export async function createChild(
   userId: string,
-  input: { name: string; birth_date?: string; color?: string },
+  input: { name: string; birth_date?: string | undefined; color?: string | undefined },
 ) {
   const { data, error } = await supabaseAdmin
     .from("children")
@@ -288,7 +288,7 @@ export async function deletePlace(userId: string, placeId: string, deleteVisits 
 
 export async function labelVisit(
   userId: string,
-  input: { visit_id: string; label: string; note?: string },
+  input: { visit_id: string; label: string; note?: string | undefined },
 ) {
   const { error } = await supabaseAdmin
     .from("visits")
