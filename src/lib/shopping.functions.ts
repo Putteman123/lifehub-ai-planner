@@ -61,55 +61,38 @@ export const suggestShoppingItems = createServerFn({ method: "POST" })
       .map((row) => `${row.name} (${row.times_added} ggr)`)
       .join(", ");
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": apiKey,
-        "X-Lovable-AIG-SDK": "fetch",
-      },
-      body: JSON.stringify({
-        model: "openai/gpt-5.6-sol",
-        stream: true,
-        instructions:
-          "Du är Andrea, en svensk personlig assistent. Föreslå dagligvaror till en svensk inköpslista. Utgå i första hand från användarens historik och komplettera med vanliga basvaror i ett svenskt hushåll. Använd korta svenska varunamn i singular, t.ex. Mjölk, Ägg, Smör, Kaffe. Föreslå högst 12 varor och upprepa inte varor som redan ligger i listan.",
-        input: `Varor som redan ligger i listan: ${data.existing.join(", ") || "inga"}.\nAnvändarens vanligaste varor: ${history || "ingen historik ännu"}.\nSvara med json.`,
-        text: {
-          format: {
-            type: "json_schema",
-            name: "shopping_suggestions",
-            strict: true,
-            schema: {
-              type: "object",
-              additionalProperties: false,
-              properties: {
-                items: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    additionalProperties: false,
-                    properties: {
-                      name: { type: "string" },
-                      category: { type: "string" },
-                    },
-                    required: ["name", "category"],
-                  },
+    const { completeText } = await import("@/lib/ai-complete.server");
+
+    const raw = await completeText({
+      apiKey,
+      system:
+        "Du är Andrea, en svensk personlig assistent. Föreslå dagligvaror till en svensk inköpslista. Utgå i första hand från användarens historik och komplettera med vanliga basvaror i ett svenskt hushåll. Använd korta svenska varunamn i singular, t.ex. Mjölk, Ägg, Smör, Kaffe. Föreslå högst 12 varor och upprepa inte varor som redan ligger i listan. Svara enbart med JSON.",
+      input: `Varor som redan ligger i listan: ${data.existing.join(", ") || "inga"}.\nAnvändarens vanligaste varor: ${history || "ingen historik ännu"}.\nSvara med json.`,
+      jsonSchema: {
+        name: "shopping_suggestions",
+        schema: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            items: {
+              type: "array",
+              items: {
+                type: "object",
+                additionalProperties: false,
+                properties: {
+                  name: { type: "string" },
+                  category: { type: "string" },
                 },
+                required: ["name", "category"],
               },
-              required: ["items"],
             },
           },
+          required: ["items"],
         },
-      }),
+      },
     });
 
-    if (!res.ok) {
-      if (res.status === 429) throw new Error("För många AI-förfrågningar, försök snart igen.");
-      if (res.status === 402) throw new Error("AI-krediterna är slut.");
-      throw new Error(`AI-fel (${res.status})`);
-    }
-
-    const text = await readStream(res);
+    const text = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
     let items: { name: string; category: string | null }[] = [];
     try {
       const parsed = JSON.parse(text) as { items?: { name?: string; category?: string }[] };
