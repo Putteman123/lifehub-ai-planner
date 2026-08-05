@@ -15,6 +15,8 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
 import { DataGate } from "@/components/DataGate";
+import { OwnTracksGuide } from "@/components/platser/OwnTracksGuide";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
