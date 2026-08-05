@@ -153,6 +153,15 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
     return { first, last, meters, minutes, count: pickedTrips.length };
   }, [pickedTrips]);
 
+  const suggestions = useMemo(
+    () =>
+      suggestTravelMerges(
+        trips.map((t) => t.visit),
+        (point, fallback) => endpointName(point, places, fallback),
+      ),
+    [trips, places],
+  );
+
   function togglePick(id: string) {
     setPicked((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
@@ -160,7 +169,9 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
   function exitMergeMode() {
     setMergeMode(false);
     setPicked([]);
+    setShowSuggestions(false);
   }
+
 
   async function runMerge() {
     if (!pickedSummary) return;
