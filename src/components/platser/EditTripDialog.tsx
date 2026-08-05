@@ -83,6 +83,8 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
     setLabel(trip.label ?? "");
     setKm(((trip.distance_m ?? 0) / 1000).toFixed(1).replace(".", ","));
     setVerified(trip.distance_verified ?? false);
+    setMode(trip.travel_mode ?? "bil");
+
     setKmTouched(false);
     setVerifiedTouched(false);
   }, [trip, places]);
