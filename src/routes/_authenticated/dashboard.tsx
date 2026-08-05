@@ -155,7 +155,7 @@ function Dashboard() {
         </Button>
       }
     >
-      <DataGate queries={[eventsQ, tasksQ, remindersQ]}>
+      <DataGate queries={[eventsQ, tasksQ, remindersQ, todosQ]}>
         <div className="grid min-w-0 gap-5 lg:grid-cols-12">
           <div className="min-w-0 space-y-5 lg:col-span-8">
 
