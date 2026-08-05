@@ -1,5 +1,14 @@
 import { findFreeSlot, fmt, overlapsOnDay } from "@/lib/calendar";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import {
+  PLACE_KINDS,
+  formatDuration,
+  minutesByKind,
+  startOfDay,
+  startOfWeek,
+  visitLabel,
+  visitMinutes,
+} from "@/lib/geo";
 
 export const ANDREA_SYSTEM = `Du är **Andrea**, Patricks personliga AI-guide i LifeHub AI – en app för kalender, familj och juristuppdrag.
 
@@ -47,6 +56,24 @@ export async function buildAndreaContext() {
     supabaseAdmin.from("reminders").select("title, remind_at, is_done"),
   ]);
 
+  const weekStart = startOfWeek(now);
+  const [placesRes, visitsRes] = await Promise.all([
+    supabaseAdmin.from("places").select("*"),
+    supabaseAdmin
+      .from("visits")
+      .select("*")
+      .gte("arrived_at", weekStart.toISOString())
+      .order("arrived_at", { ascending: true }),
+  ]);
+  const places = placesRes.data ?? [];
+  const weekVisits = visitsRes.data ?? [];
+  const todayStart = startOfDay(now);
+  const todayVisits = weekVisits.filter(
+    (v) => new Date(v.left_at ?? now).getTime() >= todayStart.getTime(),
+  );
+  const todayMinutes = minutesByKind(weekVisits, places, todayStart, now, now);
+  const weekMinutes = minutesByKind(weekVisits, places, weekStart, now, now);
+
   const events = eventsRes.data ?? [];
   const todayOverlaps = overlapsOnDay(events, now);
   const freeSlot = findFreeSlot(events, 60, now, 7);
@@ -75,6 +102,16 @@ export async function buildAndreaContext() {
     ...(remindersRes.data ?? [])
       .filter((r) => !r.is_done)
       .map((r) => `- ${r.title} ${fmtDate(r.remind_at, false)}`),
+    "",
+    "Platslogg idag:",
+    ...(todayVisits.length
+      ? todayVisits.map(
+          (v) =>
+            `- ${visitLabel(v, places)} ${new Date(v.arrived_at).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" })}–${v.left_at ? new Date(v.left_at).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" }) : "pågår"} (${formatDuration(visitMinutes(v, now))})`,
+        )
+      : ["- ingen plats registrerad idag"]),
+    `Tid idag per typ: ${PLACE_KINDS.map((k) => `${k.label} ${formatDuration(todayMinutes[k.value])}`).join(", ")}`,
+    `Tid denna vecka per typ: ${PLACE_KINDS.map((k) => `${k.label} ${formatDuration(weekMinutes[k.value])}`).join(", ")}`,
     "",
     "Analys:",
     todayOverlaps.length

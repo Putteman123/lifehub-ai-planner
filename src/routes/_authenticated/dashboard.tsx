@@ -409,8 +409,10 @@ function QuickLink({
 }) {
   return (
     <Link
-      to={to}
-      search={search}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      to={to as any}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      search={(search ?? {}) as any}
       className="inline-flex items-center gap-1.5 rounded-lg bg-background px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
     >
       {children}

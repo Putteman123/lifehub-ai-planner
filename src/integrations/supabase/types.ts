@@ -236,6 +236,81 @@ export type Database = {
         }
         Relationships: []
       }
+      location_pings: {
+        Row: {
+          accuracy_m: number | null
+          created_at: string
+          id: string
+          lat: number
+          lng: number
+          recorded_at: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          accuracy_m?: number | null
+          created_at?: string
+          id?: string
+          lat: number
+          lng: number
+          recorded_at?: string
+          source?: string
+          user_id: string
+        }
+        Update: {
+          accuracy_m?: number | null
+          created_at?: string
+          id?: string
+          lat?: number
+          lng?: number
+          recorded_at?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      places: {
+        Row: {
+          address: string | null
+          color: string
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["place_kind"]
+          lat: number
+          lng: number
+          name: string
+          radius_m: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          color?: string
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["place_kind"]
+          lat: number
+          lng: number
+          name: string
+          radius_m?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          color?: string
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["place_kind"]
+          lat?: number
+          lng?: number
+          name?: string
+          radius_m?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -301,6 +376,62 @@ export type Database = {
           },
         ]
       }
+      visits: {
+        Row: {
+          arrived_at: string
+          created_at: string
+          id: string
+          is_manual: boolean
+          label: string | null
+          lat: number | null
+          left_at: string | null
+          lng: number | null
+          note: string | null
+          place_id: string | null
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          arrived_at: string
+          created_at?: string
+          id?: string
+          is_manual?: boolean
+          label?: string | null
+          lat?: number | null
+          left_at?: string | null
+          lng?: number | null
+          note?: string | null
+          place_id?: string | null
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          arrived_at?: string
+          created_at?: string
+          id?: string
+          is_manual?: boolean
+          label?: string | null
+          lat?: number | null
+          left_at?: string | null
+          lng?: number | null
+          note?: string | null
+          place_id?: string | null
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visits_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -325,6 +456,7 @@ export type Database = {
         | "barn"
         | "privat"
         | "viktigt"
+      place_kind: "jobb" | "jurist" | "hem" | "barn" | "annat"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -463,6 +595,7 @@ export const Constants = {
         "family",
       ],
       event_category: ["jobb", "ledig", "jurist", "barn", "privat", "viktigt"],
+      place_kind: ["jobb", "jurist", "hem", "barn", "annat"],
     },
   },
 } as const
