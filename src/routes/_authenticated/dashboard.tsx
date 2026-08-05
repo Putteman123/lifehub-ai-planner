@@ -1,9 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Plus, Sparkles } from "lucide-react";
 
-import { AiPanel } from "@/components/AiPanel";
 import { AppShell } from "@/components/AppShell";
+
 import { DataGate } from "@/components/DataGate";
 import { EventDialog } from "@/components/EventDialog";
 import { Button } from "@/components/ui/button";
