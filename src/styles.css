@@ -58,6 +58,8 @@
   --color-cat-barn: var(--cat-barn);
   --color-cat-privat: var(--cat-privat);
   --color-cat-viktigt: var(--cat-viktigt);
+  --color-cat-natt: var(--cat-natt);
+  --color-cat-kvall: var(--cat-kvall);
 
   /* Ikonfärger per läge */
   --color-nav-oversikt: var(--nav-oversikt);
@@ -116,6 +118,8 @@
   --cat-barn: oklch(0.82 0.14 92);
   --cat-privat: oklch(0.6 0.2 310);
   --cat-viktigt: oklch(0.62 0.22 22);
+  --cat-natt: oklch(0.42 0.15 285);
+  --cat-kvall: oklch(0.68 0.16 55);
 
   --shadow-soft: 0 1px 2px oklch(0.21 0.02 277 / 5%), 0 10px 30px oklch(0.21 0.02 277 / 7%);
 
