@@ -237,10 +237,15 @@ export async function updatePlace(
     radius_m?: number;
   },
 ) {
-  const patch: Record<string, unknown> = {};
-  if (input.name !== undefined) patch["name"] = input.name;
-  if (input.kind !== undefined) patch["kind"] = input.kind;
-  if (input.radius_m !== undefined) patch["radius_m"] = input.radius_m;
+  const patch: {
+    name?: string;
+    kind?: "jobb" | "jurist" | "hem" | "barn" | "annat";
+    radius_m?: number;
+  } = {};
+  if (input.name !== undefined) patch.name = input.name;
+  if (input.kind !== undefined) patch.kind = input.kind;
+  if (input.radius_m !== undefined) patch.radius_m = input.radius_m;
+
   if (Object.keys(patch).length === 0) throw new Error("Inget att ändra.");
 
   const { error } = await supabaseAdmin
