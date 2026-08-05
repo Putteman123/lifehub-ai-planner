@@ -326,6 +326,39 @@ export type Database = {
         }
         Relationships: []
       }
+      mail_rules: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          kind: string
+          mode: string
+          updated_at: string
+          user_id: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kind: string
+          mode?: string
+          updated_at?: string
+          user_id: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          mode?: string
+          updated_at?: string
+          user_id?: string
+          value?: string
+        }
+        Relationships: []
+      }
       pantry_items: {
         Row: {
           category: string | null

@@ -61,10 +61,11 @@ export const getInbox = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input?: { query?: string; max?: number }) => input ?? {})
   .handler(async ({ data }) => {
-    const { gmailList, hasGoogle } = await import("./google.server");
+    const { gmailList, hasGoogle, mailQueryWithRules } = await import("./google.server");
     if (!hasGoogle("mail")) return { connected: false as const, mails: [] };
     try {
-      const mails = await gmailList(data.query ?? "is:unread in:inbox", data.max ?? 6);
+      const query = await mailQueryWithRules(data.query ?? "is:unread in:inbox");
+      const mails = await gmailList(query, data.max ?? 6);
       return { connected: true as const, mails };
     } catch (error) {
       return {
