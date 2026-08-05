@@ -104,15 +104,16 @@ export const Route = createFileRoute("/api/chat")({
             }),
             gmail_search: tool({
               description:
-                "Sök i Gmail. Använd Gmails sökspråk, t.ex. 'is:unread in:inbox' eller 'from:skolan'.",
+                "Sök i Gmail. Använd Gmails sökspråk, t.ex. 'is:unread in:inbox'. Patricks mejlregler (etiketter/avsändare/nyckelord) läggs på automatiskt.",
               inputSchema: z.object({
                 query: z.string(),
                 max: z.number().min(1).max(20).nullable(),
               }),
               execute: async ({ query, max }) => {
-                const { gmailList } = await import("@/lib/google.server");
+                const { gmailList, mailQueryWithRules } = await import("@/lib/google.server");
                 try {
-                  return { mails: await gmailList(query, max ?? 8) };
+                  const q = await mailQueryWithRules(query);
+                  return { mails: await gmailList(q, max ?? 8) };
                 } catch (error) {
                   return { error: error instanceof Error ? error.message : "Gmail-fel." };
                 }

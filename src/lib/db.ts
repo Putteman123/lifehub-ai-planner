@@ -12,6 +12,7 @@ import type {
 } from "./categories";
 import type { PlaceRow, VisitRow } from "./geo";
 import type { TodoRow } from "./todos";
+import type { MailRuleRow } from "./mail-rules";
 
 
 function unwrap<T>(res: { data: T | null; error: { message: string } | null }): T {
@@ -111,6 +112,16 @@ export function useTodos() {
   });
 }
 
+export function useMailRules() {
+  return useQuery({
+    queryKey: ["mail_rules"],
+    queryFn: async () =>
+      unwrap<MailRuleRow[]>(
+        await supabase.from("mail_rules").select("*").order("created_at", { ascending: true }),
+      ),
+  });
+}
+
 type TableName =
   | "events"
   | "calendars"
@@ -120,7 +131,8 @@ type TableName =
   | "reminders"
   | "places"
   | "visits"
-  | "todos";
+  | "todos"
+  | "mail_rules";
 
 const QUERY_KEY: Record<TableName, string> = {
   events: "events",
@@ -132,6 +144,7 @@ const QUERY_KEY: Record<TableName, string> = {
   places: "places",
   visits: "visits",
   todos: "todos",
+  mail_rules: "mail_rules",
 };
 
 

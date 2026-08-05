@@ -348,3 +348,19 @@ export async function mapsRoute(
     km: Math.round(((route.distanceMeters ?? 0) / 1000) * 10) / 10,
   };
 }
+
+/** Lägger på användarens sparade mejlregler på en Gmail-sökfråga. */
+export async function mailQueryWithRules(base: string): Promise<string> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { buildGmailQuery } = await import("./mail-rules");
+    const { data } = await supabaseAdmin
+      .from("mail_rules")
+      .select("*")
+      .eq("is_active", true);
+    if (!data || data.length === 0) return base;
+    return buildGmailQuery(base, data);
+  } catch {
+    return base;
+  }
+}
