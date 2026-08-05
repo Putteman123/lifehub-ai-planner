@@ -54,10 +54,15 @@ Svara alltid på svenska.`;
 
 
 function fmtDate(value: string, allDay: boolean) {
-  const d = new Date(value);
-  return allDay
-    ? d.toLocaleDateString("sv-SE")
-    : d.toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" });
+  return allDay ? dateLocal(value) : fmtLocal(value);
+}
+
+/** Idag / Imorgon / veckodag – alltid svensk tid. */
+function bucketLabel(iso: string, now: Date) {
+  const key = dayKey(iso);
+  if (key === dayKey(now)) return "IDAG";
+  if (key === dayKey(new Date(now.getTime() + 86400000))) return "IMORGON";
+  return weekdayLocal(iso).toUpperCase();
 }
 
 export async function buildAndreaContext() {
@@ -100,6 +105,25 @@ export async function buildAndreaContext() {
   const events = eventsRes.data ?? [];
   const todayOverlaps = overlapsOnDay(events, now);
   const freeSlot = findFreeSlot(events, 60, now, 7);
+
+  // Gruppera händelser per svensk kalenderdag och markera läge.
+  const eventLines: string[] = [];
+  let lastBucket = "";
+  for (const e of events) {
+    const bucket = bucketLabel(e.starts_at, now);
+    if (bucket !== lastBucket) {
+      eventLines.push(`  [${bucket}]`);
+      lastBucket = bucket;
+    }
+    const start = new Date(e.starts_at).getTime();
+    const end = new Date(e.ends_at).getTime();
+    const state =
+      end < now.getTime() ? " (avslutad)" : start <= now.getTime() ? " (PÅGÅR NU)" : "";
+    eventLines.push(
+      `  - ${fmtDate(e.starts_at, e.all_day)}–${fmtDate(e.ends_at, e.all_day)} | ${e.category} | ${e.title}${e.location ? ` (${e.location})` : ""}${state} [id=${e.id}]`,
+    );
+  }
+
 
   return [
     `Nu: ${now.toLocaleString("sv-SE")}`,
