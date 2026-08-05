@@ -447,3 +447,79 @@ export async function analyzeTravelTrend(userId: string, days = 180) {
     summary,
   };
 }
+
+/** Lägger till varor i den aktiva inköpslistan (skapar en om det behövs). */
+export async function addShoppingItems(userId: string, input: { items: string[] }) {
+  const names = input.items.map((n) => n.trim()).filter(Boolean);
+  if (!names.length) return ok("Inga varor att lägga till.");
+
+  const existingList = await supabaseAdmin
+    .from("shopping_lists")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("status", "aktiv")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  fail(existingList.error);
+
+  let listId = existingList.data?.id;
+  if (!listId) {
+    const created = await supabaseAdmin
+      .from("shopping_lists")
+      .insert({ user_id: userId, title: "Inköpslista" })
+      .select("id")
+      .single();
+    fail(created.error);
+    listId = created.data!.id;
+  }
+
+  const current = await supabaseAdmin
+    .from("shopping_items")
+    .select("name, sort_order")
+    .eq("list_id", listId);
+  fail(current.error);
+
+  const taken = new Set((current.data ?? []).map((row) => row.name.trim().toLowerCase()));
+  let order = Math.max(0, ...(current.data ?? []).map((row) => row.sort_order));
+  const fresh = names.filter((name) => {
+    const key = name.toLowerCase();
+    if (taken.has(key)) return false;
+    taken.add(key);
+    return true;
+  });
+  if (!fresh.length) return ok("Varorna fanns redan i listan.");
+
+  const inserted = await supabaseAdmin.from("shopping_items").insert(
+    fresh.map((name) => ({
+      user_id: userId,
+      list_id: listId!,
+      name,
+      source: "manuell" as const,
+      sort_order: ++order,
+    })),
+  );
+  fail(inserted.error);
+
+  for (const name of fresh) {
+    const key = name.toLowerCase();
+    const existing = await supabaseAdmin
+      .from("pantry_items")
+      .select("id, times_added")
+      .eq("user_id", userId)
+      .eq("name_key", key)
+      .maybeSingle();
+    if (existing.data) {
+      await supabaseAdmin
+        .from("pantry_items")
+        .update({ times_added: existing.data.times_added + 1, last_added_at: new Date().toISOString() })
+        .eq("id", existing.data.id);
+    } else {
+      await supabaseAdmin
+        .from("pantry_items")
+        .insert({ user_id: userId, name, name_key: key, source: "manuell" });
+    }
+  }
+
+  return ok(`La till ${fresh.length} varor i inköpslistan.`);
+}
