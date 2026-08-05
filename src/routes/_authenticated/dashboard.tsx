@@ -11,6 +11,7 @@ import { InboxCard } from "@/components/google/InboxCard";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSwipe } from "@/hooks/use-swipe";
+import { hapticTick } from "@/lib/haptics";
 
 import { categoryMeta, SHIFT_STYLES, type EventRow } from "@/lib/categories";
 import {
@@ -190,11 +191,17 @@ function Dashboard() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [tab, setTab] = useState("idag");
+  const swipeTo = (next: (t: string) => string) =>
+    setTab((t) => {
+      const n = next(t);
+      if (n !== t) hapticTick();
+      return n;
+    });
   const swipe = useSwipe({
     onSwipeLeft: () =>
-      setTab((t) => (t === "idag" ? "kalender" : t === "kalender" ? "statistik" : t)),
+      swipeTo((t) => (t === "idag" ? "kalender" : t === "kalender" ? "statistik" : t)),
     onSwipeRight: () =>
-      setTab((t) => (t === "statistik" ? "kalender" : t === "kalender" ? "idag" : t)),
+      swipeTo((t) => (t === "statistik" ? "kalender" : t === "kalender" ? "idag" : t)),
   });
 
   const [selected, setSelected] = useState<EventRow | null>(null);
