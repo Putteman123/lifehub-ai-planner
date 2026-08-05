@@ -121,17 +121,37 @@ export function GoogleMap({
           ? {
               icon: {
                 path: maps.SymbolPath.CIRCLE,
-                scale: 8,
-                fillColor: marker.role === "start" ? "#22c55e" : "#ef4444",
+                scale: marker.role === "self" ? 7 : 8,
+                fillColor:
+                  marker.role === "start"
+                    ? "#22c55e"
+                    : marker.role === "self"
+                      ? "#2563eb"
+                      : "#ef4444",
                 fillOpacity: 1,
                 strokeColor: "#ffffff",
-                strokeWeight: 2,
+                strokeWeight: 3,
               },
+              zIndex: 10,
             }
           : {}),
       });
       overlaysRef.current.push(created);
       bounds.extend(position);
+    }
+
+    if (accuracy && accuracy > 0 && markers[0]) {
+      const circle = new maps.Circle({
+        map,
+        center: { lat: markers[0].lat, lng: markers[0].lng },
+        radius: accuracy,
+        strokeColor: "#2563eb",
+        strokeOpacity: 0.4,
+        strokeWeight: 1,
+        fillColor: "#2563eb",
+        fillOpacity: 0.12,
+      });
+      overlaysRef.current.push(circle);
     }
 
     if (polyline && maps.geometry?.encoding) {
@@ -149,11 +169,20 @@ export function GoogleMap({
 
     if (markers.length > 1 || polyline) {
       map.fitBounds(bounds, 40);
-    } else {
+    } else if (follow || !fittedRef.current) {
       map.setCenter({ lat: markers[0]!.lat, lng: markers[0]!.lng });
-      map.setZoom(zoom);
+      if (!fittedRef.current) map.setZoom(zoom);
     }
-  }, [ready, markers, polyline, zoom]);
+    fittedRef.current = true;
+  }, [ready, markers, polyline, zoom, accuracy, follow]);
+
+  // Upptäcker att användaren själv panorerar kartan.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || !onUserPan) return;
+    const listener = map.addListener("dragstart", () => onUserPan());
+    return () => listener.remove();
+  }, [ready, onUserPan]);
 
   if (error) {
     return (
