@@ -18,6 +18,10 @@ import { AppShell } from "@/components/AppShell";
 import { DataGate } from "@/components/DataGate";
 import { OwnTracksGuide } from "@/components/platser/OwnTracksGuide";
 import { MapDialog, type MapTarget } from "@/components/platser/MapDialog";
+import {
+  NameVisitDialog,
+  type NameVisitTarget,
+} from "@/components/platser/NameVisitDialog";
 
 
 import { Button } from "@/components/ui/button";
@@ -56,6 +60,7 @@ import {
   clearLocationHistory,
   endMyVisit,
   getIngestInfo,
+  nameVisit,
   recordMyPosition,
 } from "@/lib/places.functions";
 
@@ -412,14 +417,25 @@ function PlacesPage() {
                       className="flex min-w-0 flex-1 items-center gap-3 text-left"
                       aria-label={`Visa ${visitLabel(visit, places)} på karta`}
                       onClick={() =>
-                        setMapTarget({
+                        place
+                          ? setMapTarget({
                           title: visitLabel(visit, places),
                           subtitle: `${timeLabel(visit.arrived_at)}${
                             visit.left_at ? `–${timeLabel(visit.left_at)}` : "–nu"
                           } · ${formatDuration(visitMinutes(visit, now))}`,
-                          lat: visit.lat ?? place?.lat ?? null,
-                          lng: visit.lng ?? place?.lng ?? null,
-                        })
+                          lat: visit.lat ?? place.lat,
+                          lng: visit.lng ?? place.lng,
+                            })
+                          : setNameTarget({
+                              visitId: visit.id,
+                              subtitle: `${timeLabel(visit.arrived_at)}${
+                                visit.left_at ? `–${timeLabel(visit.left_at)}` : "–nu"
+                              } · ${formatDuration(visitMinutes(visit, now))}`,
+                              lat: visit.lat,
+                              lng: visit.lng,
+                              label: visit.label,
+                              note: visit.note,
+                            })
                       }
                     >
                       <span className="w-24 shrink-0 text-xs tabular-nums text-muted-foreground">
@@ -428,6 +444,16 @@ function PlacesPage() {
                       </span>
                       <span className="min-w-0 flex-1 truncate text-sm font-medium">
                         {visitLabel(visit, places)}
+                        {visit.note ? (
+                          <span className="ml-2 text-xs font-normal text-muted-foreground">
+                            {visit.note}
+                          </span>
+                        ) : null}
+                        {!place && !visit.note ? (
+                          <span className="ml-2 text-xs font-normal text-primary">
+                            Namnge
+                          </span>
+                        ) : null}
                       </span>
                       <span className="shrink-0 text-xs text-muted-foreground">
                         {formatDuration(visitMinutes(visit, now))}
@@ -689,6 +715,14 @@ function PlacesPage() {
       </Dialog>
 
       <MapDialog target={mapTarget} onOpenChange={(open) => !open && setMapTarget(null)} />
+
+      <NameVisitDialog
+        target={nameTarget}
+        suggestions={noteSuggestions}
+        saving={namingBusy}
+        onOpenChange={(open) => !open && setNameTarget(null)}
+        onSave={handleNameVisit}
+      />
     </AppShell>
   );
 
