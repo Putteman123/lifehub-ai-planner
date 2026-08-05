@@ -159,6 +159,10 @@ function CalendarPage() {
         ))}
       </div>
 
+      <div className="mt-3">
+        <ShiftLegend showLoad={view === "ar"} />
+      </div>
+
       <div className="mt-5">
         {view === "dag" ? <DayView events={events} day={cursor} onSelect={open} /> : null}
         {view === "vecka" ? (
