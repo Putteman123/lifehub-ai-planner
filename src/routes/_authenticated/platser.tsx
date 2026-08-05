@@ -112,7 +112,42 @@ function PlacesPage() {
   const deleteVisit = useDeleteRow("visits", "Besök borttaget");
 
   const [mapTarget, setMapTarget] = useState<MapTarget | null>(null);
+  const [nameTarget, setNameTarget] = useState<NameVisitTarget | null>(null);
+  const [namingBusy, setNamingBusy] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+
+  const saveVisitName = useServerFn(nameVisit);
+  const noteSuggestions = Array.from(
+    new Set(
+      visits
+        .map((v) => v.note?.trim())
+        .filter((n): n is string => Boolean(n)),
+    ),
+  );
+
+  async function handleNameVisit(values: {
+    visitId: string;
+    label: string;
+    note: string;
+    kind: PlaceKind;
+    saveAsPlace: boolean;
+  }) {
+    setNamingBusy(true);
+    try {
+      const res = await saveVisitName({ data: values });
+      await qc.invalidateQueries({ queryKey: ["visits"] });
+      await qc.invalidateQueries({ queryKey: ["places"] });
+      toast.success(
+        res.linked > 1 ? `Sparat · ${res.linked} besök kopplade` : "Platsen är namngiven",
+      );
+      setNameTarget(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Kunde inte spara platsen.");
+    } finally {
+      setNamingBusy(false);
+    }
+  }
+
 
   const [live, setLive] = useState(false);
   const [ingestUrl, setIngestUrl] = useState<string | null>(null);
