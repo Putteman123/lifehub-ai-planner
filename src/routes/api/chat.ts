@@ -393,10 +393,24 @@ export const Route = createFileRoute("/api/chat")({
             }),
 
           },
+          providerOptions: {
+            openai: {
+              // Gateway-modell-id känns inte igen som resonemangsmodell utan detta.
+              forceReasoning: true,
+              reasoningEffort: "medium",
+              reasoningSummary: "auto",
+              // Gateway är tillståndslös: historiken skickas med varje gång.
+              store: false,
+              include: ["reasoning.encrypted_content"],
+              // Verktygsschemana använder valfria fält – kör inte strikt läge.
+              strictJsonSchema: false,
+            },
+          },
         });
 
         return result.toUIMessageStreamResponse({
           originalMessages: body.messages as UIMessage[],
+          sendReasoning: true,
         });
       },
     },
