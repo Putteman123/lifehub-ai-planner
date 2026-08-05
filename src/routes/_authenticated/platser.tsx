@@ -616,6 +616,12 @@ function PlacesPage() {
           </section>
         </div>
 
+        <div className="mt-4">
+          <TravelTimeline places={places} />
+        </div>
+
+
+
         <section className="mt-4 rounded-2xl border border-border bg-card p-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold">Mina platser</h2>
