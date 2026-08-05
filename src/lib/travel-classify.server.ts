@@ -237,7 +237,7 @@ export async function mergeTravelVisits(supabase: Client, userId: string, visitI
       left_at: last.left_at,
       lat: first.lat,
       lng: first.lng,
-      end_lat: last.end_lat ?? last.lng != null ? last.end_lat ?? last.lat : null,
+      end_lat: last.end_lat ?? last.lat,
       end_lng: last.end_lng ?? last.lng,
       distance_m: distance,
       travel_mode: mode,
