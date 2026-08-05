@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { APP_VERSION } from "@/lib/nav-theme";
 import { DataGate } from "@/components/DataGate";
+import { GooglePanel } from "@/components/google/GooglePanel";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -138,7 +140,11 @@ function CalendarsPage() {
       }
     >
       <DataGate queries={[calendarsQ]}>
+      <GooglePanel
+        connectedExternalIds={calendars.map((c) => c.external_id).filter((v): v is string => !!v)}
+      />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+
         {calendars.length === 0 ? (
           <div className="card-soft p-6 text-sm text-muted-foreground sm:col-span-2 lg:col-span-3">
             Inga kalendrar ännu. Lägg till en ICS-länk från skolan, träningen eller familjen.

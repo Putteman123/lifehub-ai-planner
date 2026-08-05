@@ -102,6 +102,91 @@ export const Route = createFileRoute("/api/chat")({
                 }
               },
             }),
+            gmail_search: tool({
+              description:
+                "Sök i Gmail. Använd Gmails sökspråk, t.ex. 'is:unread in:inbox' eller 'from:skolan'.",
+              inputSchema: z.object({
+                query: z.string(),
+                max: z.number().min(1).max(20).nullable(),
+              }),
+              execute: async ({ query, max }) => {
+                const { gmailList } = await import("@/lib/google.server");
+                try {
+                  return { mails: await gmailList(query, max ?? 8) };
+                } catch (error) {
+                  return { error: error instanceof Error ? error.message : "Gmail-fel." };
+                }
+              },
+            }),
+            drive_search: tool({
+              description: "Sök dokument i Google Drive på filnamn.",
+              inputSchema: z.object({ query: z.string() }),
+              execute: async ({ query }) => {
+                const { driveSearch } = await import("@/lib/google.server");
+                try {
+                  return { files: await driveSearch(query, 10) };
+                } catch (error) {
+                  return { error: error instanceof Error ? error.message : "Drive-fel." };
+                }
+              },
+            }),
+            google_route: tool({
+              description:
+                "Räkna ut restid och sträcka mellan två koordinater med Google Maps. Färdsätt: bil, kollektivt eller gang_cykel.",
+              inputSchema: z.object({
+                from_lat: z.number(),
+                from_lng: z.number(),
+                to_lat: z.number(),
+                to_lng: z.number(),
+                mode: z.enum(["bil", "kollektivt", "gang_cykel"]).nullable(),
+              }),
+              execute: async (input) => {
+                const { mapsRoute } = await import("@/lib/google.server");
+                try {
+                  return await mapsRoute(
+                    { lat: input.from_lat, lng: input.from_lng },
+                    { lat: input.to_lat, lng: input.to_lng },
+                    input.mode ?? "bil",
+                  );
+                } catch (error) {
+                  return { error: error instanceof Error ? error.message : "Maps-fel." };
+                }
+              },
+            }),
+            send_mail: tool({
+              description: "Skicka ett mejl från Gmail.",
+              inputSchema: z.object({ to: z.string(), subject: z.string(), body: z.string() }),
+              needsApproval: true,
+              execute: async ({ to, subject, body }) => {
+                const { gmailSend } = await import("@/lib/google.server");
+                await gmailSend(to, subject, body);
+                return { ok: true, message: `Mejlet till ${to} är skickat.` };
+              },
+            }),
+            create_google_doc: tool({
+              description: "Skapa ett nytt Google-dokument med given titel och text.",
+              inputSchema: z.object({ title: z.string(), text: z.string() }),
+              needsApproval: true,
+              execute: async ({ title, text }) => {
+                const { docsCreate } = await import("@/lib/google.server");
+                const doc = await docsCreate(title, text);
+                return { ok: true, message: `Dokumentet är skapat: ${doc.link}` };
+              },
+            }),
+            export_to_sheet: tool({
+              description:
+                "Exportera tabelldata till ett nytt Google Sheet. Första raden är rubrikrad.",
+              inputSchema: z.object({
+                title: z.string(),
+                rows: z.array(z.array(z.string())),
+              }),
+              needsApproval: true,
+              execute: async ({ title, rows }) => {
+                const { sheetsExport } = await import("@/lib/google.server");
+                const sheet = await sheetsExport(title, rows);
+                return { ok: true, message: `Kalkylarket är klart: ${sheet.link}` };
+              },
+            }),
 
 
             // --- Åtgärder som ändrar data. Kräver användarens godkännande. ---

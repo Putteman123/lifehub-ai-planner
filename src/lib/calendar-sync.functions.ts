@@ -20,35 +20,63 @@ export const syncCalendar = createServerFn({ method: "POST" })
 
     if (calErr) throw new Error(calErr.message);
     if (!calendar) throw new Error("Kalendern hittades inte.");
-    if (!calendar.ics_url) {
-      throw new Error("Den här kalendern saknar en ICS-länk. Lägg till länken och försök igen.");
-    }
 
-    const url = normalizeIcsUrl(calendar.ics_url);
-    let res: Response;
-    try {
-      res = await fetch(url, {
-        headers: { Accept: "text/calendar, text/plain;q=0.9, */*;q=0.8", "User-Agent": "LifeHubAI/1.0" },
-        redirect: "follow",
-      });
-    } catch {
-      throw new Error("Kunde inte nå kalenderlänken. Kontrollera adressen och att den är publik.");
-    }
+    const isGoogle = calendar.source === "google" && Boolean(calendar.external_id);
 
-    if (!res.ok) {
-      throw new Error(
-        res.status === 401 || res.status === 403
-          ? "Kalenderlänken kräver inloggning. Använd en publik/hemlig ICS-adress."
-          : `Kalendern svarade med fel (${res.status}).`,
+    let parsed: Array<{
+      uid: string;
+      title: string;
+      description: string | null;
+      location: string | null;
+      starts_at: string;
+      ends_at: string;
+      all_day: boolean;
+    }> = [];
+
+    if (isGoogle) {
+      const { fetchGoogleEvents } = await import("./google.server");
+      const now = Date.now();
+      parsed = await fetchGoogleEvents(
+        calendar.external_id as string,
+        new Date(now - 60 * 86400000).toISOString(),
+        new Date(now + 365 * 86400000).toISOString(),
       );
+    } else {
+      if (!calendar.ics_url) {
+        throw new Error("Den här kalendern saknar en ICS-länk. Lägg till länken och försök igen.");
+      }
+
+      const url = normalizeIcsUrl(calendar.ics_url);
+      let res: Response;
+      try {
+        res = await fetch(url, {
+          headers: {
+            Accept: "text/calendar, text/plain;q=0.9, */*;q=0.8",
+            "User-Agent": "LifeHubAI/1.0",
+          },
+          redirect: "follow",
+        });
+      } catch {
+        throw new Error("Kunde inte nå kalenderlänken. Kontrollera adressen och att den är publik.");
+      }
+
+      if (!res.ok) {
+        throw new Error(
+          res.status === 401 || res.status === 403
+            ? "Kalenderlänken kräver inloggning. Använd en publik/hemlig ICS-adress."
+            : `Kalendern svarade med fel (${res.status}).`,
+        );
+      }
+
+      const text = await res.text();
+      if (!text.includes("BEGIN:VCALENDAR")) {
+        throw new Error(
+          "Länken returnerade ingen ICS-kalender. Kontrollera att adressen slutar på .ics.",
+        );
+      }
+      parsed = parseIcs(text);
     }
 
-    const text = await res.text();
-    if (!text.includes("BEGIN:VCALENDAR")) {
-      throw new Error("Länken returnerade ingen ICS-kalender. Kontrollera att adressen slutar på .ics.");
-    }
-
-    const parsed = parseIcs(text);
     if (parsed.length === 0) {
       await supabase
         .from("calendars")
@@ -56,6 +84,7 @@ export const syncCalendar = createServerFn({ method: "POST" })
         .eq("id", calendar.id);
       return { imported: 0 };
     }
+
 
     const category = (
       ["jobb", "ledig", "jurist", "barn", "privat", "viktigt"] as const
