@@ -3,41 +3,6 @@ import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-/** Läser SSE-svaret från Responses-API:t och returnerar hela texten. */
-async function readStream(res: Response) {
-  if (!res.body) throw new Error("Tomt AI-svar.");
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  let text = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
-    for (const line of lines) {
-      if (!line.startsWith("data:")) continue;
-      const payload = line.slice(5).trim();
-      if (!payload || payload === "[DONE]") continue;
-      try {
-        const evt = JSON.parse(payload) as {
-          type?: string;
-          delta?: string;
-          response?: { output_text?: string };
-        };
-        if (evt.type === "response.output_text.delta" && evt.delta) text += evt.delta;
-        if (evt.type === "response.completed" && !text && evt.response?.output_text) {
-          text = evt.response.output_text;
-        }
-      } catch {
-        // ofullständigt event – ignorera
-      }
-    }
-  }
-  return text.trim();
-}
-
 /**
  * Andrea förgyller inköpslistan med dagligvaror utifrån vad användaren
  * brukar handla (varuregistret) plus vanliga basvaror.
