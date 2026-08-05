@@ -226,7 +226,7 @@ function DayView({ events, day, onSelect }: { events: EventRow[]; day: Date; onS
           <p className="text-sm text-muted-foreground">Inga aktiviteter denna dag.</p>
         ) : (
           items.map((e) => {
-            const meta = categoryMeta(e.category);
+            const meta = shiftMeta(e);
             return (
               <button
                 key={e.id}
@@ -237,7 +237,14 @@ function DayView({ events, day, onSelect }: { events: EventRow[]; day: Date; onS
                   {timeRange(e)}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">{e.title}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="min-w-0 truncate text-sm font-medium">{e.title}</span>
+                    {meta.shift ? (
+                      <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${meta.chip}`}>
+                        {meta.label}
+                      </span>
+                    ) : null}
+                  </span>
                   {e.location ? (
                     <span className="block truncate text-xs text-muted-foreground">
                       {e.location}
