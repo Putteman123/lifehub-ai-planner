@@ -1,4 +1,4 @@
-import { ANDREA_MODEL } from "@/lib/ai-models";
+import { ANDREA_FAST_MODEL } from "@/lib/ai-models";
 
 type JsonSchema = { name: string; schema: Record<string, unknown> };
 
