@@ -220,7 +220,11 @@ function CalendarsPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Källa</Label>
-              <Select value={provider} onValueChange={setProvider}>
+              <Select
+                value={provider}
+                onValueChange={setProvider}
+                disabled={!!editingId}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -241,8 +245,15 @@ function CalendarsPage() {
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="https://..."
+                  disabled={!!editingId}
                 />
+                {editingId ? (
+                  <p className="text-xs text-muted-foreground">
+                    Länken kan inte ändras – lägg till en ny kalender om källan byts.
+                  </p>
+                ) : null}
               </div>
+
             ) : null}
             <div className="space-y-1.5">
               <Label>Standardkategori</Label>
