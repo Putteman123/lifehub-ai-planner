@@ -183,12 +183,20 @@
     border-color: var(--color-border);
   }
 
+  html {
+    /* Tillåt nyp-zoom (pinch) i hela appen, även som hemskärmsapp. */
+    touch-action: pan-x pan-y pinch-zoom;
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    touch-action: pan-x pan-y pinch-zoom;
   }
+
 }
 
 @utility card-soft {
