@@ -652,6 +652,9 @@ function PlacesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <MapDialog target={mapTarget} onOpenChange={(open) => !open && setMapTarget(null)} />
     </AppShell>
   );
+
 }
