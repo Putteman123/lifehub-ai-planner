@@ -8,6 +8,7 @@ import { EventDialog } from "@/components/EventDialog";
 import { InboxCard } from "@/components/google/InboxCard";
 
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { categoryMeta, SHIFT_STYLES, type EventRow } from "@/lib/categories";
 import {
   addDays,
@@ -156,6 +157,7 @@ function Dashboard() {
   const reminders = remindersQ.data ?? [];
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [tab, setTab] = useState("idag");
   const [selected, setSelected] = useState<EventRow | null>(null);
 
   const events = useMemo(() => mergeDuplicates(rawEvents), [rawEvents]);
