@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { BadgeCheck, Car, ExternalLink, Loader2, Merge, Pencil, X } from "lucide-react";
+import { BadgeCheck, Car, ExternalLink, Loader2, Merge, Pencil, Sparkles, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -28,6 +28,7 @@ import {
   type PlaceRow,
   type VisitRow,
 } from "@/lib/geo";
+import { suggestTravelMerges } from "@/lib/merge-suggestions";
 import { mergeVisitTravels } from "@/lib/places.functions";
 
 
@@ -95,6 +96,7 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
   const [picked, setPicked] = useState<string[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [merging, setMerging] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const qc = useQueryClient();
   const mergeTravels = useServerFn(mergeVisitTravels);
 
@@ -206,6 +208,14 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
+                  onClick={() => setShowSuggestions((v) => !v)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
+                >
+                  <Sparkles className="size-3.5" />
+                  Föreslå{suggestions.length > 0 ? ` (${suggestions.length})` : ""}
+                </button>
+                <button
+                  type="button"
                   disabled={!pickedSummary}
                   onClick={() => setConfirmOpen(true)}
                   className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
@@ -235,6 +245,48 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
         </div>
       </div>
 
+
+      {mergeMode && showSuggestions ? (
+        <div className="mt-3 rounded-xl border border-border bg-surface/60 p-3">
+          <p className="text-xs font-medium text-muted-foreground">
+            Förslag: samma färdsätt, nära i tid och sammanhängande sträcka.
+          </p>
+          {suggestions.length === 0 ? (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Inga tydliga sammanslagningar hittades bland de senaste {DAYS} dagarna.
+            </p>
+          ) : (
+            <ul className="mt-2 space-y-1.5">
+              {suggestions.map((s) => {
+                const ModeIcon = MODE_ICONS[s.mode ?? "okant"];
+                const chosen =
+                  s.visitIds.length === picked.length &&
+                  s.visitIds.every((id) => picked.includes(id));
+                return (
+                  <li key={s.id}>
+                    <button
+                      type="button"
+                      onClick={() => setPicked(s.visitIds)}
+                      aria-pressed={chosen}
+                      className={`flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left transition-colors ${
+                        chosen ? "border-primary/40 bg-primary/5" : "border-border/60 hover:bg-muted/50"
+                      }`}
+                    >
+                      <ModeIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                      <span className="min-w-0 flex-1 truncate text-sm">
+                        {s.visitIds.length} poster · {s.from} → {s.to}
+                      </span>
+                      <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                        {formatDistance(s.meters)} · {formatDuration(s.minutes)}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      ) : null}
 
       {trips.length === 0 ? (
         <p className="mt-4 text-sm text-muted-foreground">
