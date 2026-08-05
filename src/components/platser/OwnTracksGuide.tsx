@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronDown, Copy, Eye, TriangleAlert } from "lucide-react";
+import { Check, ChevronDown, Copy, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,10 @@ import {
 
 type Props = {
   ingestUrl: string | null;
-  onShowIngest: () => void | Promise<void>;
+  error?: string | null;
   lastPingAt: Date | null;
 };
+
 
 function Step({
   n,
@@ -73,31 +74,32 @@ export function OwnTracksGuide({ ingestUrl, onShowIngest, lastPingAt }: Props) {
         </Step>
 
         <Step n={3} title="Klistra in din privata adress i fältet URL">
-          <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            {ingestUrl ? (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  void navigator.clipboard.writeText(ingestUrl);
-                  toast.success("Adressen kopierad");
-                }}
-              >
-                <Copy className="size-4" /> Kopiera adressen
-              </Button>
-            ) : (
-              <Button size="sm" variant="outline" onClick={() => void onShowIngest()}>
-                <Eye className="size-4" /> Visa min privata adress
-              </Button>
-            )}
-            <span className="text-xs">Adressen är hemlig – dela den inte.</span>
-          </div>
           {ingestUrl ? (
-            <code className="mt-2 block break-all rounded-lg bg-muted px-3 py-2 text-xs">
-              {ingestUrl}
-            </code>
-          ) : null}
+            <>
+              <code className="mt-1.5 block break-all rounded-lg bg-muted px-3 py-2 text-xs">
+                {ingestUrl}
+              </code>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    void navigator.clipboard.writeText(ingestUrl);
+                    toast.success("Adressen kopierad");
+                  }}
+                >
+                  <Copy className="size-4" /> Kopiera adressen
+                </Button>
+                <span className="text-xs">Adressen är privat – dela den inte.</span>
+              </div>
+            </>
+          ) : (
+            <p className="mt-1.5 text-sm text-destructive">
+              {error ?? "Hämtar din privata adress…"}
+            </p>
+          )}
         </Step>
+
 
         <Step n={4} title="Stäng av Autentisering och Lösenord">
           Din token ligger redan i adressen, så inga inloggningsuppgifter behövs.
