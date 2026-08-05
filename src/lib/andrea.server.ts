@@ -56,6 +56,8 @@ export async function buildAndreaContext() {
     supabaseAdmin.from("reminders").select("title, remind_at, is_done"),
   ]);
 
+  const todosRes = await supabaseAdmin.from("todos").select("title, due_date, is_done");
+
   const weekStart = startOfWeek(now);
   const [placesRes, visitsRes] = await Promise.all([
     supabaseAdmin.from("places").select("*"),
@@ -93,10 +95,17 @@ export async function buildAndreaContext() {
     "Juristärenden:",
     ...(casesRes.data ?? []).map((c) => `- ${c.title} (${c.client_name ?? "–"}, ${c.status})`),
     "",
-    "Att göra:",
+    "Att göra (juristuppgifter):",
     ...(tasksRes.data ?? [])
       .filter((t) => !t.is_done)
       .map((t) => `- ${t.title}${t.due_date ? ` (senast ${fmtDate(t.due_date, false)})` : ""}`),
+    "",
+    "Att göra-listan:",
+    ...((todosRes.data ?? []).filter((t) => !t.is_done).length
+      ? (todosRes.data ?? [])
+          .filter((t) => !t.is_done)
+          .map((t) => `- ${t.title}${t.due_date ? ` (senast ${fmtDate(t.due_date, false)})` : ""}`)
+      : ["- inga uppgifter"]),
     "",
     "Påminnelser:",
     ...(remindersRes.data ?? [])
