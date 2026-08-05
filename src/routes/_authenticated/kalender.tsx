@@ -19,6 +19,7 @@ import {
   monthGrid,
   overlapsOnDay,
   shiftMeta,
+  shiftType,
   timeRange,
   weekDays,
 } from "@/lib/calendar";
