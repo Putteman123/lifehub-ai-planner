@@ -629,6 +629,11 @@ function PlacesPage() {
         </div>
 
         <div className="mt-4">
+          <TravelTrendChart />
+        </div>
+
+
+        <div className="mt-4">
           <FrequentRoutes places={places} />
         </div>
 
