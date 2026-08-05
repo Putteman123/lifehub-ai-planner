@@ -73,6 +73,7 @@ import {
   endMyVisit,
   getIngestInfo,
   markVisitTravel,
+  mergeVisitTravels,
   nameVisit,
   recordMyPosition,
   undoVisitTravel,
@@ -169,6 +170,7 @@ function PlacesPage() {
 
   const markTravel = useServerFn(markVisitTravel);
   const undoTravelFn = useServerFn(undoVisitTravel);
+  const mergeTravels = useServerFn(mergeVisitTravels);
   const [travelBusy, setTravelBusy] = useState<string | null>(null);
 
   async function handleMarkTravel(visitId: string) {
