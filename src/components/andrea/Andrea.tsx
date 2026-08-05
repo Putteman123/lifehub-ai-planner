@@ -96,11 +96,25 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
   ).current;
 
   const initial = useRef(loadHistory()).current;
-  const { messages, sendMessage, status, error, setMessages, stop } = useChat({
+  const queryClient = useQueryClient();
+  const {
+    messages,
+    sendMessage,
+    status,
+    error,
+    setMessages,
+    stop,
+    addToolApprovalResponse,
+  } = useChat({
     id: "andrea-lifehub",
     messages: initial,
     transport,
+    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
+    onFinish: () => {
+      void queryClient.invalidateQueries();
+    },
   });
+
 
   const [input, setInput] = useState("");
   const taRef = useRef<HTMLTextAreaElement>(null);
