@@ -489,32 +489,76 @@ function Dashboard() {
       <DataGate queries={[eventsQ, tasksQ, remindersQ, todosQ]}>
         {/* Mobil: flikar så varje vy får full bredd och läsbar text. */}
         <Tabs value={tab} onValueChange={setTab} className="min-w-0 lg:hidden">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="idag" className="min-h-11 text-[13px]">
+          <TabsList className="grid w-full grid-cols-3" aria-label="Vy för översikten">
+            <TabsTrigger
+              value="idag"
+              aria-label="Idag – dagens agenda, lägesbild och påminnelser"
+              className="min-h-11 text-[13px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
               Idag
             </TabsTrigger>
-            <TabsTrigger value="kalender" className="min-h-11 text-[13px]">
+            <TabsTrigger
+              value="kalender"
+              aria-label="Kalender – vecka och månad"
+              className="min-h-11 text-[13px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
               Kalender
             </TabsTrigger>
-            <TabsTrigger value="statistik" className="min-h-11 text-[13px]">
+            <TabsTrigger
+              value="statistik"
+              aria-label="Statistik – timmar, skift och platser"
+              className="min-h-11 text-[13px] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
               Statistik
             </TabsTrigger>
           </TabsList>
+          {/* Meddelar skärmläsare vilken flik som är aktiv, även vid svep. */}
+          <p aria-live="polite" className="sr-only">
+            {tab === "idag"
+              ? "Visar Idag"
+              : tab === "kalender"
+                ? "Visar Kalender"
+                : "Visar Statistik"}
+          </p>
           <div className="mt-2 flex items-center justify-between rounded-xl border bg-card/60 px-3 py-2">
             <Label htmlFor="swipe-tabs" className="text-[13px] text-muted-foreground">
               Svep mellan flikar
             </Label>
-            <Switch id="swipe-tabs" checked={swipeEnabled} onCheckedChange={setSwipeEnabled} />
+            <Switch
+              id="swipe-tabs"
+              checked={swipeEnabled}
+              onCheckedChange={setSwipeEnabled}
+              aria-describedby="swipe-tabs-hjalp"
+            />
+            <span id="swipe-tabs-hjalp" className="sr-only">
+              När detta är på byter du flik genom att svepa i sidled. Flikarna kan alltid väljas med
+              piltangenter eller genom att trycka på dem.
+            </span>
           </div>
           {/* Svep i sidled för att byta flik på mobil. */}
           <div className="min-w-0 touch-pan-y" {...(swipeEnabled ? swipe : {})}>
-            <TabsContent key={tab} value="idag" className="view-enter mt-4 space-y-4">
+            <TabsContent
+              key={tab}
+              value="idag"
+              aria-label="Idag"
+              className="view-enter mt-4 space-y-4"
+            >
               {idagGroup}
             </TabsContent>
-            <TabsContent key={`${tab}-k`} value="kalender" className="view-enter mt-4 space-y-4">
+            <TabsContent
+              key={`${tab}-k`}
+              value="kalender"
+              aria-label="Kalender"
+              className="view-enter mt-4 space-y-4"
+            >
               {kalenderGroup}
             </TabsContent>
-            <TabsContent key={`${tab}-s`} value="statistik" className="view-enter mt-4 space-y-4">
+            <TabsContent
+              key={`${tab}-s`}
+              value="statistik"
+              aria-label="Statistik"
+              className="view-enter mt-4 space-y-4"
+            >
               {statistikGroup}
             </TabsContent>
           </div>
