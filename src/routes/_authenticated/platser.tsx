@@ -18,6 +18,7 @@ import { AppShell } from "@/components/AppShell";
 import { DataGate } from "@/components/DataGate";
 import { OwnTracksGuide } from "@/components/platser/OwnTracksGuide";
 import { MapDialog, type MapTarget } from "@/components/platser/MapDialog";
+import { FrequentRoutes } from "@/components/platser/FrequentRoutes";
 import { TravelTimeline } from "@/components/platser/TravelTimeline";
 import {
   NameVisitDialog,
@@ -620,6 +621,11 @@ function PlacesPage() {
         <div className="mt-4">
           <TravelTimeline places={places} />
         </div>
+
+        <div className="mt-4">
+          <FrequentRoutes places={places} />
+        </div>
+
 
 
 
