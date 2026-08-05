@@ -7,6 +7,7 @@ import {
   Loader2,
   LogOut,
   MapPin,
+  Pencil,
   Plus,
   Radio,
   Trash2,
@@ -16,6 +17,8 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { DataGate } from "@/components/DataGate";
 import { OwnTracksGuide } from "@/components/platser/OwnTracksGuide";
+import { MapDialog, type MapTarget } from "@/components/platser/MapDialog";
+
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -108,7 +111,9 @@ function PlacesPage() {
   const deletePlace = useDeleteRow("places", "Plats borttagen");
   const deleteVisit = useDeleteRow("visits", "Besök borttaget");
 
+  const [mapTarget, setMapTarget] = useState<MapTarget | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+
   const [live, setLive] = useState(false);
   const [ingestUrl, setIngestUrl] = useState<string | null>(null);
   const [ingestError, setIngestError] = useState<string | null>(null);
@@ -358,21 +363,41 @@ function PlacesPage() {
               </p>
             ) : (
               <ol className="mt-4 space-y-2">
-                {todayVisits.map((visit) => (
+                {todayVisits.map((visit) => {
+                  const place = visit.place_id
+                    ? places.find((p) => p.id === visit.place_id)
+                    : undefined;
+                  return (
                   <li
                     key={visit.id}
                     className="group flex items-center gap-3 rounded-xl border border-border/70 px-3 py-2"
                   >
-                    <span className="w-24 shrink-0 text-xs tabular-nums text-muted-foreground">
-                      {timeLabel(visit.arrived_at)}
-                      {visit.left_at ? `–${timeLabel(visit.left_at)}` : "–nu"}
-                    </span>
-                    <span className="flex-1 truncate text-sm font-medium">
-                      {visitLabel(visit, places)}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatDuration(visitMinutes(visit, now))}
-                    </span>
+                    <button
+                      type="button"
+                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                      aria-label={`Visa ${visitLabel(visit, places)} på karta`}
+                      onClick={() =>
+                        setMapTarget({
+                          title: visitLabel(visit, places),
+                          subtitle: `${timeLabel(visit.arrived_at)}${
+                            visit.left_at ? `–${timeLabel(visit.left_at)}` : "–nu"
+                          } · ${formatDuration(visitMinutes(visit, now))}`,
+                          lat: visit.lat ?? place?.lat ?? null,
+                          lng: visit.lng ?? place?.lng ?? null,
+                        })
+                      }
+                    >
+                      <span className="w-24 shrink-0 text-xs tabular-nums text-muted-foreground">
+                        {timeLabel(visit.arrived_at)}
+                        {visit.left_at ? `–${timeLabel(visit.left_at)}` : "–nu"}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                        {visitLabel(visit, places)}
+                      </span>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {formatDuration(visitMinutes(visit, now))}
+                      </span>
+                    </button>
                     <button
                       type="button"
                       aria-label="Ta bort besök"
@@ -382,7 +407,9 @@ function PlacesPage() {
                       <Trash2 className="size-3.5" />
                     </button>
                   </li>
-                ))}
+                  );
+                })}
+
               </ol>
             )}
 
@@ -491,13 +518,30 @@ function PlacesPage() {
                   <button
                     type="button"
                     className="flex-1 truncate text-left text-sm font-medium"
-                    onClick={() => openEdit(place)}
+                    aria-label={`Visa ${place.name} på karta`}
+                    onClick={() =>
+                      setMapTarget({
+                        title: place.name,
+                        subtitle: `${kindLabel(place.kind)} · radie ${place.radius_m} m`,
+                        lat: place.lat,
+                        lng: place.lng,
+                      })
+                    }
                   >
                     {place.name}
                     <span className="ml-2 text-xs font-normal text-muted-foreground">
                       {kindLabel(place.kind)} · {place.radius_m} m
                     </span>
                   </button>
+                  <button
+                    type="button"
+                    aria-label="Redigera plats"
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={() => openEdit(place)}
+                  >
+                    <Pencil className="size-3.5" />
+                  </button>
+
                   <button
                     type="button"
                     aria-label="Ta bort plats"
@@ -608,6 +652,9 @@ function PlacesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <MapDialog target={mapTarget} onOpenChange={(open) => !open && setMapTarget(null)} />
     </AppShell>
   );
+
 }

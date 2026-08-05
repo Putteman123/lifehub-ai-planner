@@ -23,7 +23,7 @@ import {
   totalHours,
   weekDays,
 } from "@/lib/calendar";
-import { useCaseTasks, useEvents, usePlaces, useReminders, useVisits } from "@/lib/db";
+import { useCaseTasks, useEvents, usePlaces, useReminders, useTodos, useVisits } from "@/lib/db";
 import {
   PLACE_KINDS,
   formatDuration,
@@ -101,8 +101,11 @@ function Dashboard() {
   const rawEvents = eventsQ.data ?? [];
   const tasksQ = useCaseTasks();
   const tasks = tasksQ.data ?? [];
+  const todosQ = useTodos();
+  const todos = todosQ.data ?? [];
   const remindersQ = useReminders();
   const reminders = remindersQ.data ?? [];
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selected, setSelected] = useState<EventRow | null>(null);
 
@@ -123,7 +126,18 @@ function Dashboard() {
   const upcoming = events
     .filter((e) => new Date(e.starts_at) > today)
     .slice(0, 5);
-  const deadlines = tasks.filter((t) => !t.is_done && t.due_date).slice(0, 4);
+  const todoDeadlines = todos
+    .filter((t) => !t.is_done && t.due_date)
+    .map((t) => ({ id: t.id, title: t.title, due_date: t.due_date }));
+  const deadlines = [
+    ...tasks
+      .filter((t) => !t.is_done && t.due_date)
+      .map((t) => ({ id: t.id, title: t.title, due_date: t.due_date })),
+    ...todoDeadlines,
+  ]
+    .sort((a, b) => (a.due_date ?? "").localeCompare(b.due_date ?? ""))
+    .slice(0, 5);
+
   const openReminders = reminders.filter((r) => !r.is_done).slice(0, 4);
 
   function open(event: EventRow | null) {
@@ -141,7 +155,7 @@ function Dashboard() {
         </Button>
       }
     >
-      <DataGate queries={[eventsQ, tasksQ, remindersQ]}>
+      <DataGate queries={[eventsQ, tasksQ, remindersQ, todosQ]}>
         <div className="grid min-w-0 gap-5 lg:grid-cols-12">
           <div className="min-w-0 space-y-5 lg:col-span-8">
 

@@ -11,6 +11,8 @@ import type {
   ReminderRow,
 } from "./categories";
 import type { PlaceRow, VisitRow } from "./geo";
+import type { TodoRow } from "./todos";
+
 
 function unwrap<T>(res: { data: T | null; error: { message: string } | null }): T {
   if (res.error) throw new Error(res.error.message);
@@ -99,6 +101,16 @@ export function useVisits(sinceIso?: string) {
   });
 }
 
+export function useTodos() {
+  return useQuery({
+    queryKey: ["todos"],
+    queryFn: async () =>
+      unwrap<TodoRow[]>(
+        await supabase.from("todos").select("*").order("created_at", { ascending: false }),
+      ),
+  });
+}
+
 type TableName =
   | "events"
   | "calendars"
@@ -107,7 +119,8 @@ type TableName =
   | "case_tasks"
   | "reminders"
   | "places"
-  | "visits";
+  | "visits"
+  | "todos";
 
 const QUERY_KEY: Record<TableName, string> = {
   events: "events",
@@ -118,7 +131,9 @@ const QUERY_KEY: Record<TableName, string> = {
   reminders: "reminders",
   places: "places",
   visits: "visits",
+  todos: "todos",
 };
+
 
 async function currentUserId() {
   const { data, error } = await supabase.auth.getUser();
