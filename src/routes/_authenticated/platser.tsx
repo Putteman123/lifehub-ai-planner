@@ -18,6 +18,7 @@ import { AppShell } from "@/components/AppShell";
 import { DataGate } from "@/components/DataGate";
 import { OwnTracksGuide } from "@/components/platser/OwnTracksGuide";
 import { MapDialog, type MapTarget } from "@/components/platser/MapDialog";
+import { TravelTimeline } from "@/components/platser/TravelTimeline";
 import {
   NameVisitDialog,
   type NameVisitTarget,
