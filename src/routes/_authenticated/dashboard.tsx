@@ -422,7 +422,10 @@ function Dashboard() {
                 )}
               </ul>
             </section>
+
+            <ShiftSummaryCard events={events} />
           </div>
+
         </div>
 
         <EventDialog
