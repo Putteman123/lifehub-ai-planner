@@ -1,8 +1,22 @@
-import { BadgeCheck, Car, ExternalLink, Pencil } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { BadgeCheck, Car, ExternalLink, Loader2, Merge, Pencil, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { EditTripDialog } from "@/components/platser/EditTripDialog";
 import { MODE_ICONS } from "@/components/platser/TravelModeStats";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useVisits } from "@/lib/db";
 import {
   formatDistance,
@@ -14,6 +28,7 @@ import {
   type PlaceRow,
   type VisitRow,
 } from "@/lib/geo";
+import { mergeVisitTravels } from "@/lib/places.functions";
 
 
 
@@ -76,6 +91,13 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
   const visitsQ = useVisits(sinceIso);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editing, setEditing] = useState<VisitRow | null>(null);
+  const [mergeMode, setMergeMode] = useState(false);
+  const [picked, setPicked] = useState<string[]>([]);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [merging, setMerging] = useState(false);
+  const qc = useQueryClient();
+  const mergeTravels = useServerFn(mergeVisitTravels);
+
 
 
   const trips = useMemo<Trip[]>(() => {
@@ -108,16 +130,100 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
   const points = selected ? [selected.start, selected.end].filter(Boolean) : [];
   const hasMap = points.length > 0;
 
+  // Sammanfattning av de markerade resorna, sorterade i tidsordning.
+  const pickedTrips = useMemo(() => {
+    return trips
+      .filter((t) => picked.includes(t.visit.id))
+      .sort((a, b) => a.visit.arrived_at.localeCompare(b.visit.arrived_at));
+  }, [trips, picked]);
+
+  const pickedSummary = useMemo(() => {
+    if (pickedTrips.length < 2) return null;
+    const first = pickedTrips[0]!.visit;
+    const last = pickedTrips[pickedTrips.length - 1]!.visit;
+    const meters = pickedTrips.reduce((sum, t) => sum + (t.visit.distance_m ?? 0), 0);
+    const minutes = Math.max(
+      0,
+      Math.round(
+        (new Date(last.left_at ?? last.arrived_at).getTime() -
+          new Date(first.arrived_at).getTime()) /
+          60000,
+      ),
+    );
+    return { first, last, meters, minutes, count: pickedTrips.length };
+  }, [pickedTrips]);
+
+  function togglePick(id: string) {
+    setPicked((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  function exitMergeMode() {
+    setMergeMode(false);
+    setPicked([]);
+  }
+
+  async function runMerge() {
+    if (!pickedSummary) return;
+    setMerging(true);
+    try {
+      const res = await mergeTravels({ data: { visitIds: pickedTrips.map((t) => t.visit.id) } });
+      await qc.invalidateQueries({ queryKey: ["visits"] });
+      toast.success(
+        `Sammanslagen resa: ${formatDistance(res.distance_m)} · ${formatDuration(res.minutes)}`,
+      );
+      setConfirmOpen(false);
+      exitMergeMode();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Kunde inte slå ihop resorna.");
+    } finally {
+      setMerging(false);
+    }
+  }
+
   return (
     <section className="rounded-2xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <Car className="size-4" /> Reskarta &amp; tidslinje
         </h2>
-        <span className="text-xs text-muted-foreground">
-          {trips.length} resor · {formatDistance(totalMeters)} senaste {DAYS} dagarna
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">
+            {trips.length} resor · {formatDistance(totalMeters)} senaste {DAYS} dagarna
+          </span>
+          {trips.length >= 2 ? (
+            mergeMode ? (
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={!pickedSummary}
+                  onClick={() => setConfirmOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
+                >
+                  <Merge className="size-3.5" />
+                  Slå ihop {picked.length > 0 ? `${picked.length} ` : ""}resor
+                </button>
+                <button
+                  type="button"
+                  onClick={exitMergeMode}
+                  aria-label="Avbryt sammanslagning"
+                  className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setMergeMode(true)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
+              >
+                <Merge className="size-3.5" /> Slå ihop
+              </button>
+            )
+          ) : null}
+        </div>
       </div>
+
 
       {trips.length === 0 ? (
         <p className="mt-4 text-sm text-muted-foreground">
@@ -174,6 +280,7 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
                 <ul className="mt-2 space-y-1.5 border-l border-border/70 pl-3">
                   {dayTrips.map((trip) => {
                     const active = selected?.visit.id === trip.visit.id;
+                    const isPicked = picked.includes(trip.visit.id);
                     return (
                       <li key={trip.visit.id} className="relative flex items-center gap-1">
                         <span
@@ -181,16 +288,27 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
                             active ? "bg-primary" : "bg-muted-foreground/40"
                           }`}
                         />
+                        {mergeMode ? (
+                          <Checkbox
+                            checked={isPicked}
+                            onCheckedChange={() => togglePick(trip.visit.id)}
+                            aria-label="Markera resa för sammanslagning"
+                            className="shrink-0"
+                          />
+                        ) : null}
                         <button
                           type="button"
-                          onClick={() => setSelectedId(trip.visit.id)}
-                          aria-pressed={active}
+                          onClick={() =>
+                            mergeMode ? togglePick(trip.visit.id) : setSelectedId(trip.visit.id)
+                          }
+                          aria-pressed={mergeMode ? isPicked : active}
                           className={`flex min-w-0 flex-1 items-center gap-2 rounded-xl border px-3 py-2 text-left transition-colors ${
-                            active
+                            (mergeMode ? isPicked : active)
                               ? "border-primary/40 bg-primary/5"
                               : "border-border/60 hover:bg-muted/50"
                           }`}
                         >
+
                           <span className="w-24 shrink-0 text-xs tabular-nums text-muted-foreground">
                             {timeLabel(trip.visit.arrived_at)}
                             {trip.visit.left_at ? `–${timeLabel(trip.visit.left_at)}` : "–nu"}
@@ -232,14 +350,16 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
                             </span>
                           </span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditing(trip.visit)}
-                          aria-label="Redigera resa"
-                          className="shrink-0 rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                        >
-                          <Pencil className="size-3.5" />
-                        </button>
+                        {mergeMode ? null : (
+                          <button
+                            type="button"
+                            onClick={() => setEditing(trip.visit)}
+                            aria-label="Redigera resa"
+                            className="shrink-0 rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                          >
+                            <Pencil className="size-3.5" />
+                          </button>
+                        )}
                       </li>
                     );
                   })}
@@ -251,7 +371,55 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
       )}
 
       <EditTripDialog trip={editing} places={places} onClose={() => setEditing(null)} />
+
+      <AlertDialog open={confirmOpen} onOpenChange={(open) => !merging && setConfirmOpen(open)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Slå ihop {pickedSummary?.count ?? 0} resor till en?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-1 text-sm">
+                {pickedSummary ? (
+                  <>
+                    <p>
+                      Start {timeLabel(pickedSummary.first.arrived_at)} ·{" "}
+                      {new Date(pickedSummary.first.arrived_at).toLocaleDateString("sv-SE")}
+                    </p>
+                    <p>
+                      Slut{" "}
+                      {timeLabel(pickedSummary.last.left_at ?? pickedSummary.last.arrived_at)} ·{" "}
+                      {new Date(
+                        pickedSummary.last.left_at ?? pickedSummary.last.arrived_at,
+                      ).toLocaleDateString("sv-SE")}
+                    </p>
+                    <p>
+                      Total sträcka {formatDistance(pickedSummary.meters)} · total tid{" "}
+                      {formatDuration(pickedSummary.minutes)}
+                    </p>
+                    <p className="text-muted-foreground">
+                      Övriga poster tas bort och ersätts av en enda resa.
+                    </p>
+                  </>
+                ) : null}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={merging}>Avbryt</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={merging}
+              onClick={(e) => {
+                e.preventDefault();
+                void runMerge();
+              }}
+            >
+              {merging ? <Loader2 className="size-4 animate-spin" /> : <Merge className="size-4" />}
+              Slå ihop
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
+
 
   );
 }
