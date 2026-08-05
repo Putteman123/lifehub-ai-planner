@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
@@ -16,6 +16,7 @@ import {
   LOAD_STYLES,
   mergeDuplicates,
   monthGrid,
+  overlapsOnDay,
   timeRange,
   weekDays,
 } from "@/lib/calendar";
@@ -43,6 +44,7 @@ export const Route = createFileRoute("/_authenticated/kalender")({
 
 function CalendarPage() {
   const search = Route.useSearch();
+  const navigate = useNavigate({ from: "/kalender" });
   const eventsQ = useEvents();
   const rawEvents = eventsQ.data ?? [];
   const [view, setView] = useState<View>(search.vy ?? "vecka");
@@ -58,11 +60,18 @@ function CalendarPage() {
     [rawEvents, active],
   );
 
+  useEffect(() => {
+    const params: Record<string, string> = {};
+    if (view !== "vecka") params['vy'] = view;
+    const dateStr = fmt(cursor, "yyyy-MM-dd");
+    if (dateStr !== fmt(new Date(), "yyyy-MM-dd")) params['datum'] = dateStr;
+    void navigate({ search: params, replace: true });
+  }, [view, cursor, navigate]);
+
   function openDay(date: Date) {
     setCursor(date);
     setView("dag");
   }
-
 
   function shift(direction: number) {
     const next = new Date(cursor);
@@ -171,6 +180,17 @@ function CalendarPage() {
 
 type SelectFn = (event: EventRow | null, date?: Date) => void;
 
+function OverlapWarning({ events, day }: { events: EventRow[]; day: Date }) {
+  const pairs = overlapsOnDay(events, day);
+  if (pairs.length === 0) return null;
+  return (
+    <div className="mt-2 flex items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1 text-[10px] font-medium text-destructive">
+      <span className="size-1.5 rounded-full bg-destructive" />
+      {pairs.length === 1 ? "Krock i schemat" : `${pairs.length} krockar`}
+    </div>
+  );
+}
+
 function EventChip({ event, onSelect }: { event: EventRow; onSelect: SelectFn }) {
   const meta = categoryMeta(event.category);
   return (
@@ -223,6 +243,7 @@ function DayView({ events, day, onSelect }: { events: EventRow[]; day: Date; onS
             );
           })
         )}
+        <OverlapWarning events={events} day={day} />
       </div>
     </div>
   );
@@ -276,6 +297,7 @@ function WeekView({
               {items.map((e) => (
                 <EventChip key={e.id} event={e} onSelect={onSelect} />
               ))}
+              <OverlapWarning events={events} day={d} />
             </div>
           </div>
         );
@@ -330,6 +352,7 @@ function MonthView({
                     +{items.length - 3} till
                   </span>
                 ) : null}
+                <OverlapWarning events={events} day={d} />
               </div>
             </div>
           );
@@ -438,6 +461,7 @@ function AgendaView({
                 </button>
               );
             })}
+            <OverlapWarning events={events} day={d} />
           </div>
         </section>
       ))}

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Plus, Check } from "lucide-react";
+import { Plus, Check, Briefcase, CalendarDays, ListTodo } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
 import { DataGate } from "@/components/DataGate";
@@ -107,7 +107,31 @@ function LegalPage() {
       }
     >
       <DataGate queries={[casesQ, tasksQ, eventsQ]}>
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="card-soft flex items-center gap-3 p-4">
+          <Briefcase className="size-5 text-primary" />
+          <div>
+            <p className="text-xs text-muted-foreground">Ärenden</p>
+            <p className="text-xl font-semibold">{cases.length}</p>
+          </div>
+        </div>
+        <div className="card-soft flex items-center gap-3 p-4">
+          <ListTodo className="size-5 text-primary" />
+          <div>
+            <p className="text-xs text-muted-foreground">Öppna uppgifter</p>
+            <p className="text-xl font-semibold">{tasks.filter((t) => !t.is_done).length}</p>
+          </div>
+        </div>
+        <div className="card-soft flex items-center gap-3 p-4">
+          <CalendarDays className="size-5 text-primary" />
+          <div>
+            <p className="text-xs text-muted-foreground">Kommande möten</p>
+            <p className="text-xl font-semibold">{events.length}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-3">
         <section className="card-soft p-5">
           <h2 className="text-sm font-semibold">Ärenden</h2>
           <div className="mt-3 space-y-2">

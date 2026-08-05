@@ -1,3 +1,4 @@
+import { findFreeSlot, fmt, overlapsOnDay } from "@/lib/calendar";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export const ANDREA_SYSTEM = `Du är **Andrea**, Patricks personliga AI-guide i LifeHub AI – en app för kalender, familj och juristuppdrag.
@@ -10,7 +11,8 @@ Ditt jobb:
 2. Var proaktiv: peka ut krockar, tidsbrist, tomma luckor och deadlines innan de blir problem.
 3. Föreslå alltid ett konkret nästa steg.
 4. När användaren vill öppna en vy – använd verktyget 'goto' med rätt route.
-5. Vid osäkerhet – säg det hellre än att gissa. Hitta aldrig på händelser som inte finns i underlaget.
+5. När användaren vill hitta ledig tid – använd verktyget 'find_free_time'.
+6. Vid osäkerhet – säg det hellre än att gissa. Hitta aldrig på händelser som inte finns i underlaget.
 
 TILLGÄNGLIGA ROUTES:
 - /dashboard   — Översikt med dagens agenda, statistik och ledig tid
@@ -35,7 +37,7 @@ export async function buildAndreaContext() {
   const [eventsRes, childrenRes, casesRes, tasksRes, remindersRes] = await Promise.all([
     supabaseAdmin
       .from("events")
-      .select("title, starts_at, ends_at, all_day, category, location")
+      .select("*")
       .gte("ends_at", new Date(now.getTime() - 86400000).toISOString())
       .lte("starts_at", until.toISOString())
       .order("starts_at"),
@@ -46,6 +48,8 @@ export async function buildAndreaContext() {
   ]);
 
   const events = eventsRes.data ?? [];
+  const todayOverlaps = overlapsOnDay(events, now);
+  const freeSlot = findFreeSlot(events, 60, now, 7);
 
   return [
     `Nu: ${now.toLocaleString("sv-SE")}`,
@@ -71,5 +75,13 @@ export async function buildAndreaContext() {
     ...(remindersRes.data ?? [])
       .filter((r) => !r.is_done)
       .map((r) => `- ${r.title} ${fmtDate(r.remind_at, false)}`),
+    "",
+    "Analys:",
+    todayOverlaps.length
+      ? `- Krockar idag: ${todayOverlaps.map(([a, b]) => `${a.title} / ${b.title}`).join("; ")}`
+      : "- Inga krockar idag",
+    freeSlot
+      ? `- Nästa lediga timme: ${fmt(freeSlot.start, "EEEE d MMMM HH:mm")}`
+      : "- Ingen ledig timme hittad de närmaste 7 dagarna",
   ].join("\n");
 }
