@@ -206,7 +206,7 @@ function CalendarsPage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Lägg till kalender</DialogTitle>
+            <DialogTitle>{editingId ? "Redigera kalender" : "Lägg till kalender"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
