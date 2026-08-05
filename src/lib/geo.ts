@@ -141,6 +141,20 @@ export function isTravel(visit: Pick<VisitRow, "entry_kind">) {
   return visit.entry_kind === "resa";
 }
 
+export type TravelMode = VisitRow["travel_mode"];
+
+export const TRAVEL_MODES: { value: TravelMode; label: string }[] = [
+  { value: "bil", label: "Bil" },
+  { value: "kollektivt", label: "Kollektivtrafik" },
+  { value: "gang_cykel", label: "Gång/cykel" },
+  { value: "okant", label: "Okänt" },
+];
+
+export function travelModeLabel(mode: TravelMode | null | undefined) {
+  return TRAVEL_MODES.find((m) => m.value === mode)?.label ?? "Okänt";
+}
+
+
 export function formatDistance(meters: number) {
   if (!meters || meters < 0) return "0 km";
   if (meters < 1000) return `${Math.round(meters)} m`;
