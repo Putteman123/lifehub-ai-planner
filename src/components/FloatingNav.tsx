@@ -1,14 +1,15 @@
 import { Link } from "@tanstack/react-router";
 import { Lock } from "lucide-react";
 
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { NAV_ITEMS } from "@/lib/nav-theme";
 
-/** Flytande vertikal meny längs vänsterkanten. */
+/** Flytande vertikal meny längs vänsterkanten – endast surfplatta och dator. */
 export function FloatingNav({ onLock }: { onLock: () => void }) {
   return (
     <nav
       aria-label="Huvudmeny"
-      className="fixed left-2 top-1/2 z-40 -translate-y-1/2 rounded-3xl border border-border/70 bg-background/70 p-1.5 shadow-[var(--shadow-soft)] backdrop-blur-xl sm:left-3 sm:p-2"
+      className="fixed left-2 top-1/2 z-40 hidden -translate-y-1/2 rounded-3xl border border-border/70 bg-background/70 p-1.5 shadow-[var(--shadow-soft)] backdrop-blur-xl sm:left-3 sm:block sm:p-2"
       style={{
         paddingLeft: "max(0.375rem, env(safe-area-inset-left, 0px))",
         marginTop: "calc(env(safe-area-inset-top, 0px) / 2)",
@@ -50,5 +51,71 @@ export function FloatingNav({ onLock }: { onLock: () => void }) {
         </li>
       </ul>
     </nav>
+  );
+}
+
+/** Utfällbar meny för mobil, öppnas från knappen i sidhuvudet. */
+export function MobileNav({
+  open,
+  onOpenChange,
+  onLock,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onLock: () => void;
+}) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="left"
+        className="w-[19rem] max-w-[85vw] p-0 sm:hidden"
+      >
+        <div
+          className="flex h-full flex-col"
+          style={{
+            paddingTop: "env(safe-area-inset-top, 0px)",
+            paddingBottom: "env(safe-area-inset-bottom, 0px)",
+          }}
+        >
+          <SheetHeader className="px-5 pb-2 pt-5 text-left">
+            <SheetTitle className="text-lg">LifeHub AI</SheetTitle>
+          </SheetHeader>
+
+          <nav aria-label="Huvudmeny" className="flex-1 overflow-y-auto px-3 pb-3">
+            <ul className="space-y-1">
+              {NAV_ITEMS.map((item) => (
+                <li key={item.to}>
+                  <Link
+                    to={item.to}
+                    onClick={() => onOpenChange(false)}
+                    className="flex min-h-[52px] items-center gap-3 rounded-2xl px-3 text-[15px] font-medium transition-colors hover:bg-muted"
+                    activeProps={{
+                      className: "bg-primary/10 text-primary ring-1 ring-primary/25",
+                    }}
+                  >
+                    <item.icon className={`size-5 shrink-0 ${item.color}`} />
+                    <span className="truncate">{item.label}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <div className="border-t border-border px-3 py-3">
+            <button
+              type="button"
+              onClick={() => {
+                onOpenChange(false);
+                onLock();
+              }}
+              className="flex min-h-[52px] w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <Lock className="size-5 shrink-0" />
+              Lås appen
+            </button>
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
