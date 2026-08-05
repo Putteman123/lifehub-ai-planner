@@ -23,10 +23,20 @@ function unwrap<T>(res: { data: T | null; error: { message: string } | null }): 
 export function useEvents() {
   return useQuery({
     queryKey: ["events"],
-    queryFn: async () =>
-      unwrap<EventRow[]>(
-        await supabase.from("events").select("*").order("starts_at", { ascending: true }),
-      ),
+    queryFn: async () => {
+      // Begränsa till ±1 år: räcker för alla vyer och håller svaret litet.
+      const now = Date.now();
+      const from = new Date(now - 365 * 24 * 3600 * 1000).toISOString();
+      const to = new Date(now + 365 * 24 * 3600 * 1000).toISOString();
+      return unwrap<EventRow[]>(
+        await supabase
+          .from("events")
+          .select("*")
+          .gte("starts_at", from)
+          .lte("starts_at", to)
+          .order("starts_at", { ascending: true }),
+      );
+    },
   });
 }
 
@@ -98,7 +108,7 @@ export function useVisits(sinceIso?: string) {
       if (sinceIso) query = query.gte("arrived_at", sinceIso);
       return unwrap<VisitRow[]>(await query.limit(500));
     },
-    refetchInterval: 60000,
+    refetchInterval: 5 * 60_000,
   });
 }
 
