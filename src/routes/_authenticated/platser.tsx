@@ -26,6 +26,8 @@ import { WeeklyTravelPlan } from "@/components/platser/WeeklyTravelPlan";
 import { TravelTrendChart } from "@/components/platser/TravelTrendChart";
 
 import { TravelTimeline } from "@/components/platser/TravelTimeline";
+import { PositionHistory } from "@/components/platser/PositionHistory";
+
 
 import {
   NameVisitDialog,
