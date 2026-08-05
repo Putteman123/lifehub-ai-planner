@@ -72,6 +72,8 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
   );
   const visitsQ = useVisits(sinceIso);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<VisitRow | null>(null);
+
 
   const trips = useMemo<Trip[]>(() => {
     const rows = (visitsQ.data ?? []).filter(isTravel);
