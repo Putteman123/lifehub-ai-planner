@@ -623,8 +623,13 @@ function PlacesPage() {
         </div>
 
         <div className="mt-4">
+          <TravelModeStats />
+        </div>
+
+        <div className="mt-4">
           <FrequentRoutes places={places} />
         </div>
+
 
 
 
