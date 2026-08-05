@@ -10,6 +10,7 @@ import { AppShell } from "@/components/AppShell";
 import { APP_VERSION } from "@/lib/nav-theme";
 import { DataGate } from "@/components/DataGate";
 import { GooglePanel } from "@/components/google/GooglePanel";
+import { GoogleStatusPanel } from "@/components/google/GoogleStatusPanel";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -140,6 +141,7 @@ function CalendarsPage() {
       }
     >
       <DataGate queries={[calendarsQ]}>
+      <GoogleStatusPanel />
       <GooglePanel
         connectedExternalIds={calendars.map((c) => c.external_id).filter((v): v is string => !!v)}
       />
