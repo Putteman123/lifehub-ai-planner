@@ -283,6 +283,12 @@ function PlacesPage() {
     .filter((v) => new Date(v.left_at ?? now).getTime() >= todayStart.getTime())
     .sort((a, b) => a.arrived_at.localeCompare(b.arrived_at));
   const openVisit = visits.find((v) => !v.left_at) ?? null;
+  const lastPingMs = visits.reduce((acc, v) => {
+    const t = new Date(v.left_at ?? v.arrived_at).getTime();
+    return t > acc ? t : acc;
+  }, 0);
+  const lastPingAt = lastPingMs > 0 ? new Date(lastPingMs) : null;
+
 
   const today = minutesByKind(visits, places, todayStart, now, now);
   const week = minutesByKind(visits, places, weekStart, now, now);
