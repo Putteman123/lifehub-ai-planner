@@ -544,6 +544,22 @@ function PlacesPage() {
                         {formatDuration(visitMinutes(visit, now))}
                       </span>
                     </button>
+                    {!travel ? (
+                      <button
+                        type="button"
+                        aria-label="Markera som resa"
+                        disabled={travelBusy === visit.id}
+                        className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border/70 px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:opacity-60"
+                        onClick={() => handleMarkTravel(visit.id)}
+                      >
+                        {travelBusy === visit.id ? (
+                          <Loader2 className="size-3 animate-spin" />
+                        ) : (
+                          <Car className="size-3" />
+                        )}
+                        Resa
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       aria-label="Ta bort besök"
@@ -552,6 +568,7 @@ function PlacesPage() {
                     >
                       <Trash2 className="size-3.5" />
                     </button>
+
                   </li>
                   );
                 })}
