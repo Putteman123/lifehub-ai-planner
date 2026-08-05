@@ -37,7 +37,7 @@ export async function buildAndreaContext() {
   const [eventsRes, childrenRes, casesRes, tasksRes, remindersRes] = await Promise.all([
     supabaseAdmin
       .from("events")
-      .select("title, starts_at, ends_at, all_day, category, location")
+      .select("*")
       .gte("ends_at", new Date(now.getTime() - 86400000).toISOString())
       .lte("starts_at", until.toISOString())
       .order("starts_at"),
