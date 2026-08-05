@@ -500,8 +500,14 @@ function Dashboard() {
               Statistik
             </TabsTrigger>
           </TabsList>
+          <div className="mt-2 flex items-center justify-between rounded-xl border bg-card/60 px-3 py-2">
+            <Label htmlFor="swipe-tabs" className="text-[13px] text-muted-foreground">
+              Svep mellan flikar
+            </Label>
+            <Switch id="swipe-tabs" checked={swipeEnabled} onCheckedChange={setSwipeEnabled} />
+          </div>
           {/* Svep i sidled för att byta flik på mobil. */}
-          <div className="min-w-0 touch-pan-y" {...swipe}>
+          <div className="min-w-0 touch-pan-y" {...(swipeEnabled ? swipe : {})}>
             <TabsContent key={tab} value="idag" className="view-enter mt-4 space-y-4">
               {idagGroup}
             </TabsContent>
