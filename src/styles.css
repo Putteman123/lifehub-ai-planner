@@ -59,53 +59,75 @@
   --color-cat-privat: var(--cat-privat);
   --color-cat-viktigt: var(--cat-viktigt);
 
-  --font-sans: "Inter Tight", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  /* Ikonfärger per läge */
+  --color-nav-oversikt: var(--nav-oversikt);
+  --color-nav-kalender: var(--nav-kalender);
+  --color-nav-attgora: var(--nav-attgora);
+  --color-nav-handla: var(--nav-handla);
+  --color-nav-barn: var(--nav-barn);
+  --color-nav-jurist: var(--nav-jurist);
+  --color-nav-platser: var(--nav-platser);
+  --color-nav-kassaskap: var(--nav-kassaskap);
+  --color-nav-kalendrar: var(--nav-kalendrar);
+
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Space Grotesk", "DM Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
   --radius: 0.75rem;
-  --background: oklch(0.995 0.002 250);
+  --background: oklch(0.978 0.004 265);
   --foreground: oklch(0.21 0.02 265);
-  --surface: oklch(0.972 0.004 250);
+  --surface: oklch(0.958 0.007 265);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.21 0.02 265);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.21 0.02 265);
-  --primary: oklch(0.52 0.19 265);
+  --primary: oklch(0.52 0.21 277);
   --primary-foreground: oklch(0.99 0.005 250);
   --secondary: oklch(0.96 0.006 250);
   --secondary-foreground: oklch(0.28 0.02 265);
   --muted: oklch(0.965 0.005 250);
   --muted-foreground: oklch(0.55 0.02 258);
-  --accent: oklch(0.955 0.015 265);
-  --accent-foreground: oklch(0.32 0.06 265);
+  --accent: oklch(0.945 0.028 277);
+  --accent-foreground: oklch(0.33 0.09 277);
   --destructive: oklch(0.58 0.22 25);
   --destructive-foreground: oklch(0.99 0.003 250);
   --border: oklch(0.915 0.007 255);
   --input: oklch(0.915 0.007 255);
-  --ring: oklch(0.52 0.19 265);
-  --chart-1: oklch(0.55 0.19 258);
-  --chart-2: oklch(0.68 0.15 155);
-  --chart-3: oklch(0.72 0.16 62);
+  --ring: oklch(0.52 0.21 277);
+  --chart-1: oklch(0.52 0.21 277);
+  --chart-2: oklch(0.68 0.15 163);
+  --chart-3: oklch(0.76 0.16 70);
   --chart-4: oklch(0.62 0.2 300);
   --chart-5: oklch(0.62 0.2 20);
   --sidebar: oklch(0.985 0.003 250);
   --sidebar-foreground: oklch(0.28 0.02 265);
-  --sidebar-primary: oklch(0.52 0.19 265);
+  --sidebar-primary: oklch(0.52 0.21 277);
   --sidebar-primary-foreground: oklch(0.99 0.005 250);
   --sidebar-accent: oklch(0.95 0.01 265);
   --sidebar-accent-foreground: oklch(0.3 0.04 265);
   --sidebar-border: oklch(0.915 0.007 255);
-  --sidebar-ring: oklch(0.52 0.19 265);
+  --sidebar-ring: oklch(0.52 0.21 277);
 
-  --cat-jobb: oklch(0.58 0.17 250);
-  --cat-ledig: oklch(0.66 0.15 155);
-  --cat-jurist: oklch(0.7 0.16 55);
-  --cat-barn: oklch(0.79 0.15 95);
-  --cat-privat: oklch(0.58 0.19 300);
-  --cat-viktigt: oklch(0.6 0.21 22);
+  --cat-jobb: oklch(0.55 0.2 272);
+  --cat-ledig: oklch(0.68 0.15 163);
+  --cat-jurist: oklch(0.76 0.16 70);
+  --cat-barn: oklch(0.82 0.14 92);
+  --cat-privat: oklch(0.6 0.2 310);
+  --cat-viktigt: oklch(0.62 0.22 22);
 
-  --shadow-soft: 0 1px 2px oklch(0.21 0.02 265 / 6%), 0 8px 24px oklch(0.21 0.02 265 / 6%);
+  --shadow-soft: 0 1px 2px oklch(0.21 0.02 277 / 5%), 0 10px 30px oklch(0.21 0.02 277 / 7%);
+
+  --nav-oversikt: oklch(0.52 0.21 277);
+  --nav-kalender: oklch(0.55 0.2 258);
+  --nav-attgora: oklch(0.6 0.2 310);
+  --nav-handla: oklch(0.66 0.15 163);
+  --nav-barn: oklch(0.78 0.15 92);
+  --nav-jurist: oklch(0.72 0.16 70);
+  --nav-platser: oklch(0.65 0.16 200);
+  --nav-kassaskap: oklch(0.62 0.22 22);
+  --nav-kalendrar: oklch(0.58 0.04 277);
 }
 
 .dark {
@@ -116,7 +138,7 @@
   --card-foreground: oklch(0.96 0.004 250);
   --popover: oklch(0.215 0.017 265);
   --popover-foreground: oklch(0.96 0.004 250);
-  --primary: oklch(0.68 0.16 265);
+  --primary: oklch(0.7 0.17 277);
   --primary-foreground: oklch(0.16 0.02 265);
   --secondary: oklch(0.26 0.02 265);
   --secondary-foreground: oklch(0.95 0.004 250);
@@ -128,15 +150,25 @@
   --destructive-foreground: oklch(0.98 0.003 250);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.68 0.16 265);
+  --ring: oklch(0.7 0.17 277);
   --sidebar: oklch(0.195 0.016 265);
   --sidebar-foreground: oklch(0.94 0.004 250);
-  --sidebar-primary: oklch(0.68 0.16 265);
+  --sidebar-primary: oklch(0.7 0.17 277);
   --sidebar-primary-foreground: oklch(0.16 0.02 265);
   --sidebar-accent: oklch(0.27 0.025 265);
   --sidebar-accent-foreground: oklch(0.95 0.004 250);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.68 0.16 265);
+  --sidebar-ring: oklch(0.7 0.17 277);
+
+  --nav-oversikt: oklch(0.72 0.17 277);
+  --nav-kalender: oklch(0.74 0.15 258);
+  --nav-attgora: oklch(0.74 0.16 310);
+  --nav-handla: oklch(0.76 0.14 163);
+  --nav-barn: oklch(0.85 0.13 92);
+  --nav-jurist: oklch(0.8 0.14 70);
+  --nav-platser: oklch(0.76 0.13 200);
+  --nav-kassaskap: oklch(0.72 0.19 22);
+  --nav-kalendrar: oklch(0.75 0.03 277);
 }
 
 @layer base {
@@ -171,4 +203,72 @@
 
 @utility andrea-thinking {
   animation: andrea-pulse 1.6s ease-in-out infinite;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+}
+
+/* --- Lägesanimationer --- */
+@keyframes view-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@utility view-enter {
+  animation: view-enter 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes nav-pop {
+  0% {
+    transform: scale(0.8);
+  }
+  60% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@utility nav-pop {
+  animation: nav-pop 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes check-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@utility check-pop {
+  animation: check-pop 0.3s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
