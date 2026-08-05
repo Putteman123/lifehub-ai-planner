@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -19,6 +19,7 @@ export function AppShell({
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   async function lockApp() {
     await queryClient.cancelQueries();
@@ -54,7 +55,8 @@ export function AppShell({
         </header>
 
         <main
-          className="px-3 pt-4 sm:px-5"
+          key={pathname}
+          className="view-enter px-3 pt-4 sm:px-5"
           style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom, 0px))" }}
         >
           {children}

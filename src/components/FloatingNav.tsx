@@ -1,30 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import {
-  Baby,
-  CalendarDays,
-  LayoutDashboard,
-  ListTodo,
-  Lock,
-  MapPin,
-  Scale,
-  Settings2,
-  ShieldCheck,
-  ShoppingCart,
-} from "lucide-react";
+import { Lock } from "lucide-react";
 
-const NAV = [
-  { to: "/dashboard", label: "Översikt", icon: LayoutDashboard },
-  { to: "/kalender", label: "Kalender", icon: CalendarDays },
-  { to: "/attgora", label: "Att göra", icon: ListTodo },
-  { to: "/handla", label: "Handla", icon: ShoppingCart },
-  { to: "/barn", label: "Barn", icon: Baby },
-  { to: "/jurist", label: "Jurist", icon: Scale },
-  { to: "/platser", label: "Platser", icon: MapPin },
-  { to: "/kassaskap", label: "Kassaskåp", icon: ShieldCheck },
-  { to: "/kalendrar", label: "Kalendrar", icon: Settings2 },
-] as const;
-
-
+import { NAV_ITEMS } from "@/lib/nav-theme";
 
 /** Flytande vertikal meny längs vänsterkanten. */
 export function FloatingNav({ onLock }: { onLock: () => void }) {
@@ -40,15 +17,18 @@ export function FloatingNav({ onLock }: { onLock: () => void }) {
       }}
     >
       <ul className="flex flex-col gap-1">
-        {NAV.map((item) => (
+        {NAV_ITEMS.map((item) => (
           <li key={item.to}>
             <Link
               to={item.to}
               aria-label={item.label}
-              className="group relative flex size-11 items-center justify-center rounded-2xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              activeProps={{ className: "bg-primary text-primary-foreground hover:bg-primary" }}
+              className="group relative flex size-11 items-center justify-center rounded-2xl transition-all duration-200 hover:bg-muted"
+              activeProps={{
+                className:
+                  "bg-primary/10 ring-1 ring-primary/25 shadow-[var(--shadow-soft)] hover:bg-primary/10 [&_svg]:nav-pop",
+              }}
             >
-              <item.icon className="size-[18px] shrink-0" />
+              <item.icon className={`size-[19px] shrink-0 ${item.color}`} />
               <span className="pointer-events-none absolute left-[calc(100%+0.5rem)] hidden whitespace-nowrap rounded-lg border border-border bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100 md:block">
                 {item.label}
               </span>
