@@ -101,8 +101,11 @@ function Dashboard() {
   const rawEvents = eventsQ.data ?? [];
   const tasksQ = useCaseTasks();
   const tasks = tasksQ.data ?? [];
+  const todosQ = useTodos();
+  const todos = todosQ.data ?? [];
   const remindersQ = useReminders();
   const reminders = remindersQ.data ?? [];
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selected, setSelected] = useState<EventRow | null>(null);
 
