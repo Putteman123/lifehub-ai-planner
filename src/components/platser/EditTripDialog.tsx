@@ -225,19 +225,50 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
               id="trip-km"
               inputMode="decimal"
               value={km}
-              onChange={(e) => setKm(e.target.value)}
+              onChange={(e) => {
+                setKmTouched(true);
+                setKm(e.target.value);
+              }}
             />
+            {estimateMeters != null ? (
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span>
+                  Beräknat: {(estimateMeters / 1000).toFixed(1).replace(".", ",")} km
+                  {crowMeters != null
+                    ? ` (fågelväg ${(crowMeters / 1000).toFixed(1).replace(".", ",")} km)`
+                    : ""}
+                </span>
+                {kmTouched ? (
+                  <button
+                    type="button"
+                    onClick={() => setKmTouched(false)}
+                    className="rounded-md border border-border/60 px-2 py-0.5 text-xs hover:bg-muted"
+                  >
+                    Använd beräknat
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+            {estimateMeters != null && !autoMatches ? (
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                Avviker från beräknat avstånd
+              </p>
+            ) : null}
           </div>
 
           <label className="flex items-center gap-2 rounded-xl border border-border/60 px-3 py-2 text-sm">
             <input
               type="checkbox"
               checked={verified}
-              onChange={(e) => setVerified(e.target.checked)}
+              onChange={(e) => {
+                setVerifiedTouched(true);
+                setVerified(e.target.checked);
+              }}
               className="size-4 accent-primary"
             />
             Avståndet stämmer (kontrollerat)
           </label>
+
         </div>
 
         <DialogFooter>
