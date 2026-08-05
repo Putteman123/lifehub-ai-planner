@@ -18,9 +18,14 @@ export function InboxCard() {
   const fetchInbox = useServerFn(getInbox);
   const [rulesOpen, setRulesOpen] = useState(false);
   const rulesQ = useMailRules();
-  const activeRules = (rulesQ.data ?? []).filter((r) => r.is_active).length;
+  const rules = rulesQ.data ?? [];
+  const activeRules = rules.filter((r) => r.is_active).length;
+  const ruleKey = rules
+    .filter((r) => r.is_active)
+    .map((r) => `${r.mode}:${r.kind}:${r.value}`)
+    .join("|");
   const query = useQuery({
-    queryKey: ["gmail", "unread"],
+    queryKey: ["gmail", "unread", ruleKey],
     queryFn: () => fetchInbox({ data: { query: "is:unread in:inbox", max: 5 } }),
     refetchInterval: 5 * 60 * 1000,
   });
