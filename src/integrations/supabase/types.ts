@@ -412,6 +412,39 @@ export type Database = {
         }
         Relationships: []
       }
+      travel_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          preferred_mode: Database["public"]["Enums"]["travel_mode"]
+          route_key: string | null
+          updated_at: string
+          user_id: string
+          weekday: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind?: string
+          preferred_mode?: Database["public"]["Enums"]["travel_mode"]
+          route_key?: string | null
+          updated_at?: string
+          user_id: string
+          weekday?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          preferred_mode?: Database["public"]["Enums"]["travel_mode"]
+          route_key?: string | null
+          updated_at?: string
+          user_id?: string
+          weekday?: number | null
+        }
+        Relationships: []
+      }
       vault_challenges: {
         Row: {
           challenge: string
