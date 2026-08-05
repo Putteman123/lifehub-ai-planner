@@ -1,5 +1,8 @@
-import { Bike, Bus, Car, HelpCircle, type LucideIcon } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Bike, Bus, Car, HelpCircle, Sparkles, type LucideIcon } from "lucide-react";
 import { useMemo } from "react";
+import { toast } from "sonner";
 
 import { useVisits } from "@/lib/db";
 import {
@@ -10,6 +13,8 @@ import {
   visitMinutes,
   type TravelMode,
 } from "@/lib/geo";
+import { getTravelInsight } from "@/lib/travel-insight.functions";
+
 
 const DAYS = 90;
 
@@ -47,6 +52,24 @@ export function TravelModeStats() {
   }, [visitsQ.data]);
 
   const totalMeters = stats.reduce((sum, s) => sum + s.meters, 0);
+
+  const fetchInsight = useServerFn(getTravelInsight);
+  const insight = useMutation({
+    mutationFn: () =>
+      fetchInsight({
+        data: {
+          modes: stats.map((s) => ({
+            label: s.label,
+            trips: s.trips,
+            km: s.meters / 1000,
+            minutes: s.minutes,
+          })),
+        },
+      }),
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+
 
   return (
     <section className="rounded-2xl border border-border bg-card p-4">
@@ -95,6 +118,38 @@ export function TravelModeStats() {
           })}
         </ul>
       )}
+
+      {stats.length > 0 ? (
+        <div className="mt-4 rounded-xl border border-primary/30 bg-primary/5 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="flex items-center gap-2 text-sm font-medium">
+              <Sparkles className="size-4 text-primary" /> Andreas reseinsikt
+            </span>
+            <button
+              type="button"
+              onClick={() => insight.mutate()}
+              disabled={insight.isPending}
+              className="rounded-lg border border-border/60 px-2 py-1 text-xs hover:bg-muted disabled:opacity-60"
+            >
+              {insight.isPending
+                ? "Analyserar…"
+                : insight.data?.text
+                  ? "Uppdatera"
+                  : "Skapa insikt"}
+            </button>
+          </div>
+          {insight.data?.text ? (
+            <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
+              {insight.data.text}
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Låt Andrea sammanfatta dina färdsätt och föreslå hur du kan optimera resorna.
+            </p>
+          )}
+        </div>
+      ) : null}
     </section>
+
   );
 }
