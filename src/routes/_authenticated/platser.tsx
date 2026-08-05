@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import {
-  
+  Car,
   Loader2,
   LogOut,
   MapPin,
@@ -47,12 +47,15 @@ import {
   PLACE_KINDS,
   type PlaceKind,
   type PlaceRow,
+  formatDistance,
   formatDuration,
+  isTravel,
   kindLabel,
   minutesByKind,
   startOfDay,
   startOfWeek,
   timeLabel,
+  travelStats,
   visitLabel,
   visitMinutes,
 } from "@/lib/geo";
@@ -353,6 +356,8 @@ function PlacesPage() {
 
   const today = minutesByKind(visits, places, todayStart, now, now);
   const week = minutesByKind(visits, places, weekStart, now, now);
+  const todayTravel = travelStats(visits, todayStart, now, now);
+  const weekTravel = travelStats(visits, weekStart, now, now);
 
   const todayEvents = events.filter((e) => {
     const start = new Date(e.starts_at);
@@ -607,7 +612,10 @@ function PlacesPage() {
                     type="button"
                     aria-label="Ta bort plats"
                     className="text-muted-foreground hover:text-destructive"
-                    onClick={() => deletePlace.mutate(place.id)}
+                    onClick={() => {
+                      if (confirm(`Ta bort platsen "${place.name}"? Besöken finns kvar i loggen.`))
+                        deletePlace.mutate(place.id);
+                    }}
                   >
                     <Trash2 className="size-3.5" />
                   </button>
