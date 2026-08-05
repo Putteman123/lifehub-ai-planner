@@ -183,9 +183,19 @@ function CalendarsPage() {
                     )}
                   </Button>
 
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => openEdit(c)}
+                    aria-label="Byt namn på kalender"
+                  >
+                    <Pencil className="size-4" />
+                  </Button>
+
                   <Button size="icon" variant="ghost" onClick={() => remove.mutate(c.id)}>
                     <Trash2 className="size-4" />
                   </Button>
+
                 </div>
               </div>
             </div>
