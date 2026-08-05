@@ -191,12 +191,15 @@ function Dashboard() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [tab, setTab] = useState("idag");
-  const swipeTo = (next: (t: string) => string) =>
+  const { swipeEnabled, setSwipeEnabled } = useSwipeTabsSetting();
+  const swipeTo = (next: (t: string) => string) => {
+    if (!swipeEnabled) return;
     setTab((t) => {
       const n = next(t);
       if (n !== t) hapticTick();
       return n;
     });
+  };
   const swipe = useSwipe({
     onSwipeLeft: () =>
       swipeTo((t) => (t === "idag" ? "kalender" : t === "kalender" ? "statistik" : t)),
