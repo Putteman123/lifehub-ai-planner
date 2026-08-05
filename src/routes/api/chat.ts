@@ -86,6 +86,23 @@ export const Route = createFileRoute("/api/chat")({
               inputSchema: z.object({ title: z.string().describe("Händelsens titel.") }),
               execute: async ({ title }) => ({ category: suggestCategory(title) }),
             }),
+            web_search: tool({
+              description:
+                "Sök på webben i realtid via Perplexity. Använd för färsk information: nyheter, öppettider, restider, priser, lagändringar, matchtider, väder.",
+              inputSchema: z.object({
+                query: z.string().describe("Sökfrågan, gärna på svenska."),
+                mode: z.enum(["web", "academic"]).nullable(),
+              }),
+              execute: async ({ query, mode }) => {
+                const { searchWeb } = await import("@/lib/websearch.server");
+                try {
+                  return await searchWeb(query, mode ?? "web");
+                } catch (error) {
+                  return { error: error instanceof Error ? error.message : "Sökningen misslyckades." };
+                }
+              },
+            }),
+
 
             // --- Åtgärder som ändrar data. Kräver användarens godkännande. ---
             create_event: tool({
