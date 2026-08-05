@@ -1,3 +1,5 @@
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -21,6 +23,7 @@ import {
   type TravelMode,
   type VisitRow,
 } from "@/lib/geo";
+import { routeBetween } from "@/lib/maps.functions";
 import { tripFieldLabel, useLogTripEdits, useTripHistory } from "@/lib/trip-history";
 
 
@@ -107,10 +110,36 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
     startPoint && endPoint
       ? Math.round(haversineMeters(startPoint.lat, startPoint.lng, endPoint.lat, endPoint.lng))
       : null;
-  const estimateMeters =
+  // Google Maps ger verklig körsträcka; fågelvägen används bara som reserv.
+  const fetchRoute = useServerFn(routeBetween);
+  const routeQ = useQuery({
+    queryKey: [
+      "maps-route",
+      startPoint?.lat ?? null,
+      startPoint?.lng ?? null,
+      endPoint?.lat ?? null,
+      endPoint?.lng ?? null,
+      mode,
+    ],
+    enabled: Boolean(startPoint && endPoint),
+    staleTime: 1000 * 60 * 60 * 24,
+    queryFn: () =>
+      fetchRoute({
+        data: {
+          origin: startPoint!,
+          destination: endPoint!,
+          mode: mode && mode !== "okant" ? mode : "bil",
+        },
+      }),
+  });
+
+  const googleMeters = routeQ.data?.meters ?? null;
+  const fallbackMeters =
     startPoint && endPoint
       ? estimateRouteMeters(startPoint.lat, startPoint.lng, endPoint.lat, endPoint.lng)
       : null;
+  const estimateMeters = googleMeters ?? fallbackMeters;
+  const distanceSource = googleMeters != null ? "Google Maps" : "Beräknat";
 
   // Fyll i beräknat avstånd automatiskt så länge fältet inte redigerats manuellt.
   useEffect(() => {
@@ -305,7 +334,7 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
             {estimateMeters != null ? (
               <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                 <span>
-                  Beräknat: {(estimateMeters / 1000).toFixed(1).replace(".", ",")} km
+                  {distanceSource}: {(estimateMeters / 1000).toFixed(1).replace(".", ",")} km
                   {crowMeters != null
                     ? ` (fågelväg ${(crowMeters / 1000).toFixed(1).replace(".", ",")} km)`
                     : ""}
@@ -320,14 +349,14 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
                   }}
                   className="rounded-md border border-border/60 px-2 py-0.5 text-xs font-medium hover:bg-muted"
                 >
-                  Återställ till beräknat
+                  Använd {googleMeters != null ? "Googles" : "beräknat"} avstånd
                 </button>
 
               </div>
             ) : null}
             {estimateMeters != null && !autoMatches ? (
               <p className="text-xs text-amber-600 dark:text-amber-400">
-                Avviker från beräknat avstånd
+                Avviker från {googleMeters != null ? "Googles" : "beräknat"} avstånd
               </p>
             ) : null}
           </div>
