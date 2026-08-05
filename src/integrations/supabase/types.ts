@@ -412,6 +412,141 @@ export type Database = {
         }
         Relationships: []
       }
+      vault_challenges: {
+        Row: {
+          challenge: string
+          created_at: string
+          expires_at: string
+          id: string
+          purpose: string
+          user_id: string
+        }
+        Insert: {
+          challenge: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          purpose: string
+          user_id: string
+        }
+        Update: {
+          challenge?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          purpose?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vault_credentials: {
+        Row: {
+          counter: number
+          created_at: string
+          credential_id: string
+          id: string
+          label: string | null
+          public_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          counter?: number
+          created_at?: string
+          credential_id: string
+          id?: string
+          label?: string | null
+          public_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          counter?: number
+          created_at?: string
+          credential_id?: string
+          id?: string
+          label?: string | null
+          public_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vault_files: {
+        Row: {
+          caption: string | null
+          created_at: string
+          file_name: string
+          id: string
+          mime_type: string | null
+          size_bytes: number | null
+          storage_path: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          file_name: string
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          file_name?: string
+          id?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          storage_path?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vault_items: {
+        Row: {
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["vault_kind"]
+          notes: string | null
+          secret: string | null
+          title: string
+          updated_at: string
+          url: string | null
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["vault_kind"]
+          notes?: string | null
+          secret?: string | null
+          title: string
+          updated_at?: string
+          url?: string | null
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["vault_kind"]
+          notes?: string | null
+          secret?: string | null
+          title?: string
+          updated_at?: string
+          url?: string | null
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
       visits: {
         Row: {
           arrived_at: string
@@ -505,6 +640,7 @@ export type Database = {
         | "privat"
         | "viktigt"
       place_kind: "jobb" | "jurist" | "hem" | "barn" | "annat"
+      vault_kind: "losenord" | "pinkod" | "kod" | "anteckning"
       visit_kind: "besok" | "resa"
     }
     CompositeTypes: {
@@ -645,6 +781,7 @@ export const Constants = {
       ],
       event_category: ["jobb", "ledig", "jurist", "barn", "privat", "viktigt"],
       place_kind: ["jobb", "jurist", "hem", "barn", "annat"],
+      vault_kind: ["losenord", "pinkod", "kod", "anteckning"],
       visit_kind: ["besok", "resa"],
     },
   },
