@@ -20,6 +20,7 @@ import {
   useDeletePantryItem,
   usePantry,
   useShoppingItems,
+  useShoppingRealtime,
   useToggleItem,
 } from "@/lib/shopping";
 import { completeShoppingList, suggestShoppingItems } from "@/lib/shopping.functions";
@@ -51,6 +52,8 @@ function ShoppingPage() {
   const listId = listQ.data?.id;
   const itemsQ = useShoppingItems(listId);
   const pantryQ = usePantry();
+  useShoppingRealtime(listId);
+
 
   const items = useMemo(() => itemsQ.data ?? [], [itemsQ.data]);
   const addItems = useAddItems(listId);

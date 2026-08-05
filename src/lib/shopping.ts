@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -216,4 +217,35 @@ export function useDeletePantryItem() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["pantry_items"] }),
     onError: (error: Error) => toast.error(error.message),
   });
+}
+
+/** Lyssnar på ändringar från andra enheter och håller listan i synk i realtid. */
+export function useShoppingRealtime(listId: string | undefined) {
+  const qc = useQueryClient();
+  useEffect(() => {
+    const channel = supabase
+      .channel("shopping-sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "shopping_items" },
+        () => {
+          if (listId) qc.invalidateQueries({ queryKey: ["shopping_items", listId] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "shopping_lists" },
+        () => qc.invalidateQueries({ queryKey: ["shopping_list", "aktiv"] }),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "pantry_items" },
+        () => qc.invalidateQueries({ queryKey: ["pantry_items"] }),
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc, listId]);
 }
