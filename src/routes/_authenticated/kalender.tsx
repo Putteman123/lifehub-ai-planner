@@ -453,6 +453,7 @@ function AgendaView({
                 </button>
               );
             })}
+            <OverlapWarning events={events} day={d} />
           </div>
         </section>
       ))}
