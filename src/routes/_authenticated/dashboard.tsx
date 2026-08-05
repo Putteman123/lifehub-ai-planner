@@ -193,27 +193,31 @@ function Dashboard() {
                         isToday ? "border-primary/40 bg-primary/5" : "border-border bg-surface"
                       }`}
                     >
-
-                      <span className="text-[11px] font-medium capitalize text-muted-foreground">
-                        {fmt(day, "EEE d/M")}
+                      <span className="text-[10px] font-medium capitalize text-muted-foreground sm:text-[11px]">
+                        <span className="sm:hidden">{fmt(day, "EEEEE")}</span>
+                        <span className="hidden sm:inline">{fmt(day, "EEE d/M")}</span>
                       </span>
-                      <div className="mt-2 flex items-center gap-1.5">
-                        <span className={`size-2 rounded-full ${LOAD_STYLES[load].dot}`} />
-                        <span className={`text-[11px] ${LOAD_STYLES[load].text}`}>
+                      <span className="mt-0.5 text-[10px] text-muted-foreground sm:hidden">
+                        {fmt(day, "d")}
+                      </span>
+                      <div className="mt-1.5 flex items-center gap-1.5 sm:mt-2">
+                        <span className={`size-2 shrink-0 rounded-full ${LOAD_STYLES[load].dot}`} />
+                        <span className={`hidden text-[11px] sm:inline ${LOAD_STYLES[load].text}`}>
                           {LOAD_STYLES[load].label}
                         </span>
                       </div>
-                      <div className="mt-2 flex flex-wrap gap-1">
+                      <div className="mt-1.5 flex flex-wrap justify-center gap-0.5 sm:mt-2 sm:justify-start sm:gap-1">
                         {items.slice(0, 4).map((e) => (
                           <span
                             key={e.id}
-                            className={`size-2 rounded-full ${categoryMeta(e.category).dot}`}
+                            className={`size-1.5 rounded-full sm:size-2 ${categoryMeta(e.category).dot}`}
                           />
                         ))}
                         {items.length > 4 ? (
                           <span className="text-[9px] text-muted-foreground">+</span>
                         ) : null}
                       </div>
+
                     </Link>
                   );
                 })}
