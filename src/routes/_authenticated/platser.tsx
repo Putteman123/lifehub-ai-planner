@@ -393,6 +393,37 @@ function PlacesPage() {
     .filter((v) => new Date(v.left_at ?? now).getTime() >= todayStart.getTime())
     .sort((a, b) => a.arrived_at.localeCompare(b.arrived_at));
   const openVisit = visits.find((v) => !v.left_at) ?? null;
+
+  // Längsta serie av resor i följd i dag – kan slås ihop till en resa.
+  const mergeGroup = (() => {
+    let best: typeof todayVisits = [];
+    let run: typeof todayVisits = [];
+    for (const visit of todayVisits) {
+      if (isTravel(visit)) {
+        run = [...run, visit];
+        if (run.length > best.length) best = run;
+      } else {
+        run = [];
+      }
+    }
+    return best.length >= 2 ? best : null;
+  })();
+
+  async function handleMergeTravels(ids: string[]) {
+    setTravelBusy("merge");
+    try {
+      const res = await mergeTravels({ data: { visitIds: ids } });
+      await qc.invalidateQueries({ queryKey: ["visits"] });
+      toast.success(
+        `Sammanslagen resa: ${formatDistance(res.distance_m)} · ${formatDuration(res.minutes)}`,
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Kunde inte slå ihop resorna.");
+    } finally {
+      setTravelBusy(null);
+    }
+  }
+
   const lastPingMs = visits.reduce((acc, v) => {
     const t = new Date(v.left_at ?? v.arrived_at).getTime();
     return t > acc ? t : acc;
