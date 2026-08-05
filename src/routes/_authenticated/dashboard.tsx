@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Fragment, useMemo, useState } from "react";
-import { Plus, Sparkles, AlertTriangle, Clock, Calendar } from "lucide-react";
+import { Fragment, useMemo, useState, type ReactNode } from "react";
+import { Plus, Sparkles, AlertTriangle, Clock, Calendar, ChevronDown } from "lucide-react";
+
 
 import { AppShell } from "@/components/AppShell";
 import { DataGate } from "@/components/DataGate";
