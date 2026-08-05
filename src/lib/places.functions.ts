@@ -138,3 +138,47 @@ export const nameVisit = createServerFn({ method: "POST" })
 
     return { ok: true, placeId, linked };
   });
+
+const markTravelSchema = z.object({ visitId: z.string().uuid() });
+
+/** Markerar ett besök som resa – appen fyller i start, slut, sträcka och färdsätt. */
+export const markVisitTravel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => markTravelSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { markVisitAsTravel } = await import("@/lib/travel-classify.server");
+    return markVisitAsTravel(context.supabase, context.userId, data.visitId);
+  });
+
+const undoTravelSchema = z.object({
+  visitId: z.string().uuid(),
+  previous: z.object({
+    entry_kind: z.enum(["besok", "resa"]),
+    distance_m: z.number(),
+    travel_mode: z.enum(["bil", "kollektivt", "gang_cykel", "okant"]),
+    distance_verified: z.boolean(),
+    label: z.string().nullable(),
+    place_id: z.string().nullable(),
+  }),
+});
+
+/** Ångrar en resemarkering. */
+export const undoVisitTravel = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => undoTravelSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { undoTravel } = await import("@/lib/travel-classify.server");
+    return undoTravel(context.supabase, context.userId, data.visitId, data.previous);
+  });
+
+const mergeSchema = z.object({ visitIds: z.array(z.string().uuid()).min(2).max(20) });
+
+/** Slår ihop flera resor i följd till en. */
+export const mergeVisitTravels = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => mergeSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { mergeTravelVisits } = await import("@/lib/travel-classify.server");
+    return mergeTravelVisits(context.supabase, context.userId, data.visitIds);
+  });
+
