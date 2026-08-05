@@ -153,7 +153,7 @@ function Dashboard() {
             <p className="mt-2 text-sm leading-relaxed text-foreground">{summary}</p>
           </section>
 
-          <AiPanel />
+
 
 
           <section className="card-soft p-5">
@@ -224,9 +224,11 @@ function Dashboard() {
                 const isToday = fmt(day, "yyyy-MM-dd") === fmt(today, "yyyy-MM-dd");
                 const otherMonth = day.getMonth() !== today.getMonth();
                 return (
-                  <div
+                  <Link
                     key={day.toISOString()}
-                    className={`aspect-square rounded-md p-1 text-[11px] ${
+                    to="/kalender"
+                    search={{ vy: "dag", datum: fmt(day, "yyyy-MM-dd") }}
+                    className={`aspect-square rounded-md p-1 text-[11px] transition-colors hover:ring-1 hover:ring-primary/40 ${
                       isToday ? "bg-primary/10 font-semibold text-primary" : "bg-surface"
                     } ${otherMonth ? "opacity-40" : ""}`}
                   >
