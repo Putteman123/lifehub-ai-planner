@@ -350,14 +350,16 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
                             </span>
                           </span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditing(trip.visit)}
-                          aria-label="Redigera resa"
-                          className="shrink-0 rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                        >
-                          <Pencil className="size-3.5" />
-                        </button>
+                        {mergeMode ? null : (
+                          <button
+                            type="button"
+                            onClick={() => setEditing(trip.visit)}
+                            aria-label="Redigera resa"
+                            className="shrink-0 rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                          >
+                            <Pencil className="size-3.5" />
+                          </button>
+                        )}
                       </li>
                     );
                   })}
@@ -369,7 +371,55 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
       )}
 
       <EditTripDialog trip={editing} places={places} onClose={() => setEditing(null)} />
+
+      <AlertDialog open={confirmOpen} onOpenChange={(open) => !merging && setConfirmOpen(open)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Slå ihop {pickedSummary?.count ?? 0} resor till en?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-1 text-sm">
+                {pickedSummary ? (
+                  <>
+                    <p>
+                      Start {timeLabel(pickedSummary.first.arrived_at)} ·{" "}
+                      {new Date(pickedSummary.first.arrived_at).toLocaleDateString("sv-SE")}
+                    </p>
+                    <p>
+                      Slut{" "}
+                      {timeLabel(pickedSummary.last.left_at ?? pickedSummary.last.arrived_at)} ·{" "}
+                      {new Date(
+                        pickedSummary.last.left_at ?? pickedSummary.last.arrived_at,
+                      ).toLocaleDateString("sv-SE")}
+                    </p>
+                    <p>
+                      Total sträcka {formatDistance(pickedSummary.meters)} · total tid{" "}
+                      {formatDuration(pickedSummary.minutes)}
+                    </p>
+                    <p className="text-muted-foreground">
+                      Övriga poster tas bort och ersätts av en enda resa.
+                    </p>
+                  </>
+                ) : null}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={merging}>Avbryt</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={merging}
+              onClick={(e) => {
+                e.preventDefault();
+                void runMerge();
+              }}
+            >
+              {merging ? <Loader2 className="size-4 animate-spin" /> : <Merge className="size-4" />}
+              Slå ihop
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
+
 
   );
 }
