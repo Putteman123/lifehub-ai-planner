@@ -28,8 +28,11 @@ export type TravelPlanItem = {
   routeKey: string;
   meters: number;
   minutes: number;
-  /** Källa för restiden: historik eller uppskattning. */
-  basis: "historik" | "uppskattad";
+  /** Källa för restiden: historik, Google Maps eller uppskattning. */
+  basis: "historik" | "google" | "uppskattad";
+  /** Koordinater för sträckan, används för att hämta Google-rutt. */
+  origin: { lat: number; lng: number };
+  destination: { lat: number; lng: number };
   mode: TravelMode;
   modeSource: "preferens" | "historik" | "förslag";
   leaveAt: string;
@@ -39,6 +42,16 @@ export type TravelPlanItem = {
   status: PlanStatus;
   previousTitle: string | null;
 };
+
+/** Nyckel för en sträcka mellan två koordinater. */
+export function legKey(
+  origin: { lat: number; lng: number },
+  destination: { lat: number; lng: number },
+) {
+  return `${origin.lat.toFixed(5)},${origin.lng.toFixed(5)}->${destination.lat.toFixed(5)},${destination.lng.toFixed(5)}`;
+}
+
+export type RouteLookup = Record<string, { meters: number; minutes: number } | null>;
 
 /** Marginal i minuter som alltid läggs på restiden. */
 export const BASE_BUFFER_MIN = 5;
@@ -151,6 +164,8 @@ export function buildTravelPlan(input: {
   places: PlaceRow[];
   visits: VisitRow[];
   preferences: PreferenceRow[];
+  /** Verkliga sträckor från Google Maps, nyckel från legKey(). */
+  routes?: RouteLookup;
   from?: Date;
   days?: number;
 }): TravelPlanItem[] {
@@ -185,10 +200,13 @@ export function buildTravelPlan(input: {
     if (!origin || origin.id === destination.id) continue;
 
     const history = historyForRoute(input.visits, origin, destination);
+    const google = input.routes?.[legKey(origin, destination)] ?? null;
     const meters =
       history?.meters && history.meters > 0
         ? history.meters
-        : estimateRouteMeters(origin.lat, origin.lng, destination.lat, destination.lng);
+        : google?.meters
+          ? google.meters
+          : estimateRouteMeters(origin.lat, origin.lng, destination.lat, destination.lng);
 
     const routeKey = `${endpointKey({ lat: origin.lat, lng: origin.lng }, input.places, origin.name)}→${endpointKey(
       { lat: destination.lat, lng: destination.lng },
@@ -204,8 +222,16 @@ export function buildTravelPlan(input: {
       meters,
     );
 
-    const minutes = history ? history.minutes : estimateMinutes(meters, mode);
-    const basis: TravelPlanItem["basis"] = history ? "historik" : "uppskattad";
+    const minutes = history
+      ? history.minutes
+      : google?.minutes
+        ? google.minutes
+        : estimateMinutes(meters, mode);
+    const basis: TravelPlanItem["basis"] = history
+      ? "historik"
+      : google
+        ? "google"
+        : "uppskattad";
 
     const leaveAt = new Date(start.getTime() - (minutes + BASE_BUFFER_MIN) * 60000);
 
@@ -230,6 +256,8 @@ export function buildTravelPlan(input: {
       startsAt: event.starts_at,
       fromName: origin.name,
       toName: destination.name,
+      origin: { lat: origin.lat, lng: origin.lng },
+      destination: { lat: destination.lat, lng: destination.lng },
       routeKey,
       meters,
       minutes,

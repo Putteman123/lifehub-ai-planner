@@ -1,5 +1,6 @@
 import { ExternalLink } from "lucide-react";
 
+import { GoogleMap } from "@/components/GoogleMap";
 import {
   Dialog,
   DialogContent,
@@ -13,10 +14,6 @@ export type MapTarget = {
   lat: number | null;
   lng: number | null;
 };
-
-function bbox(lat: number, lng: number, span = 0.006) {
-  return [lng - span, lat - span / 2, lng + span, lat + span / 2].join("%2C");
-}
 
 export function MapDialog({
   target,
@@ -41,15 +38,11 @@ export function MapDialog({
         {hasCoords ? (
           <>
             <div className="overflow-hidden rounded-xl border border-border">
-              <iframe
-                title={`Karta över ${target!.title}`}
-                className="h-64 w-full border-0"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                src={`https://www.openstreetmap.org/export/embed.html?bbox=${bbox(
-                  target!.lat!,
-                  target!.lng!,
-                )}&layer=mapnik&marker=${target!.lat}%2C${target!.lng}`}
+              <GoogleMap
+                className="h-64 w-full"
+                markers={[
+                  { lat: target!.lat!, lng: target!.lng!, title: target!.title },
+                ]}
               />
             </div>
             <div className="flex items-center justify-between gap-3">
@@ -57,12 +50,12 @@ export function MapDialog({
                 {target!.lat!.toFixed(5)}, {target!.lng!.toFixed(5)}
               </span>
               <a
-                href={`https://www.openstreetmap.org/?mlat=${target!.lat}&mlon=${target!.lng}#map=16/${target!.lat}/${target!.lng}`}
+                href={`https://www.google.com/maps/search/?api=1&query=${target!.lat}%2C${target!.lng}`}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1.5 rounded-lg bg-surface px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
               >
-                <ExternalLink className="size-3.5" /> Öppna i kartor
+                <ExternalLink className="size-3.5" /> Öppna i Google Maps
               </a>
             </div>
           </>
