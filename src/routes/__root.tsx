@@ -73,14 +73,50 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
+const APPLE_SPLASH: Array<{ w: number; h: number; r: number; file: string }> = [
+  { w: 430, h: 932, r: 3, file: "apple-splash-1290x2796.png" },
+  { w: 393, h: 852, r: 3, file: "apple-splash-1179x2556.png" },
+  { w: 390, h: 844, r: 3, file: "apple-splash-1170x2532.png" },
+  { w: 414, h: 896, r: 3, file: "apple-splash-1242x2688.png" },
+  { w: 375, h: 812, r: 3, file: "apple-splash-1125x2436.png" },
+  { w: 414, h: 736, r: 3, file: "apple-splash-1242x2208.png" },
+  { w: 414, h: 896, r: 2, file: "apple-splash-828x1792.png" },
+  { w: 375, h: 667, r: 2, file: "apple-splash-750x1334.png" },
+  { w: 1024, h: 1366, r: 2, file: "apple-splash-2048x2732.png" },
+  { w: 834, h: 1194, r: 2, file: "apple-splash-1668x2388.png" },
+  { w: 810, h: 1080, r: 2, file: "apple-splash-1620x2160.png" },
+];
+
+const appleSplashLinks = APPLE_SPLASH.flatMap(({ w, h, r, file }) => [
+  {
+    rel: "apple-touch-startup-image",
+    href: `/${file}`,
+    media: `(device-width: ${w}px) and (device-height: ${h}px) and (-webkit-device-pixel-ratio: ${r}) and (orientation: portrait)`,
+  },
+  {
+    rel: "apple-touch-startup-image",
+    href: `/${file}`,
+    media: `(device-width: ${h}px) and (device-height: ${w}px) and (-webkit-device-pixel-ratio: ${r}) and (orientation: portrait)`,
+  },
+]);
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      {
+        name: "viewport",
+        content: "width=device-width, initial-scale=1, viewport-fit=cover",
+      },
       { title: "LifeHub AI" },
       { name: "description", content: "Din personliga AI-assistent för arbete, familj och privatliv" },
       { name: "author", content: "LifeHub" },
+      { name: "theme-color", content: "#3b82f6" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-title", content: "LifeHub" },
+      { name: "application-name", content: "LifeHub" },
       { property: "og:title", content: "LifeHub AI" },
       { property: "og:description", content: "Din personliga AI-assistent för arbete, familj och privatliv" },
       { property: "og:type", content: "website" },
@@ -91,11 +127,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.png", type: "image/png" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "icon", href: "/favicon.png", type: "image/png", sizes: "64x64" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon-167.png", sizes: "167x167" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon-152.png", sizes: "152x152" },
       { rel: "manifest", href: "/manifest.json" },
+      ...appleSplashLinks,
     ],
   }),
+
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
