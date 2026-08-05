@@ -1,9 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Mail, RefreshCw } from "lucide-react";
+import { useState } from "react";
+import { Mail, RefreshCw, SlidersHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { getInbox } from "@/lib/google.functions";
+import { useMailRules } from "@/lib/db";
+import { MailRulesDialog } from "./MailRulesDialog";
 
 function sender(from: string) {
   const match = /^(.*?)\s*</.exec(from);
@@ -13,6 +16,9 @@ function sender(from: string) {
 /** Olästa mejl från Gmail direkt på översikten. */
 export function InboxCard() {
   const fetchInbox = useServerFn(getInbox);
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const rulesQ = useMailRules();
+  const activeRules = (rulesQ.data ?? []).filter((r) => r.is_active).length;
   const query = useQuery({
     queryKey: ["gmail", "unread"],
     queryFn: () => fetchInbox({ data: { query: "is:unread in:inbox", max: 5 } }),
@@ -27,6 +33,15 @@ export function InboxCard() {
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <Mail className="size-4 text-[hsl(var(--cat-jobb))]" /> Inkorg
         </h2>
+        <div className="flex items-center gap-1">
+        <Button
+          size="icon"
+          variant="ghost"
+          aria-label="Mejlregler"
+          onClick={() => setRulesOpen(true)}
+        >
+          <SlidersHorizontal className="size-4" />
+        </Button>
         <Button
           size="icon"
           variant="ghost"
@@ -35,7 +50,14 @@ export function InboxCard() {
         >
           <RefreshCw className={`size-4 ${query.isFetching ? "animate-spin" : ""}`} />
         </Button>
+        </div>
       </div>
+
+      {activeRules > 0 ? (
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          {activeRules} aktiv{activeRules === 1 ? " regel" : "a regler"} filtrerar inkorgen
+        </p>
+      ) : null}
 
       {query.isLoading ? (
         <p className="mt-3 text-sm text-muted-foreground">Hämtar mejl…</p>
@@ -57,6 +79,8 @@ export function InboxCard() {
           ))}
         </ul>
       )}
+
+      <MailRulesDialog open={rulesOpen} onOpenChange={setRulesOpen} />
     </section>
   );
 }
