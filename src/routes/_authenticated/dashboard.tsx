@@ -96,6 +96,49 @@ function PlaceCard() {
   );
 }
 
+/** Topplista: de platser du besökt flest gånger de senaste 90 dagarna. */
+function TopPlacesCard() {
+  const placesQ = usePlaces();
+  const now = new Date();
+  const from = new Date(now.getTime() - 90 * 86400000);
+  const visitsQ = useVisits(from.toISOString());
+  const places = placesQ.data ?? [];
+  const visits = visitsQ.data ?? [];
+  const top = placeTotals(visits, places, from, now, now).slice(0, 5);
+
+  return (
+    <section className="card-soft p-5">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold">Mest besökta platser</h2>
+        <QuickLink to="/platser">Öppna</QuickLink>
+      </div>
+      <p className="mt-1 text-[11px] text-muted-foreground">Senaste 90 dagarna</p>
+      {top.length === 0 ? (
+        <p className="mt-3 text-sm text-muted-foreground">Inga besök registrerade än.</p>
+      ) : (
+        <ol className="mt-3 space-y-2">
+          {top.map((stat, i) => (
+            <li key={stat.key} className="flex items-center gap-3 text-sm">
+              <span className="w-4 shrink-0 text-xs tabular-nums text-muted-foreground">
+                {i + 1}
+              </span>
+              <span
+                className="size-2 shrink-0 rounded-full"
+                style={{ backgroundColor: stat.color }}
+              />
+              <span className="min-w-0 flex-1 truncate font-medium">{stat.name}</span>
+              <span className="shrink-0 tabular-nums text-xs text-muted-foreground">
+                {stat.visits} ggr · {formatDuration(stat.minutes)}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </section>
+  );
+}
+
+
 function Dashboard() {
   const eventsQ = useEvents();
   const rawEvents = eventsQ.data ?? [];
