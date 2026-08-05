@@ -131,11 +131,49 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
 
   const save = async () => {
     const meters = Math.max(0, Math.round(Number(km.replace(",", ".")) * 1000) || 0);
+    const nextArrived = fromLocalInput(startAt) ?? trip.arrived_at;
+    const nextLeft = fromLocalInput(endAt);
+    const changes: { field: string; old_value: string | null; new_value: string | null }[] = [];
+    const push = (field: string, oldV: string | null, newV: string | null) => {
+      if ((oldV ?? "") !== (newV ?? "")) changes.push({ field, old_value: oldV, new_value: newV });
+    };
+    const fmtTime = (iso: string | null) =>
+      iso ? new Date(iso).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" }) : null;
+    const nameFor = (lat: number | null, lng: number | null) =>
+      lat == null || lng == null
+        ? null
+        : places.find(
+            (p) => haversineMeters(lat, lng, p.lat, p.lng) <= Math.max(p.radius_m, 200),
+          )?.name ?? `${lat.toFixed(3)}, ${lng.toFixed(3)}`;
+
+    push("arrived_at", fmtTime(trip.arrived_at), fmtTime(nextArrived));
+    push("left_at", fmtTime(trip.left_at), fmtTime(nextLeft));
+    push(
+      "start_place",
+      nameFor(trip.lat, trip.lng),
+      start ? start.name : nameFor(trip.lat, trip.lng),
+    );
+    push(
+      "end_place",
+      nameFor(trip.end_lat, trip.end_lng),
+      end ? end.name : nameFor(trip.end_lat, trip.end_lng),
+    );
+    push(
+      "distance_m",
+      `${((trip.distance_m ?? 0) / 1000).toFixed(1).replace(".", ",")} km`,
+      `${(meters / 1000).toFixed(1).replace(".", ",")} km`,
+    );
+    push(
+      "distance_verified",
+      trip.distance_verified ? "Verifierat" : "Ej verifierat",
+      verified ? "Verifierat" : "Ej verifierat",
+    );
+
     await upsert.mutateAsync({
       id: trip.id,
       entry_kind: trip.entry_kind,
-      arrived_at: fromLocalInput(startAt) ?? trip.arrived_at,
-      left_at: fromLocalInput(endAt),
+      arrived_at: nextArrived,
+      left_at: nextLeft,
       lat: start ? start.lat : trip.lat,
       lng: start ? start.lng : trip.lng,
       end_lat: end ? end.lat : trip.end_lat,
@@ -148,8 +186,10 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
 
       is_manual: true,
     });
+    await logEdits(trip.id, changes);
     onClose();
   };
+
 
   return (
     <Dialog open={!!trip} onOpenChange={(open) => (open ? null : onClose())}>
