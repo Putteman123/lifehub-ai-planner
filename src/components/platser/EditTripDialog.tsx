@@ -16,9 +16,12 @@ import {
   distanceMatches,
   estimateRouteMeters,
   haversineMeters,
+  TRAVEL_MODES,
   type PlaceRow,
+  type TravelMode,
   type VisitRow,
 } from "@/lib/geo";
+
 
 
 /** ISO -> värde för <input type="datetime-local"> i lokal tid. */
