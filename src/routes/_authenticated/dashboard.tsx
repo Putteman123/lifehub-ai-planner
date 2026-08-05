@@ -241,7 +241,7 @@ function Dashboard() {
                         />
                       ))}
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
