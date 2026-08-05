@@ -238,7 +238,11 @@ export const getTravelTrendInsight = createServerFn({ method: "POST" })
     if (!text.trim()) return { insights: [] };
     try {
       const parsed = JSON.parse(text) as { insights?: TrendInsight[] };
-      return { insights: parsed.insights ?? [] };
+      const insights = (parsed.insights ?? []).map((i) => ({
+        ...i,
+        mode: i.mode.replace(/[[\]]/g, "").trim(),
+      }));
+      return { insights };
     } catch {
       throw new Error("Kunde inte tolka AI-svaret, försök igen.");
     }
