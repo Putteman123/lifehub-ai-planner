@@ -21,7 +21,15 @@ import {
 } from "@/lib/calendar";
 import { useEvents } from "@/lib/db";
 
+type View = "dag" | "vecka" | "manad" | "ar" | "agenda";
+
+const VIEWS: View[] = ["dag", "vecka", "manad", "ar", "agenda"];
+
 export const Route = createFileRoute("/_authenticated/kalender")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    vy: VIEWS.includes(search['vy'] as View) ? (search['vy'] as View) : undefined,
+    datum: typeof search['datum'] === "string" ? (search['datum'] as string) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Kalender – LifeHub AI" },
@@ -33,13 +41,14 @@ export const Route = createFileRoute("/_authenticated/kalender")({
   component: CalendarPage,
 });
 
-type View = "dag" | "vecka" | "manad" | "ar" | "agenda";
-
 function CalendarPage() {
+  const search = Route.useSearch();
   const eventsQ = useEvents();
   const rawEvents = eventsQ.data ?? [];
-  const [view, setView] = useState<View>("vecka");
-  const [cursor, setCursor] = useState(() => new Date());
+  const [view, setView] = useState<View>(search.vy ?? "vecka");
+  const [cursor, setCursor] = useState(() =>
+    search.datum ? new Date(`${search.datum}T12:00:00`) : new Date(),
+  );
   const [active, setActive] = useState<Category[]>(CATEGORIES.map((c) => c.value));
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selected, setSelected] = useState<EventRow | null>(null);
@@ -48,6 +57,12 @@ function CalendarPage() {
     () => mergeDuplicates(rawEvents).filter((e) => active.includes(e.category)),
     [rawEvents, active],
   );
+
+  function openDay(date: Date) {
+    setCursor(date);
+    setView("dag");
+  }
+
 
   function shift(direction: number) {
     const next = new Date(cursor);
