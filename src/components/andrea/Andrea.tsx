@@ -346,17 +346,25 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
           }}
         >
           {voice.supported ? (
-            <Button
+            <button
               type="button"
-              size="icon"
-              variant={voice.listening ? "default" : "outline"}
-              className="size-10 shrink-0 rounded-xl"
+              className={`relative flex size-10 shrink-0 items-center justify-center rounded-xl transition-all ${
+                voice.listening
+                  ? "bg-destructive text-destructive-foreground shadow-lg"
+                  : "border border-border bg-surface text-foreground hover:border-primary/40"
+              }`}
+              aria-pressed={voice.listening}
               aria-label={voice.listening ? "Sluta lyssna" : "Tala med Andrea"}
+              title={voice.listening ? "Lyssnar – tryck för att sluta" : "Tala med Andrea"}
               onClick={() => (voice.listening ? voice.stopListening() : voice.startListening())}
             >
-              <Mic className={`size-4 ${voice.listening ? "animate-pulse" : ""}`} />
-            </Button>
+              {voice.listening ? <MicOff className="size-4" /> : <Mic className="size-4" />}
+              {voice.listening ? (
+                <span className="pointer-events-none absolute inset-0 animate-ping rounded-xl border-2 border-destructive/60" />
+              ) : null}
+            </button>
           ) : null}
+
           <textarea
             ref={taRef}
             rows={1}
