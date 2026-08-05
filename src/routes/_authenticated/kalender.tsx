@@ -7,7 +7,7 @@ import { DataGate } from "@/components/DataGate";
 import { EventDialog } from "@/components/EventDialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CATEGORIES, categoryMeta, type Category, type EventRow } from "@/lib/categories";
+import { CATEGORIES, type Category, type EventRow } from "@/lib/categories";
 import {
   addDays,
   dayLoad,
@@ -17,6 +17,7 @@ import {
   mergeDuplicates,
   monthGrid,
   overlapsOnDay,
+  shiftMeta,
   timeRange,
   weekDays,
 } from "@/lib/calendar";
