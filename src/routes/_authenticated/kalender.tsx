@@ -406,11 +406,14 @@ function YearView({
               {days.map((d) => {
                 const load = dayLoad(events, d);
                 const other = d.getMonth() !== m.getMonth();
+                const dayEvents = eventsOnDay(events, d);
+                const hasNatt = dayEvents.some((e) => shiftType(e) === "natt");
+                const hasKvall = dayEvents.some((e) => shiftType(e) === "kvall");
                 return (
                   <button
                     key={d.toISOString()}
                     onClick={() => onPick(d)}
-                    className={`flex aspect-square items-center justify-center rounded-[3px] text-[9px] transition-colors hover:ring-1 hover:ring-primary/50 ${
+                    className={`relative flex aspect-square items-center justify-center rounded-[3px] text-[9px] transition-colors hover:ring-1 hover:ring-primary/50 ${
                       other ? "opacity-30" : ""
                     } ${
                       load === "full"
@@ -421,10 +424,21 @@ function YearView({
                     }`}
                   >
                     {fmt(d, "d")}
+                    {hasNatt || hasKvall ? (
+                      <span className="absolute bottom-0.5 flex gap-0.5">
+                        {hasNatt ? (
+                          <span className={`size-1 rounded-full ${SHIFT_STYLES.natt.dot}`} />
+                        ) : null}
+                        {hasKvall ? (
+                          <span className={`size-1 rounded-full ${SHIFT_STYLES.kvall.dot}`} />
+                        ) : null}
+                      </span>
+                    ) : null}
                   </button>
                 );
               })}
             </div>
+
           </div>
         );
       })}
