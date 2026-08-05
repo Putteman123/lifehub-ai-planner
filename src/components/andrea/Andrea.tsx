@@ -452,6 +452,11 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
               );
             }
             const thinking = isLoading && i === messages.length - 1;
+            const reasoning = m.parts
+              .filter((p) => (p as { type: string }).type === "reasoning")
+              .map((p) => (p as { text?: string }).text ?? "")
+              .join("\n")
+              .trim();
             return (
               <div key={m.id} className="flex gap-3">
                 <img
@@ -460,6 +465,15 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
                   className={`mt-0.5 size-8 shrink-0 rounded-full object-cover ${thinking ? "andrea-thinking" : ""}`}
                 />
                 <div className="min-w-0 max-w-[85%] space-y-2">
+                  {reasoning ? (
+                    <details className="rounded-xl border border-border/60 bg-surface px-3 py-2 text-xs text-muted-foreground">
+                      <summary className="cursor-pointer list-none font-medium text-foreground/80">
+                        {thinking && !text ? "Andrea tänker…" : "Andreas tankegång"}
+                      </summary>
+                      <p className="mt-2 whitespace-pre-wrap leading-relaxed">{reasoning}</p>
+                    </details>
+                  ) : null}
+
                   {text ? (
                     <div className="rounded-2xl rounded-bl-md bg-muted/60 px-4 py-2.5 text-sm leading-relaxed [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_ul]:mb-2 [&_ul]:space-y-1">
                       <ReactMarkdown>{text}</ReactMarkdown>
