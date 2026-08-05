@@ -158,6 +158,13 @@ function Dashboard() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [tab, setTab] = useState("idag");
+  const swipe = useSwipe({
+    onSwipeLeft: () =>
+      setTab((t) => (t === "idag" ? "kalender" : t === "kalender" ? "statistik" : t)),
+    onSwipeRight: () =>
+      setTab((t) => (t === "statistik" ? "kalender" : t === "kalender" ? "idag" : t)),
+  });
+
   const [selected, setSelected] = useState<EventRow | null>(null);
 
   const events = useMemo(() => mergeDuplicates(rawEvents), [rawEvents]);
