@@ -60,7 +60,7 @@ export const Route = createFileRoute("/api/chat")({
                 const ctxText = await buildAndreaContext();
                 const eventsMatch = ctxText.match(/Händelser \(kommande 21 dagar\):([\s\S]*?)(?=\n\n|$)/);
                 const events: { starts_at: string; ends_at: string; all_day: boolean; category: string; title: string }[] = [];
-                if (eventsMatch) {
+                if (eventsMatch && eventsMatch[1]) {
                   const lines = eventsMatch[1].split("\n").filter((l) => l.startsWith("- "));
                   for (const line of lines) {
                     const m = line.match(/- (.+?) \| (\w+) \| (.+)/);
