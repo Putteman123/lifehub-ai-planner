@@ -1,6 +1,9 @@
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { ExternalLink, Loader2, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { GoogleMap } from "@/components/GoogleMap";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PLACE_KINDS, type PlaceKind } from "@/lib/geo";
+import { reverseGeocode } from "@/lib/maps.functions";
 
 export type NameVisitTarget = {
   visitId: string;
@@ -39,10 +43,6 @@ const DEFAULT_ACTIVITIES = [
   "Jurist",
   "Hem",
 ];
-
-function bbox(lat: number, lng: number, span = 0.006) {
-  return [lng - span, lat - span / 2, lng + span, lat + span / 2].join("%2C");
-}
 
 export function NameVisitDialog({
   target,
@@ -71,6 +71,14 @@ export function NameVisitDialog({
   const hasCoords =
     target != null && typeof target.lat === "number" && typeof target.lng === "number";
 
+  const lookup = useServerFn(reverseGeocode);
+  const geocodeQ = useQuery({
+    queryKey: ["reverse-geocode", target?.lat ?? null, target?.lng ?? null],
+    enabled: hasCoords,
+    staleTime: 1000 * 60 * 60,
+    queryFn: () => lookup({ data: { lat: target!.lat!, lng: target!.lng! } }),
+  });
+
   useEffect(() => {
     if (!target) return;
     setLabel(target.label && target.label !== "Okänd plats" ? target.label : "");
@@ -95,17 +103,37 @@ export function NameVisitDialog({
         ) : null}
 
         {hasCoords ? (
-          <div className="overflow-hidden rounded-xl border border-border">
-            <iframe
-              title="Karta över besöket"
-              className="h-36 w-full border-0"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              src={`https://www.openstreetmap.org/export/embed.html?bbox=${bbox(
-                target!.lat!,
-                target!.lng!,
-              )}&layer=mapnik&marker=${target!.lat}%2C${target!.lng}`}
-            />
+          <div className="space-y-2">
+            <div className="overflow-hidden rounded-xl border border-border">
+              <GoogleMap
+                className="h-40 w-full"
+                markers={[{ lat: target!.lat!, lng: target!.lng! }]}
+              />
+            </div>
+            {geocodeQ.data ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setLabel(geocodeQ.data!.shortName);
+                }}
+                className="flex w-full items-start gap-2 rounded-xl border border-border/70 px-3 py-2 text-left transition-colors hover:bg-accent"
+              >
+                <MapPin className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium">
+                    {geocodeQ.data.shortName}
+                  </span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {geocodeQ.data.address} · tryck för att använda
+                  </span>
+                </span>
+              </button>
+            ) : geocodeQ.isFetching ? (
+              <p className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
+                <Loader2 className="size-3.5 animate-spin" /> Hämtar adress från Google
+                Maps…
+              </p>
+            ) : null}
           </div>
         ) : (
           <p className="rounded-xl border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
@@ -183,12 +211,12 @@ export function NameVisitDialog({
         <DialogFooter className="gap-2 sm:justify-between">
           {hasCoords ? (
             <a
-              href={`https://www.openstreetmap.org/?mlat=${target!.lat}&mlon=${target!.lng}#map=16/${target!.lat}/${target!.lng}`}
+              href={`https://www.google.com/maps/search/?api=1&query=${target!.lat}%2C${target!.lng}`}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-1.5 self-center text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
-              <ExternalLink className="size-3.5" /> Öppna i kartor
+              <ExternalLink className="size-3.5" /> Öppna i Google Maps
             </a>
           ) : (
             <span />
