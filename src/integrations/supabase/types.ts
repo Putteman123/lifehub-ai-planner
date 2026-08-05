@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_challenges: {
+        Row: {
+          challenge: string
+          created_at: string
+          expires_at: string
+          id: string
+          purpose: string
+        }
+        Insert: {
+          challenge: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          purpose: string
+        }
+        Update: {
+          challenge?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          purpose?: string
+        }
+        Relationships: []
+      }
+      app_passkeys: {
+        Row: {
+          counter: number
+          created_at: string
+          credential_id: string
+          id: string
+          label: string | null
+          public_key: string
+          updated_at: string
+        }
+        Insert: {
+          counter?: number
+          created_at?: string
+          credential_id: string
+          id?: string
+          label?: string | null
+          public_key: string
+          updated_at?: string
+        }
+        Update: {
+          counter?: number
+          created_at?: string
+          credential_id?: string
+          id?: string
+          label?: string | null
+          public_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       calendars: {
         Row: {
           color: string
@@ -269,6 +323,45 @@ export type Database = {
         }
         Relationships: []
       }
+      pantry_items: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          last_added_at: string
+          name: string
+          name_key: string
+          source: Database["public"]["Enums"]["shopping_source"]
+          times_added: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          last_added_at?: string
+          name: string
+          name_key: string
+          source?: Database["public"]["Enums"]["shopping_source"]
+          times_added?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          last_added_at?: string
+          name?: string
+          name_key?: string
+          source?: Database["public"]["Enums"]["shopping_source"]
+          times_added?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       places: {
         Row: {
           address: string | null
@@ -375,6 +468,89 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shopping_items: {
+        Row: {
+          category: string | null
+          checked_at: string | null
+          created_at: string
+          id: string
+          is_checked: boolean
+          list_id: string
+          name: string
+          quantity: string | null
+          sort_order: number
+          source: Database["public"]["Enums"]["shopping_source"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          checked_at?: string | null
+          created_at?: string
+          id?: string
+          is_checked?: boolean
+          list_id: string
+          name: string
+          quantity?: string | null
+          sort_order?: number
+          source?: Database["public"]["Enums"]["shopping_source"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          checked_at?: string | null
+          created_at?: string
+          id?: string
+          is_checked?: boolean
+          list_id?: string
+          name?: string
+          quantity?: string | null
+          sort_order?: number
+          source?: Database["public"]["Enums"]["shopping_source"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopping_lists: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          status: Database["public"]["Enums"]["shopping_status"]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["shopping_status"]
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["shopping_status"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       todos: {
         Row: {
@@ -717,6 +893,8 @@ export type Database = {
         | "privat"
         | "viktigt"
       place_kind: "jobb" | "jurist" | "hem" | "barn" | "annat"
+      shopping_source: "manuell" | "ai"
+      shopping_status: "aktiv" | "klar"
       travel_mode: "bil" | "kollektivt" | "gang_cykel" | "okant"
       vault_kind: "losenord" | "pinkod" | "kod" | "anteckning"
       visit_kind: "besok" | "resa"
@@ -859,6 +1037,8 @@ export const Constants = {
       ],
       event_category: ["jobb", "ledig", "jurist", "barn", "privat", "viktigt"],
       place_kind: ["jobb", "jurist", "hem", "barn", "annat"],
+      shopping_source: ["manuell", "ai"],
+      shopping_status: ["aktiv", "klar"],
       travel_mode: ["bil", "kollektivt", "gang_cykel", "okant"],
       vault_kind: ["losenord", "pinkod", "kod", "anteckning"],
       visit_kind: ["besok", "resa"],
