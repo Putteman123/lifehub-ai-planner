@@ -130,16 +130,100 @@ export function TravelTimeline({ places }: { places: PlaceRow[] }) {
   const points = selected ? [selected.start, selected.end].filter(Boolean) : [];
   const hasMap = points.length > 0;
 
+  // Sammanfattning av de markerade resorna, sorterade i tidsordning.
+  const pickedTrips = useMemo(() => {
+    return trips
+      .filter((t) => picked.includes(t.visit.id))
+      .sort((a, b) => a.visit.arrived_at.localeCompare(b.visit.arrived_at));
+  }, [trips, picked]);
+
+  const pickedSummary = useMemo(() => {
+    if (pickedTrips.length < 2) return null;
+    const first = pickedTrips[0]!.visit;
+    const last = pickedTrips[pickedTrips.length - 1]!.visit;
+    const meters = pickedTrips.reduce((sum, t) => sum + (t.visit.distance_m ?? 0), 0);
+    const minutes = Math.max(
+      0,
+      Math.round(
+        (new Date(last.left_at ?? last.arrived_at).getTime() -
+          new Date(first.arrived_at).getTime()) /
+          60000,
+      ),
+    );
+    return { first, last, meters, minutes, count: pickedTrips.length };
+  }, [pickedTrips]);
+
+  function togglePick(id: string) {
+    setPicked((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  function exitMergeMode() {
+    setMergeMode(false);
+    setPicked([]);
+  }
+
+  async function runMerge() {
+    if (!pickedSummary) return;
+    setMerging(true);
+    try {
+      const res = await mergeTravels({ data: { visitIds: pickedTrips.map((t) => t.visit.id) } });
+      await qc.invalidateQueries({ queryKey: ["visits"] });
+      toast.success(
+        `Sammanslagen resa: ${formatDistance(res.distance_m)} · ${formatDuration(res.minutes)}`,
+      );
+      setConfirmOpen(false);
+      exitMergeMode();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Kunde inte slå ihop resorna.");
+    } finally {
+      setMerging(false);
+    }
+  }
+
   return (
     <section className="rounded-2xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-sm font-semibold">
           <Car className="size-4" /> Reskarta &amp; tidslinje
         </h2>
-        <span className="text-xs text-muted-foreground">
-          {trips.length} resor · {formatDistance(totalMeters)} senaste {DAYS} dagarna
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">
+            {trips.length} resor · {formatDistance(totalMeters)} senaste {DAYS} dagarna
+          </span>
+          {trips.length >= 2 ? (
+            mergeMode ? (
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={!pickedSummary}
+                  onClick={() => setConfirmOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
+                >
+                  <Merge className="size-3.5" />
+                  Slå ihop {picked.length > 0 ? `${picked.length} ` : ""}resor
+                </button>
+                <button
+                  type="button"
+                  onClick={exitMergeMode}
+                  aria-label="Avbryt sammanslagning"
+                  className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setMergeMode(true)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-muted"
+              >
+                <Merge className="size-3.5" /> Slå ihop
+              </button>
+            )
+          ) : null}
+        </div>
       </div>
+
 
       {trips.length === 0 ? (
         <p className="mt-4 text-sm text-muted-foreground">
