@@ -118,10 +118,27 @@ function ChildrenPage() {
         </div>
       ) : null}
 
+      {children.length > 0 ? (
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="card-soft p-4">
+            <p className="text-xs text-muted-foreground">Aktiviteter (14 dagar)</p>
+            <p className="text-2xl font-semibold">{totalActivities}</p>
+          </div>
+          <div className="card-soft p-4">
+            <p className="text-xs text-muted-foreground">Barn</p>
+            <p className="text-2xl font-semibold">{children.length}</p>
+          </div>
+          <div className="card-soft p-4">
+            <p className="text-xs text-muted-foreground">Dagar med aktiviteter</p>
+            <p className="text-2xl font-semibold">{upcoming.length}</p>
+          </div>
+        </div>
+      ) : null}
+
       <div className="mt-5 space-y-4">
         {upcoming.length === 0 ? (
           <div className="card-soft p-6 text-sm text-muted-foreground">
-            Inga barnaktiviteter de kommande tre veckorna.
+            Inga barnaktiviteter de kommande två veckorna.
           </div>
         ) : (
           upcoming.map(({ day, items }) => (
