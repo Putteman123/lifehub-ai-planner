@@ -521,7 +521,7 @@ function PlacesPage() {
 
           <OwnTracksGuide
             ingestUrl={ingestUrl}
-            onShowIngest={showIngest}
+            error={ingestError}
             lastPingAt={lastPingAt}
           />
 

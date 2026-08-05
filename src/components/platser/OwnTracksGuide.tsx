@@ -47,7 +47,7 @@ function relative(date: Date) {
   return `för ${Math.round(h / 24)} dygn sedan`;
 }
 
-export function OwnTracksGuide({ ingestUrl, onShowIngest, lastPingAt }: Props) {
+export function OwnTracksGuide({ ingestUrl, error, lastPingAt }: Props) {
   const [checked, setChecked] = useState(false);
 
   return (
