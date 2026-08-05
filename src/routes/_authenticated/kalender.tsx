@@ -62,9 +62,9 @@ function CalendarPage() {
 
   useEffect(() => {
     const params: Record<string, string> = {};
-    if (view !== "vecka") params.vy = view;
+    if (view !== "vecka") params['vy'] = view;
     const dateStr = fmt(cursor, "yyyy-MM-dd");
-    if (dateStr !== fmt(new Date(), "yyyy-MM-dd")) params.datum = dateStr;
+    if (dateStr !== fmt(new Date(), "yyyy-MM-dd")) params['datum'] = dateStr;
     void navigate({ search: params, replace: true });
   }, [view, cursor, navigate]);
 
