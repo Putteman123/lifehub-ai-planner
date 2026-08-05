@@ -12,7 +12,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useUpsertRow } from "@/lib/db";
-import { haversineMeters, type PlaceRow, type VisitRow } from "@/lib/geo";
+import {
+  distanceMatches,
+  estimateRouteMeters,
+  haversineMeters,
+  type PlaceRow,
+  type VisitRow,
+} from "@/lib/geo";
+
 
 /** ISO -> värde för <input type="datetime-local"> i lokal tid. */
 function toLocalInput(iso: string | null) {
