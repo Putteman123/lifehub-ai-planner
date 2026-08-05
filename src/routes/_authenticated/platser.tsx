@@ -641,6 +641,11 @@ function PlacesPage() {
           <FrequentRoutes places={places} />
         </div>
 
+        <div className="mt-4">
+          <PreferredModes places={places} />
+        </div>
+
+
 
 
 
