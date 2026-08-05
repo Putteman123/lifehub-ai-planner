@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Loader2, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 
@@ -79,30 +79,59 @@ function CalendarsPage() {
 
 
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [provider, setProvider] = useState<string>("ics");
   const [url, setUrl] = useState("");
   const [category, setCategory] = useState<Category>("privat");
 
-  async function save() {
-    if (!name.trim()) return;
-    await upsert.mutateAsync({
-      name: name.trim(),
-      source: provider as "apple" | "family" | "google" | "ics" | "local" | "outlook" | "school" | "sports",
-      ics_url: url || null,
-      color: category,
-    });
+  function openCreate() {
+    setEditingId(null);
     setName("");
     setUrl("");
+    setProvider("ics");
+    setCategory("privat");
+    setOpen(true);
+  }
+
+  function openEdit(calendar: (typeof calendars)[number]) {
+    setEditingId(calendar.id);
+    setName(calendar.name);
+    setUrl(calendar.ics_url ?? "");
+    setProvider(calendar.source);
+    setCategory(calendar.color as Category);
+    setOpen(true);
+  }
+
+  async function save() {
+    if (!name.trim()) return;
+    if (editingId) {
+      await upsert.mutateAsync({
+        id: editingId,
+        name: name.trim(),
+        color: category,
+      });
+    } else {
+      await upsert.mutateAsync({
+        name: name.trim(),
+        source: provider as "apple" | "family" | "google" | "ics" | "local" | "outlook" | "school" | "sports",
+        ics_url: url || null,
+        color: category,
+      });
+    }
+    setName("");
+    setUrl("");
+    setEditingId(null);
     setOpen(false);
   }
+
 
   return (
     <AppShell
       title="Kalendrar"
       subtitle="Importera och synkronisera obegränsat antal källor"
       actions={
-        <Button size="sm" onClick={() => setOpen(true)}>
+        <Button size="sm" onClick={openCreate}>
           <Plus className="size-4" /> Lägg till
         </Button>
       }
@@ -154,9 +183,19 @@ function CalendarsPage() {
                     )}
                   </Button>
 
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => openEdit(c)}
+                    aria-label="Byt namn på kalender"
+                  >
+                    <Pencil className="size-4" />
+                  </Button>
+
                   <Button size="icon" variant="ghost" onClick={() => remove.mutate(c.id)}>
                     <Trash2 className="size-4" />
                   </Button>
+
                 </div>
               </div>
             </div>
@@ -167,7 +206,7 @@ function CalendarsPage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Lägg till kalender</DialogTitle>
+            <DialogTitle>{editingId ? "Redigera kalender" : "Lägg till kalender"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
@@ -181,7 +220,11 @@ function CalendarsPage() {
             </div>
             <div className="space-y-1.5">
               <Label>Källa</Label>
-              <Select value={provider} onValueChange={setProvider}>
+              <Select
+                value={provider}
+                onValueChange={setProvider}
+                disabled={!!editingId}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -202,8 +245,15 @@ function CalendarsPage() {
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="https://..."
+                  disabled={!!editingId}
                 />
+                {editingId ? (
+                  <p className="text-xs text-muted-foreground">
+                    Länken kan inte ändras – lägg till en ny kalender om källan byts.
+                  </p>
+                ) : null}
               </div>
+
             ) : null}
             <div className="space-y-1.5">
               <Label>Standardkategori</Label>
