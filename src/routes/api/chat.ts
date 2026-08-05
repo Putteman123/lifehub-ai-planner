@@ -257,6 +257,12 @@ export const Route = createFileRoute("/api/chat")({
               needsApproval: true,
               execute: async ({ visit_ids }) => agent.mergeTravels(userId, visit_ids),
             }),
+            analyze_travel_trend: tool({
+              description:
+                "Hämta trendunderlag per färdsätt (bil, kollektivt, gång/cykel): senaste 4 veckorna mot föregående 4, vanligaste rutter, vardagsandel och topp-/lågvecka. Använd vid frågor om varför resmönstret förändrats eller hur resandet kan optimeras.",
+              inputSchema: z.object({ days: z.number().min(30).max(365).nullable() }),
+              execute: async ({ days }) => agent.analyzeTravelTrend(userId, days ?? 180),
+            }),
             plan_week_travel: tool({
               description:
                 "Hämta reseplan för kommande dagar: bästa färdsätt, restid, avresetid och marginal per aktivitet med känd plats. Använd vid frågor om hur användaren tar sig till kommande aktiviteter.",
