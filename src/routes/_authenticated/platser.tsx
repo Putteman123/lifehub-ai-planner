@@ -732,8 +732,13 @@ function PlacesPage() {
         </div>
 
         <div className="mt-4">
+          <PositionHistory />
+        </div>
+
+        <div className="mt-4">
           <TravelTimeline places={places} />
         </div>
+
 
         <div className="mt-4">
           <WeeklyTravelPlan />
