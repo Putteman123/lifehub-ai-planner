@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import {
-  Copy,
+  
   Loader2,
   LogOut,
   MapPin,
@@ -15,6 +15,8 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
 import { DataGate } from "@/components/DataGate";
+import { OwnTracksGuide } from "@/components/platser/OwnTracksGuide";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -281,6 +283,12 @@ function PlacesPage() {
     .filter((v) => new Date(v.left_at ?? now).getTime() >= todayStart.getTime())
     .sort((a, b) => a.arrived_at.localeCompare(b.arrived_at));
   const openVisit = visits.find((v) => !v.left_at) ?? null;
+  const lastPingMs = visits.reduce((acc, v) => {
+    const t = new Date(v.left_at ?? v.arrived_at).getTime();
+    return t > acc ? t : acc;
+  }, 0);
+  const lastPingAt = lastPingMs > 0 ? new Date(lastPingMs) : null;
+
 
   const today = minutesByKind(visits, places, todayStart, now, now);
   const week = minutesByKind(visits, places, weekStart, now, now);
@@ -495,58 +503,12 @@ function PlacesPage() {
             privata adress i stället – gratis, och den fungerar med låst skärm.
           </p>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <Button size="sm" variant="outline" onClick={showIngest}>
-              Visa min privata adress
-            </Button>
-            {ingestUrl ? (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  void navigator.clipboard.writeText(ingestUrl);
-                  toast.success("Adressen kopierad");
-                }}
-              >
-                <Copy className="size-4" /> Kopiera
-              </Button>
-            ) : null}
-          </div>
-          {ingestUrl ? (
-            <code className="mt-2 block break-all rounded-lg bg-muted px-3 py-2 text-xs">
-              {ingestUrl}
-            </code>
-          ) : null}
+          <OwnTracksGuide
+            ingestUrl={ingestUrl}
+            onShowIngest={showIngest}
+            lastPingAt={lastPingAt}
+          />
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                OwnTracks (rekommenderas)
-              </h3>
-              <ol className="mt-2 list-decimal space-y-1 pl-4 text-sm text-muted-foreground">
-                <li>Installera OwnTracks från App Store (gratis).</li>
-                <li>Inställningar → Mode → välj <strong>HTTP</strong>.</li>
-                <li>Klistra in adressen ovan i fältet <strong>URL</strong>.</li>
-                <li>Sätt Locator till <strong>Move</strong> eller <strong>Significant</strong>.</li>
-                <li>Tillåt plats <strong>Alltid</strong> när iOS frågar.</li>
-              </ol>
-            </div>
-            <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Genvägar (utan extra app)
-              </h3>
-              <ol className="mt-2 list-decimal space-y-1 pl-4 text-sm text-muted-foreground">
-                <li>Genvägar → Automation → Ny personlig automation.</li>
-                <li>Välj t.ex. <strong>Ankomst</strong> till en plats.</li>
-                <li>Lägg till <strong>Hämta aktuell plats</strong>.</li>
-                <li>
-                  Lägg till <strong>Hämta innehåll från URL</strong>: metod POST, JSON med
-                  fälten <code>lat</code> och <code>lon</code> från platsen.
-                </li>
-                <li>Slå av ”Fråga innan körning”.</li>
-              </ol>
-            </div>
-          </div>
 
           <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/70 pt-3">
             <p className="text-xs text-muted-foreground">
