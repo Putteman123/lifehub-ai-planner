@@ -205,9 +205,8 @@ function Dashboard() {
       }
     >
       <DataGate queries={[eventsQ, tasksQ, remindersQ, todosQ]}>
-        <div className="grid min-w-0 gap-5 lg:grid-cols-12">
-          <div className="min-w-0 space-y-5 lg:col-span-8">
-
+    const idagGroup = (
+      <>
             <section className="card-soft bg-accent/40 p-5">
               <div className="flex items-center gap-2 text-primary">
                 <Sparkles className="size-4" />
@@ -240,6 +239,86 @@ function Dashboard() {
               </div>
             </section>
 
+            <section className="card-soft p-5">
+              <h2 className="text-sm font-semibold">Ledig tid idag</h2>
+              <ul className="mt-3 space-y-2">
+                {gaps.length === 0 ? (
+                  <li className="text-sm text-muted-foreground">Ingen lucka hittad.</li>
+                ) : (
+                  gaps.map((g) => (
+                    <li
+                      key={g.start.toISOString()}
+                      className="flex items-center justify-between rounded-lg bg-surface px-3 py-2 text-sm"
+                    >
+                      <span className="tabular-nums">
+                        {fmt(g.start, "HH:mm")}–{fmt(g.end, "HH:mm")}
+                      </span>
+                      <span className="text-xs text-muted-foreground">{g.minutes} min</span>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </section>
+
+            <section className="card-soft p-5">
+              <h2 className="text-sm font-semibold">Kommande</h2>
+              <ul className="mt-3 space-y-2">
+                {upcoming.length === 0 ? (
+                  <li className="text-sm text-muted-foreground">Inget planerat framåt.</li>
+                ) : (
+                  upcoming.map((e) => (
+                    <li key={e.id} className="flex items-center gap-2 text-sm">
+                      <span className={`size-2 rounded-full ${categoryMeta(e.category).dot}`} />
+                      <span className="min-w-0 flex-1 truncate">{e.title}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {fmt(e.starts_at, "d MMM HH:mm")}
+                      </span>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </section>
+
+            <section className="card-soft p-5">
+              <h2 className="text-sm font-semibold">Deadlines</h2>
+              <ul className="mt-3 space-y-2">
+                {deadlines.length === 0 ? (
+                  <li className="text-sm text-muted-foreground">Inga tidsfrister.</li>
+                ) : (
+                  deadlines.map((t) => (
+                    <li key={t.id} className="flex items-center justify-between text-sm">
+                      <span className="min-w-0 truncate">{t.title}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {t.due_date ? fmt(t.due_date, "d MMM") : ""}
+                      </span>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </section>
+
+            <section className="card-soft p-5">
+              <h2 className="text-sm font-semibold">Påminnelser</h2>
+              <ul className="mt-3 space-y-2">
+                {openReminders.length === 0 ? (
+                  <li className="text-sm text-muted-foreground">Inga påminnelser.</li>
+                ) : (
+                  openReminders.map((r) => (
+                    <li key={r.id} className="flex items-center justify-between text-sm">
+                      <span className="min-w-0 truncate">{r.title}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {fmt(r.remind_at, "d MMM HH:mm")}
+                      </span>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </section>
+      </>
+    );
+
+    const kalenderGroup = (
+      <>
             <section className="card-soft p-5">
               <h2 className="text-sm font-semibold">Veckans tidslinje</h2>
               <div className="mt-3 grid grid-cols-7 gap-1 sm:gap-2">
@@ -322,9 +401,11 @@ function Dashboard() {
                 })}
               </div>
             </section>
-          </div>
+      </>
+    );
 
-          <div className="space-y-5 lg:col-span-4">
+    const statistikGroup = (
+      <>
             <div className="grid grid-cols-2 gap-3">
               <Stat
                 label="Arbetade timmar (v)"
@@ -348,87 +429,47 @@ function Dashboard() {
             <PlaceCard />
             <TopPlacesCard />
 
-
-
-            <section className="card-soft p-5">
-              <h2 className="text-sm font-semibold">Ledig tid idag</h2>
-              <ul className="mt-3 space-y-2">
-                {gaps.length === 0 ? (
-                  <li className="text-sm text-muted-foreground">Ingen lucka hittad.</li>
-                ) : (
-                  gaps.map((g) => (
-                    <li
-                      key={g.start.toISOString()}
-                      className="flex items-center justify-between rounded-lg bg-surface px-3 py-2 text-sm"
-                    >
-                      <span className="tabular-nums">
-                        {fmt(g.start, "HH:mm")}–{fmt(g.end, "HH:mm")}
-                      </span>
-                      <span className="text-xs text-muted-foreground">{g.minutes} min</span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </section>
-
-            <section className="card-soft p-5">
-              <h2 className="text-sm font-semibold">Kommande</h2>
-              <ul className="mt-3 space-y-2">
-                {upcoming.length === 0 ? (
-                  <li className="text-sm text-muted-foreground">Inget planerat framåt.</li>
-                ) : (
-                  upcoming.map((e) => (
-                    <li key={e.id} className="flex items-center gap-2 text-sm">
-                      <span className={`size-2 rounded-full ${categoryMeta(e.category).dot}`} />
-                      <span className="min-w-0 flex-1 truncate">{e.title}</span>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {fmt(e.starts_at, "d MMM HH:mm")}
-                      </span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </section>
-
-            <section className="card-soft p-5">
-              <h2 className="text-sm font-semibold">Deadlines</h2>
-              <ul className="mt-3 space-y-2">
-                {deadlines.length === 0 ? (
-                  <li className="text-sm text-muted-foreground">Inga tidsfrister.</li>
-                ) : (
-                  deadlines.map((t) => (
-                    <li key={t.id} className="flex items-center justify-between text-sm">
-                      <span className="min-w-0 truncate">{t.title}</span>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {t.due_date ? fmt(t.due_date, "d MMM") : ""}
-                      </span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </section>
-
-            <section className="card-soft p-5">
-              <h2 className="text-sm font-semibold">Påminnelser</h2>
-              <ul className="mt-3 space-y-2">
-                {openReminders.length === 0 ? (
-                  <li className="text-sm text-muted-foreground">Inga påminnelser.</li>
-                ) : (
-                  openReminders.map((r) => (
-                    <li key={r.id} className="flex items-center justify-between text-sm">
-                      <span className="min-w-0 truncate">{r.title}</span>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {fmt(r.remind_at, "d MMM HH:mm")}
-                      </span>
-                    </li>
-                  ))
-                )}
-              </ul>
-            </section>
-
             <ShiftSummaryCard events={events} />
-          </div>
+      </>
+    );
 
+        {/* Mobil: flikar så varje vy får full bredd och läsbar text. */}
+        <Tabs value={tab} onValueChange={setTab} className="min-w-0 lg:hidden">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="idag" className="min-h-11 text-[13px]">
+              Idag
+            </TabsTrigger>
+            <TabsTrigger value="kalender" className="min-h-11 text-[13px]">
+              Kalender
+            </TabsTrigger>
+            <TabsTrigger value="statistik" className="min-h-11 text-[13px]">
+              Statistik
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="idag" className="view-enter mt-4 space-y-4">
+            {idagGroup}
+          </TabsContent>
+          <TabsContent value="kalender" className="view-enter mt-4 space-y-4">
+            {kalenderGroup}
+          </TabsContent>
+          <TabsContent value="statistik" className="view-enter mt-4 space-y-4">
+            {statistikGroup}
+          </TabsContent>
+        </Tabs>
+
+        {/* Dator: allt i två kolumner som tidigare. */}
+        <div className="hidden min-w-0 gap-5 lg:grid lg:grid-cols-12">
+          <div className="min-w-0 space-y-5 lg:col-span-8">
+            <>
+              {idagGroup}
+            </>
+          </div>
+          <div className="min-w-0 space-y-5 lg:col-span-4">
+            <>
+              {kalenderGroup}
+              {statistikGroup}
+            </>
+          </div>
         </div>
 
         <EventDialog
@@ -441,6 +482,7 @@ function Dashboard() {
     </AppShell>
   );
 }
+
 
 function TodayRow({ event, onClick }: { event: EventRow; onClick: () => void }) {
   const meta = categoryMeta(event.category);
