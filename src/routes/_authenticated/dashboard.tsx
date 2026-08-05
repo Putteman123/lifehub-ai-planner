@@ -11,6 +11,9 @@ import { InboxCard } from "@/components/google/InboxCard";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSwipe } from "@/hooks/use-swipe";
+import { useSwipeTabsSetting } from "@/hooks/use-swipe-setting";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { hapticTick } from "@/lib/haptics";
 
 import { categoryMeta, SHIFT_STYLES, type EventRow } from "@/lib/categories";
@@ -191,12 +194,15 @@ function Dashboard() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [tab, setTab] = useState("idag");
-  const swipeTo = (next: (t: string) => string) =>
+  const { swipeEnabled, setSwipeEnabled } = useSwipeTabsSetting();
+  const swipeTo = (next: (t: string) => string) => {
+    if (!swipeEnabled) return;
     setTab((t) => {
       const n = next(t);
       if (n !== t) hapticTick();
       return n;
     });
+  };
   const swipe = useSwipe({
     onSwipeLeft: () =>
       swipeTo((t) => (t === "idag" ? "kalender" : t === "kalender" ? "statistik" : t)),
@@ -494,8 +500,14 @@ function Dashboard() {
               Statistik
             </TabsTrigger>
           </TabsList>
+          <div className="mt-2 flex items-center justify-between rounded-xl border bg-card/60 px-3 py-2">
+            <Label htmlFor="swipe-tabs" className="text-[13px] text-muted-foreground">
+              Svep mellan flikar
+            </Label>
+            <Switch id="swipe-tabs" checked={swipeEnabled} onCheckedChange={setSwipeEnabled} />
+          </div>
           {/* Svep i sidled för att byta flik på mobil. */}
-          <div className="min-w-0 touch-pan-y" {...swipe}>
+          <div className="min-w-0 touch-pan-y" {...(swipeEnabled ? swipe : {})}>
             <TabsContent key={tab} value="idag" className="view-enter mt-4 space-y-4">
               {idagGroup}
             </TabsContent>
