@@ -19,7 +19,9 @@ import { DataGate } from "@/components/DataGate";
 import { OwnTracksGuide } from "@/components/platser/OwnTracksGuide";
 import { MapDialog, type MapTarget } from "@/components/platser/MapDialog";
 import { FrequentRoutes } from "@/components/platser/FrequentRoutes";
+import { TravelModeStats } from "@/components/platser/TravelModeStats";
 import { TravelTimeline } from "@/components/platser/TravelTimeline";
+
 import {
   NameVisitDialog,
   type NameVisitTarget,
