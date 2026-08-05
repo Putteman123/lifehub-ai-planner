@@ -147,10 +147,15 @@ function CalendarPage() {
 
       <div className="mt-5">
         {view === "dag" ? <DayView events={events} day={cursor} onSelect={open} /> : null}
-        {view === "vecka" ? <WeekView events={events} day={cursor} onSelect={open} /> : null}
-        {view === "manad" ? <MonthView events={events} day={cursor} onSelect={open} /> : null}
-        {view === "ar" ? <YearView events={events} day={cursor} onPick={setCursor} /> : null}
+        {view === "vecka" ? (
+          <WeekView events={events} day={cursor} onSelect={open} onOpenDay={openDay} />
+        ) : null}
+        {view === "manad" ? (
+          <MonthView events={events} day={cursor} onSelect={open} onOpenDay={openDay} />
+        ) : null}
+        {view === "ar" ? <YearView events={events} day={cursor} onPick={openDay} /> : null}
         {view === "agenda" ? <AgendaView events={events} day={cursor} onSelect={open} /> : null}
+
       </div>
 
       <EventDialog
