@@ -547,6 +547,44 @@ export type Database = {
         }
         Relationships: []
       }
+      visit_edits: {
+        Row: {
+          created_at: string
+          field: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          user_id: string
+          visit_id: string
+        }
+        Insert: {
+          created_at?: string
+          field: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          user_id: string
+          visit_id: string
+        }
+        Update: {
+          created_at?: string
+          field?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          user_id?: string
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_edits_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       visits: {
         Row: {
           arrived_at: string
