@@ -46,20 +46,18 @@ export function suggestTravelMerges(
 ): MergeSuggestion[] {
   const rows = [...visits].sort((a, b) => a.arrived_at.localeCompare(b.arrived_at));
   const groups: VisitRow[][] = [];
+  const gaps: number[] = [];
   let current: VisitRow[] = [];
   let maxGap = 0;
-  let groupGap = 0;
 
   const flush = () => {
     if (current.length >= 2) {
       groups.push(current);
-      groupGap = maxGap;
-      gaps.push(groupGap);
+      gaps.push(maxGap);
     }
     current = [];
     maxGap = 0;
   };
-  const gaps: number[] = [];
 
   for (const visit of rows) {
     if (current.length === 0) {
