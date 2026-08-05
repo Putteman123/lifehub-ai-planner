@@ -78,14 +78,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "LifeHub AI" },
+      { name: "description", content: "Din personliga AI-assistent för arbete, familj och privatliv" },
+      { name: "author", content: "LifeHub" },
+      { property: "og:title", content: "LifeHub AI" },
+      { property: "og:description", content: "Din personliga AI-assistent för arbete, familj och privatliv" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
