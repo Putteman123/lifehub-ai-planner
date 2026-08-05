@@ -8,6 +8,7 @@ import {
 } from "ai";
 import { z } from "zod";
 
+import { ANDREA_MODEL } from "@/lib/ai-models";
 import { findFreeSlot, suggestCategory } from "@/lib/calendar";
 
 type Body = { messages?: unknown };
@@ -46,10 +47,9 @@ export const Route = createFileRoute("/api/chat")({
         const gateway = createLovableAiGatewayProvider(key);
 
         const result = streamText({
-          model: gateway("openai/gpt-5.6-sol"),
+          model: gateway(ANDREA_MODEL),
           system: `${ANDREA_SYSTEM}\n\nAKTUELLT UNDERLAG FRÅN KALENDERN:\n${context}`,
           messages: await convertToModelMessages(body.messages as UIMessage[]),
-          providerOptions: { lovable: { reasoningEffort: "none" } },
           stopWhen: stepCountIs(50),
           tools: {
             goto: tool({
