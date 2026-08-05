@@ -137,8 +137,21 @@ export function EventDialog({
               id="title"
               value={form.title}
               placeholder="T.ex. Juristmöte"
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              onChange={(e) => {
+                const title = e.target.value;
+                const next = { ...form, title };
+                if (!event && title.length >= 3) {
+                  next.category = suggestCategory(title);
+                }
+                setForm(next);
+              }}
             />
+            {!event && form.title.length >= 3 ? (
+              <p className="text-xs text-muted-foreground">
+                Kategori föreslås automatiskt: {" "}
+                {CATEGORIES.find((c) => c.value === form.category)?.label}
+              </p>
+            ) : null}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
