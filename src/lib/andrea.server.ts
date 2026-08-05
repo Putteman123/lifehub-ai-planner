@@ -127,16 +127,11 @@ export async function buildAndreaContext() {
 
 
   return [
-    `Nu: ${now.toLocaleString("sv-SE")}`,
+    `Nu: ${weekdayLocal(now)} ${timeLocal(now)} (${fmtLocal(now)}, tidszon Europe/Stockholm)`,
     `Barn: ${(childrenRes.data ?? []).map((c) => `${c.name} [id=${c.id}]`).join(", ") || "inga registrerade"}`,
     "",
-    "Händelser (kommande 21 dagar):",
-    ...(events.length
-      ? events.map(
-          (e) =>
-            `- ${fmtDate(e.starts_at, e.all_day)}–${fmtDate(e.ends_at, e.all_day)} | ${e.category} | ${e.title}${e.location ? ` (${e.location})` : ""} [id=${e.id}]`,
-        )
-      : ["- inga händelser"]),
+    "Händelser (kommande 21 dagar, svensk tid):",
+    ...(eventLines.length ? eventLines : ["  - inga händelser"]),
     "",
     "Juristärenden:",
     ...(casesRes.data ?? []).map((c) => `- ${c.title} (${c.client_name ?? "–"}, ${c.status}) [id=${c.id}]`),
