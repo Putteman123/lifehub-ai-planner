@@ -19,6 +19,7 @@ import { Route as AuthenticatedKalenderRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedKalendrarRouteImport } from './routes/_authenticated/kalendrar'
 import { Route as AuthenticatedPlatserRouteImport } from './routes/_authenticated/platser'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiTtsRouteImport } from './routes/api/tts'
 import { Route as ApiPublicPlatsRouteImport } from './routes/api/public/plats'
 
 const IndexRoute = IndexRouteImport.update({
@@ -70,6 +71,11 @@ const ApiChatRoute = ApiChatRouteImport.update({
   path: '/api/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTtsRoute = ApiTtsRouteImport.update({
+  id: '/api/tts',
+  path: '/api/tts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPlatsRoute = ApiPublicPlatsRouteImport.update({
   id: '/api/public/plats',
   path: '/api/public/plats',
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/kalendrar': typeof AuthenticatedKalendrarRoute
   '/platser': typeof AuthenticatedPlatserRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/tts': typeof ApiTtsRoute
   '/api/public/plats': typeof ApiPublicPlatsRoute
 }
 export interface FileRoutesByTo {
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/kalendrar': typeof AuthenticatedKalendrarRoute
   '/platser': typeof AuthenticatedPlatserRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/tts': typeof ApiTtsRoute
   '/api/public/plats': typeof ApiPublicPlatsRoute
 }
 export interface FileRoutesById {
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/_authenticated/kalendrar': typeof AuthenticatedKalendrarRoute
   '/_authenticated/platser': typeof AuthenticatedPlatserRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/tts': typeof ApiTtsRoute
   '/api/public/plats': typeof ApiPublicPlatsRoute
 }
 export interface FileRouteTypes {
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
     | '/kalendrar'
     | '/platser'
     | '/api/chat'
+    | '/api/tts'
     | '/api/public/plats'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/kalendrar'
     | '/platser'
     | '/api/chat'
+    | '/api/tts'
     | '/api/public/plats'
   id:
     | '__root__'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/_authenticated/kalendrar'
     | '/_authenticated/platser'
     | '/api/chat'
+    | '/api/tts'
     | '/api/public/plats'
   fileRoutesById: FileRoutesById
 }
@@ -159,6 +171,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiTtsRoute: typeof ApiTtsRoute
   ApiPublicPlatsRoute: typeof ApiPublicPlatsRoute
 }
 
@@ -234,6 +247,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/tts': {
+      id: '/api/tts'
+      path: '/api/tts'
+      fullPath: '/api/tts'
+      preLoaderRoute: typeof ApiTtsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/plats': {
       id: '/api/public/plats'
       path: '/api/public/plats'
@@ -270,6 +290,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiTtsRoute: ApiTtsRoute,
   ApiPublicPlatsRoute: ApiPublicPlatsRoute,
 }
 export const routeTree = rootRouteImport
