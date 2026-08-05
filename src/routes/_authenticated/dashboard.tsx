@@ -190,11 +190,17 @@ function Dashboard() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [tab, setTab] = useState("idag");
+  const swipeTo = (next: (t: string) => string) =>
+    setTab((t) => {
+      const n = next(t);
+      if (n !== t) hapticTick();
+      return n;
+    });
   const swipe = useSwipe({
     onSwipeLeft: () =>
-      setTab((t) => (t === "idag" ? "kalender" : t === "kalender" ? "statistik" : t)),
+      swipeTo((t) => (t === "idag" ? "kalender" : t === "kalender" ? "statistik" : t)),
     onSwipeRight: () =>
-      setTab((t) => (t === "statistik" ? "kalender" : t === "kalender" ? "idag" : t)),
+      swipeTo((t) => (t === "statistik" ? "kalender" : t === "kalender" ? "idag" : t)),
   });
 
   const [selected, setSelected] = useState<EventRow | null>(null);
