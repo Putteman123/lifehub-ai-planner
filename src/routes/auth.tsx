@@ -56,9 +56,15 @@ function PinGate() {
     void checkPasskey({}).then((res) => setFaceAvailable(res.registered));
   }, [checkPasskey]);
 
+  const { next } = Route.useSearch();
+
   const goIn = useCallback(async () => {
+    if (next) {
+      window.location.href = next;
+      return;
+    }
     await navigate({ to: "/dashboard", replace: true });
-  }, [navigate]);
+  }, [navigate, next]);
 
   const signInWithTokenHash = useCallback(async (tokenHash: string) => {
     const { error } = await supabase.auth.verifyOtp({ type: "email", token_hash: tokenHash });
