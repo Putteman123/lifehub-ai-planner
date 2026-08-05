@@ -36,6 +36,28 @@ export function haversineMeters(
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
+/** Vägfaktor: verklig körsträcka är längre än fågelvägen. */
+export const ROUTE_FACTOR = 1.3;
+
+/** Uppskattad körsträcka i meter mellan två punkter. */
+export function estimateRouteMeters(
+  aLat: number,
+  aLng: number,
+  bLat: number,
+  bLng: number,
+): number {
+  return Math.round(haversineMeters(aLat, aLng, bLat, bLng) * ROUTE_FACTOR);
+}
+
+/** Stämmer det registrerade avståndet med det beräknade? */
+export function distanceMatches(actualMeters: number, estimateMeters: number): boolean {
+  if (estimateMeters <= 0) return false;
+  const diff = Math.abs(actualMeters - estimateMeters);
+  return diff < 500 || diff / estimateMeters < 0.15;
+}
+
+
+
 /** Närmaste plats vars radie täcker punkten, annars null. */
 export function matchPlace<T extends { lat: number; lng: number; radius_m: number }>(
   places: T[],

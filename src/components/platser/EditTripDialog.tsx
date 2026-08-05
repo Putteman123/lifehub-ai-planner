@@ -12,7 +12,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useUpsertRow } from "@/lib/db";
-import { haversineMeters, type PlaceRow, type VisitRow } from "@/lib/geo";
+import {
+  distanceMatches,
+  estimateRouteMeters,
+  haversineMeters,
+  type PlaceRow,
+  type VisitRow,
+} from "@/lib/geo";
+
 
 /** ISO -> värde för <input type="datetime-local"> i lokal tid. */
 function toLocalInput(iso: string | null) {
@@ -44,6 +51,8 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
   const [label, setLabel] = useState("");
   const [km, setKm] = useState("");
   const [verified, setVerified] = useState(false);
+  const [kmTouched, setKmTouched] = useState(false);
+  const [verifiedTouched, setVerifiedTouched] = useState(false);
 
   useEffect(() => {
     if (!trip) return;
@@ -69,9 +78,46 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
     setLabel(trip.label ?? "");
     setKm(((trip.distance_m ?? 0) / 1000).toFixed(1).replace(".", ","));
     setVerified(trip.distance_verified ?? false);
+    setKmTouched(false);
+    setVerifiedTouched(false);
   }, [trip, places]);
 
+  const startPoint = places.find((p) => p.id === startPlace)
+    ?? (trip && trip.lat != null && trip.lng != null
+      ? { lat: trip.lat, lng: trip.lng }
+      : null);
+  const endPoint = places.find((p) => p.id === endPlace)
+    ?? (trip && trip.end_lat != null && trip.end_lng != null
+      ? { lat: trip.end_lat, lng: trip.end_lng }
+      : null);
+
+  const crowMeters =
+    startPoint && endPoint
+      ? Math.round(haversineMeters(startPoint.lat, startPoint.lng, endPoint.lat, endPoint.lng))
+      : null;
+  const estimateMeters =
+    startPoint && endPoint
+      ? estimateRouteMeters(startPoint.lat, startPoint.lng, endPoint.lat, endPoint.lng)
+      : null;
+
+  // Fyll i beräknat avstånd automatiskt så länge fältet inte redigerats manuellt.
+  useEffect(() => {
+    if (estimateMeters == null || kmTouched) return;
+    setKm((estimateMeters / 1000).toFixed(1).replace(".", ","));
+  }, [estimateMeters, kmTouched]);
+
+  const enteredMeters = Math.max(0, Math.round(Number(km.replace(",", ".")) * 1000) || 0);
+  const autoMatches =
+    estimateMeters != null && distanceMatches(enteredMeters, estimateMeters);
+
+  // Bocka i/ur "avståndet stämmer" automatiskt tills användaren väljer själv.
+  useEffect(() => {
+    if (estimateMeters == null || verifiedTouched) return;
+    setVerified(autoMatches);
+  }, [autoMatches, estimateMeters, verifiedTouched]);
+
   if (!trip) return null;
+
 
   const start = places.find((p) => p.id === startPlace);
   const end = places.find((p) => p.id === endPlace);
@@ -179,19 +225,50 @@ export function EditTripDialog({ trip, places, onClose }: Props) {
               id="trip-km"
               inputMode="decimal"
               value={km}
-              onChange={(e) => setKm(e.target.value)}
+              onChange={(e) => {
+                setKmTouched(true);
+                setKm(e.target.value);
+              }}
             />
+            {estimateMeters != null ? (
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span>
+                  Beräknat: {(estimateMeters / 1000).toFixed(1).replace(".", ",")} km
+                  {crowMeters != null
+                    ? ` (fågelväg ${(crowMeters / 1000).toFixed(1).replace(".", ",")} km)`
+                    : ""}
+                </span>
+                {kmTouched ? (
+                  <button
+                    type="button"
+                    onClick={() => setKmTouched(false)}
+                    className="rounded-md border border-border/60 px-2 py-0.5 text-xs hover:bg-muted"
+                  >
+                    Använd beräknat
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+            {estimateMeters != null && !autoMatches ? (
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                Avviker från beräknat avstånd
+              </p>
+            ) : null}
           </div>
 
           <label className="flex items-center gap-2 rounded-xl border border-border/60 px-3 py-2 text-sm">
             <input
               type="checkbox"
               checked={verified}
-              onChange={(e) => setVerified(e.target.checked)}
+              onChange={(e) => {
+                setVerifiedTouched(true);
+                setVerified(e.target.checked);
+              }}
               className="size-4 accent-primary"
             />
             Avståndet stämmer (kontrollerat)
           </label>
+
         </div>
 
         <DialogFooter>
