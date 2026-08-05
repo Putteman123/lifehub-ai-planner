@@ -117,8 +117,8 @@ function CalendarsPage() {
         {calendars.map((c) => {
           const meta = CATEGORIES.find((x) => x.value === c.color) ?? CATEGORIES[0]!;
           return (
-            <div key={c.id} className="card-soft p-4">
-              <div className="flex items-start justify-between gap-2">
+            <div key={c.id} className="card-soft min-w-0 p-4">
+              <div className="flex min-w-0 items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{c.name}</p>
                   <p className="text-xs text-muted-foreground">
@@ -130,8 +130,11 @@ function CalendarsPage() {
                 </span>
               </div>
               {c.ics_url ? (
-                <p className="mt-2 truncate text-xs text-muted-foreground">{c.ics_url}</p>
+                <p className="mt-2 line-clamp-2 break-all text-xs text-muted-foreground">
+                  {c.ics_url}
+                </p>
               ) : null}
+
               <div className="mt-3 flex items-center justify-between">
                 <span className="text-[11px] text-muted-foreground">
                   {c.last_synced_at ? `Synkad ${fmt(c.last_synced_at, "d MMM HH:mm")}` : "Ej synkad"}
