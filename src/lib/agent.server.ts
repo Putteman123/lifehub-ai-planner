@@ -16,8 +16,9 @@ function fail(error: { message: string } | null) {
   if (error) throw new Error(error.message);
 }
 
+/** Tider utan tidszon tolkas som svensk lokaltid, inte serverns UTC. */
 function iso(value: string) {
-  const d = new Date(value);
+  const d = parseLocal(value);
   if (Number.isNaN(d.getTime())) throw new Error(`Ogiltigt datum: ${value}`);
   return d.toISOString();
 }
