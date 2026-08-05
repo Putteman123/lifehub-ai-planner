@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useEvents, usePlaces, useVisits } from "@/lib/db";
 import { formatDistance, formatDuration, travelModeLabel } from "@/lib/geo";
+import { routeBatch } from "@/lib/maps.functions";
 import { getWeeklyTravelPlanInsight } from "@/lib/travel-insight.functions";
 import {
   buildTravelPlan,
@@ -59,7 +60,7 @@ export function WeeklyTravelPlan() {
   const visitsQ = useVisits(sinceIso);
   const prefsQ = usePreferences();
 
-  const plan = useMemo(
+  const basePlan = useMemo(
     () =>
       buildTravelPlan({
         events: eventsQ.data ?? [],
@@ -68,6 +69,49 @@ export function WeeklyTravelPlan() {
         preferences: prefsQ.data ?? [],
       }),
     [eventsQ.data, placesQ.data, visitsQ.data, prefsQ.data],
+  );
+
+  // Sträckor utan historik hämtas från Google Maps för verklig restid.
+  const missingLegs = useMemo(
+    () =>
+      basePlan
+        .filter((item) => item.basis !== "historik")
+        .slice(0, 40)
+        .map((item) => ({
+          origin: item.origin,
+          destination: item.destination,
+          mode: item.mode === "okant" ? ("bil" as const) : item.mode,
+        })),
+    [basePlan],
+  );
+
+  const fetchRoutes = useServerFn(routeBatch);
+  const routesQ = useQuery({
+    queryKey: ["maps-route-batch", missingLegs.map((l) => legKey(l.origin, l.destination))],
+    enabled: missingLegs.length > 0,
+    staleTime: 1000 * 60 * 60 * 24,
+    queryFn: async () => {
+      const results = await fetchRoutes({ data: { legs: missingLegs } });
+      const lookup: RouteLookup = {};
+      missingLegs.forEach((leg, i) => {
+        lookup[legKey(leg.origin, leg.destination)] = results[i] ?? null;
+      });
+      return lookup;
+    },
+  });
+
+  const plan = useMemo(
+    () =>
+      routesQ.data
+        ? buildTravelPlan({
+            events: eventsQ.data ?? [],
+            places: placesQ.data ?? [],
+            visits: visitsQ.data ?? [],
+            preferences: prefsQ.data ?? [],
+            routes: routesQ.data,
+          })
+        : basePlan,
+    [basePlan, routesQ.data, eventsQ.data, placesQ.data, visitsQ.data, prefsQ.data],
   );
 
   const grouped = useMemo(() => {
