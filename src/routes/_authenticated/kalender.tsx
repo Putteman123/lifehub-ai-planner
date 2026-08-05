@@ -7,7 +7,8 @@ import { DataGate } from "@/components/DataGate";
 import { EventDialog } from "@/components/EventDialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CATEGORIES, type Category, type EventRow } from "@/lib/categories";
+import { ShiftLegend } from "@/components/calendar/ShiftLegend";
+import { CATEGORIES, SHIFT_STYLES, type Category, type EventRow } from "@/lib/categories";
 import {
   addDays,
   dayLoad,
