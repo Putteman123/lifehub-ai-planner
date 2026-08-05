@@ -40,14 +40,22 @@ export const Route = createFileRoute("/api/chat")({
         const userId = userData.user.id;
 
         const { ANDREA_SYSTEM, buildAndreaContext } = await import("@/lib/andrea.server");
-        const { createLovableAiGatewayProvider } = await import("@/lib/ai-gateway.server");
+        const { createOpenAI } = await import("@ai-sdk/openai");
         const agent = await import("@/lib/agent.server");
 
         const context = await buildAndreaContext();
-        const gateway = createLovableAiGatewayProvider(key);
+        // ChatGPT-modellerna körs via Lovable AI Gateways Responses API.
+        const openai = createOpenAI({
+          baseURL: "https://ai.gateway.lovable.dev/v1",
+          apiKey: key,
+          headers: {
+            "Lovable-API-Key": key,
+            "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+          },
+        });
 
         const result = streamText({
-          model: gateway(ANDREA_MODEL),
+          model: openai.responses(ANDREA_MODEL),
           system: `${ANDREA_SYSTEM}\n\nAKTUELLT UNDERLAG FRÅN KALENDERN:\n${context}`,
           messages: await convertToModelMessages(body.messages as UIMessage[]),
           stopWhen: stepCountIs(50),
