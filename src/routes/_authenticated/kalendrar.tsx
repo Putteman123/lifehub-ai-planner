@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 
 import { AppShell } from "@/components/AppShell";
+import { APP_VERSION } from "@/lib/nav-theme";
 import { DataGate } from "@/components/DataGate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -129,7 +130,7 @@ function CalendarsPage() {
   return (
     <AppShell
       title="Kalendrar"
-      subtitle="Importera och synkronisera obegränsat antal källor"
+      subtitle={`Importera och synkronisera obegränsat antal källor · LifeHub AI ${APP_VERSION}`}
       actions={
         <Button size="sm" onClick={openCreate}>
           <Plus className="size-4" /> Lägg till
