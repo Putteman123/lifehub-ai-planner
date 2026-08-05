@@ -32,7 +32,7 @@ export async function resolveLeg(input: {
 
 /** Flera sträckor med begränsad parallellitet. */
 export async function resolveLegs(
-  legs: Array<{ origin: Point; destination: Point; mode?: TravelKind }>,
+  legs: Array<{ origin: Point; destination: Point; mode?: TravelKind | undefined }>,
 ): Promise<ResolvedLeg[]> {
   const results: ResolvedLeg[] = new Array(legs.length).fill(null);
   const size = 5;
