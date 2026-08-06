@@ -68,6 +68,7 @@
   --color-nav-handla: var(--nav-handla);
   --color-nav-barn: var(--nav-barn);
   --color-nav-jurist: var(--nav-jurist);
+  --color-nav-iptv: var(--nav-iptv);
   --color-nav-platser: var(--nav-platser);
   --color-nav-kassaskap: var(--nav-kassaskap);
   --color-nav-kalendrar: var(--nav-kalendrar);
@@ -129,6 +130,7 @@
   --nav-handla: oklch(0.66 0.15 163);
   --nav-barn: oklch(0.78 0.15 92);
   --nav-jurist: oklch(0.72 0.16 70);
+  --nav-iptv: oklch(0.6 0.19 330);
   --nav-platser: oklch(0.65 0.16 200);
   --nav-kassaskap: oklch(0.62 0.22 22);
   --nav-kalendrar: oklch(0.58 0.04 277);
@@ -173,6 +175,7 @@
   --nav-handla: oklch(0.76 0.14 163);
   --nav-barn: oklch(0.85 0.13 92);
   --nav-jurist: oklch(0.8 0.14 70);
+  --nav-iptv: oklch(0.77 0.15 330);
   --nav-platser: oklch(0.76 0.13 200);
   --nav-kassaskap: oklch(0.72 0.19 22);
   --nav-kalendrar: oklch(0.75 0.03 277);
