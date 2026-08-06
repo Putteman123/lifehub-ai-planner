@@ -304,10 +304,12 @@ export type Database = {
           expires_at: string | null
           id: string
           last_response: Json | null
+          last_synced_at: string | null
           m3u_url: string | null
           mac: string | null
           months: number
           note: string | null
+          online: boolean
           package_id: string | null
           package_name: string | null
           panel_id: string | null
@@ -325,10 +327,12 @@ export type Database = {
           expires_at?: string | null
           id?: string
           last_response?: Json | null
+          last_synced_at?: string | null
           m3u_url?: string | null
           mac?: string | null
           months?: number
           note?: string | null
+          online?: boolean
           package_id?: string | null
           package_name?: string | null
           panel_id?: string | null
@@ -346,10 +350,12 @@ export type Database = {
           expires_at?: string | null
           id?: string
           last_response?: Json | null
+          last_synced_at?: string | null
           m3u_url?: string | null
           mac?: string | null
           months?: number
           note?: string | null
+          online?: boolean
           package_id?: string | null
           package_name?: string | null
           panel_id?: string | null
