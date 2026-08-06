@@ -309,14 +309,26 @@ export function IptvUserList() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const pwMutation = useMutation({
+    mutationFn: (vars: { id: string; password: string }) => setPw({ data: vars }),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Lösenordet sparat och linjen synkad");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const syncMutation = useMutation({
     mutationFn: () => syncAll({ data: undefined }),
     onSuccess: (res) => {
       invalidate();
       toast.success(
-        `Synkade ${res.updated} linjer${res.failed.length ? ` · ${res.failed.length} misslyckades` : ""}`,
+        `Synkade ${res.updated} linjer` +
+          (res.needsPassword.length ? ` · ${res.needsPassword.length} saknar lösenord` : "") +
+          (res.failed.length ? ` · ${res.failed.length} misslyckades` : ""),
       );
     },
+
     onError: (error: Error) => toast.error(error.message),
   });
 
