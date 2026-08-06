@@ -320,28 +320,29 @@ export function IptvUserList() {
         <StatCard
           icon={Users}
           value={stats.total}
-          label="Användare totalt"
-          tone="bg-cat-viktigt/15 text-cat-viktigt"
+          label="Lines Users"
+          tone="bg-[hsl(24_90%_58%)]"
         />
         <StatCard
           icon={Wifi}
-          value={stats.active}
-          label="Aktiva linjer"
-          tone="bg-cat-handla/15 text-cat-handla"
+          value={stats.online}
+          label="Lines Online"
+          tone="bg-[hsl(168_60%_42%)]"
         />
         <StatCard
           icon={AlertTriangle}
           value={stats.expired}
-          label="Utgångna linjer"
-          tone="bg-destructive/15 text-destructive"
+          label="Lines Expired"
+          tone="bg-[hsl(348_78%_54%)]"
         />
       </div>
 
       <section className="card-soft p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 text-sm font-semibold">
-            <Tv className="size-4 text-primary" /> Användarlista
+            <Tv className="size-4 text-primary" /> Userlist | LINES
           </h2>
+
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
