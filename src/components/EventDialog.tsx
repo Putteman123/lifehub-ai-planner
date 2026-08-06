@@ -170,7 +170,7 @@ export function EventDialog({
             {!event && form.title.length >= 3 ? (
               <p className="text-xs text-muted-foreground">
                 Kategori föreslås automatiskt: {" "}
-                {CATEGORIES.find((c) => c.value === form.category)?.label}
+                {categoryOptions.find((c) => c.value === form.category)?.label}
               </p>
             ) : null}
           </div>
