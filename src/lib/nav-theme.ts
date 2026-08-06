@@ -26,6 +26,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { to: "/kalender", label: "Kalender", icon: CalendarDays, color: "text-nav-kalender" },
   { to: "/attgora", label: "Att göra", icon: ListTodo, color: "text-nav-attgora" },
   { to: "/handla", label: "Handla", icon: ShoppingCart, color: "text-nav-handla" },
+  { to: "/pengar", label: "Pengar", icon: Wallet, color: "text-nav-pengar" },
   { to: "/barn", label: "Barn", icon: Baby, color: "text-nav-barn" },
   { to: "/jurist", label: "Jurist", icon: Scale, color: "text-nav-jurist" },
   { to: "/iptv", label: "IPTV", icon: Tv, color: "text-nav-iptv" },
