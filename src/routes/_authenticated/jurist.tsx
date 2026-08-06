@@ -6,6 +6,7 @@ import { AppShell } from "@/components/AppShell";
 import { DataGate } from "@/components/DataGate";
 import { EventDialog } from "@/components/EventDialog";
 import { DriveDocsPanel } from "@/components/google/DriveDocsPanel";
+import { IptvPanel } from "@/components/iptv/IptvPanel";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +50,7 @@ function LegalPage() {
   const [eventOpen, setEventOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<EventRow | null>(null);
   const [activeCase, setActiveCase] = useState<string | null>(null);
+  const [tab, setTab] = useState<"juridik" | "iptv">("juridik");
 
   const [title, setTitle] = useState("");
   const [client, setClient] = useState("");
@@ -109,6 +111,23 @@ function LegalPage() {
       }
     >
       <DataGate queries={[casesQ, tasksQ, eventsQ]}>
+      <div className="mb-4 inline-flex rounded-xl bg-surface p-1">
+        {(["juridik", "iptv"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`rounded-lg px-4 py-1.5 text-sm font-medium transition-colors ${
+              tab === t ? "bg-card shadow-sm" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {t === "juridik" ? "Juridik" : "IPTV"}
+          </button>
+        ))}
+      </div>
+
+      {tab === "iptv" ? <IptvPanel /> : null}
+
+      <div className={tab === "juridik" ? "" : "hidden"}>
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="card-soft flex items-center gap-3 p-4">
           <Briefcase className="size-5 text-primary" />
@@ -296,6 +315,7 @@ function LegalPage() {
       </Dialog>
 
       <DriveDocsPanel />
+      </div>
 
       <EventDialog
 
