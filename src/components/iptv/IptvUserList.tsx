@@ -439,13 +439,13 @@ export function IptvUserList() {
                         </button>
                       </td>
                       <td className="py-2 pr-3">
-                        <button
-                          onClick={() => copy(row.password, "Lösenord")}
-                          className="max-w-[9rem] truncate font-mono text-xs text-muted-foreground hover:text-primary"
-                        >
-                          {row.password ?? "–"}
-                        </button>
+                        <PasswordCell
+                          row={row}
+                          onSave={(value) => pwMutation.mutate({ id: row.id, password: value })}
+                          pending={pwMutation.isPending}
+                        />
                       </td>
+
                       <td className="max-w-[9rem] truncate py-2 pr-3 text-xs text-muted-foreground">
                         {row.package_name ?? row.package_id ?? "–"}
                       </td>
