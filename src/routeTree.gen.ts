@@ -24,6 +24,7 @@ import { Route as AuthenticatedJuristRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedKalenderRouteImport } from './routes/_authenticated/kalender'
 import { Route as AuthenticatedKalendrarRouteImport } from './routes/_authenticated/kalendrar'
 import { Route as AuthenticatedKassaskapRouteImport } from './routes/_authenticated/kassaskap'
+import { Route as AuthenticatedPengarRouteImport } from './routes/_authenticated/pengar'
 import { Route as AuthenticatedPlatserRouteImport } from './routes/_authenticated/platser'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiTtsRouteImport } from './routes/api/tts'
@@ -107,6 +108,11 @@ const AuthenticatedKassaskapRoute = AuthenticatedKassaskapRouteImport.update({
   path: '/kassaskap',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPengarRoute = AuthenticatedPengarRouteImport.update({
+  id: '/pengar',
+  path: '/pengar',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPlatserRoute = AuthenticatedPlatserRouteImport.update({
   id: '/platser',
   path: '/platser',
@@ -154,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/kalender': typeof AuthenticatedKalenderRoute
   '/kalendrar': typeof AuthenticatedKalendrarRoute
   '/kassaskap': typeof AuthenticatedKassaskapRoute
+  '/pengar': typeof AuthenticatedPengarRoute
   '/platser': typeof AuthenticatedPlatserRoute
   '/api/chat': typeof ApiChatRoute
   '/api/tts': typeof ApiTtsRoute
@@ -176,6 +183,7 @@ export interface FileRoutesByTo {
   '/kalender': typeof AuthenticatedKalenderRoute
   '/kalendrar': typeof AuthenticatedKalendrarRoute
   '/kassaskap': typeof AuthenticatedKassaskapRoute
+  '/pengar': typeof AuthenticatedPengarRoute
   '/platser': typeof AuthenticatedPlatserRoute
   '/api/chat': typeof ApiChatRoute
   '/api/tts': typeof ApiTtsRoute
@@ -200,6 +208,7 @@ export interface FileRoutesById {
   '/_authenticated/kalender': typeof AuthenticatedKalenderRoute
   '/_authenticated/kalendrar': typeof AuthenticatedKalendrarRoute
   '/_authenticated/kassaskap': typeof AuthenticatedKassaskapRoute
+  '/_authenticated/pengar': typeof AuthenticatedPengarRoute
   '/_authenticated/platser': typeof AuthenticatedPlatserRoute
   '/api/chat': typeof ApiChatRoute
   '/api/tts': typeof ApiTtsRoute
@@ -224,6 +233,7 @@ export interface FileRouteTypes {
     | '/kalender'
     | '/kalendrar'
     | '/kassaskap'
+    | '/pengar'
     | '/platser'
     | '/api/chat'
     | '/api/tts'
@@ -246,6 +256,7 @@ export interface FileRouteTypes {
     | '/kalender'
     | '/kalendrar'
     | '/kassaskap'
+    | '/pengar'
     | '/platser'
     | '/api/chat'
     | '/api/tts'
@@ -269,6 +280,7 @@ export interface FileRouteTypes {
     | '/_authenticated/kalender'
     | '/_authenticated/kalendrar'
     | '/_authenticated/kassaskap'
+    | '/_authenticated/pengar'
     | '/_authenticated/platser'
     | '/api/chat'
     | '/api/tts'
@@ -398,6 +410,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedKassaskapRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/pengar': {
+      id: '/_authenticated/pengar'
+      path: '/pengar'
+      fullPath: '/pengar'
+      preLoaderRoute: typeof AuthenticatedPengarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/platser': {
       id: '/_authenticated/platser'
       path: '/platser'
@@ -453,6 +472,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedKalenderRoute: typeof AuthenticatedKalenderRoute
   AuthenticatedKalendrarRoute: typeof AuthenticatedKalendrarRoute
   AuthenticatedKassaskapRoute: typeof AuthenticatedKassaskapRoute
+  AuthenticatedPengarRoute: typeof AuthenticatedPengarRoute
   AuthenticatedPlatserRoute: typeof AuthenticatedPlatserRoute
 }
 
@@ -466,6 +486,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedKalenderRoute: AuthenticatedKalenderRoute,
   AuthenticatedKalendrarRoute: AuthenticatedKalendrarRoute,
   AuthenticatedKassaskapRoute: AuthenticatedKassaskapRoute,
+  AuthenticatedPengarRoute: AuthenticatedPengarRoute,
   AuthenticatedPlatserRoute: AuthenticatedPlatserRoute,
 }
 
