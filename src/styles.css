@@ -122,6 +122,7 @@
   --cat-viktigt: oklch(0.62 0.22 22);
   --cat-natt: oklch(0.42 0.15 285);
   --cat-kvall: oklch(0.68 0.16 55);
+  --cat-iptv: oklch(0.6 0.16 205);
 
   --shadow-soft: 0 1px 2px oklch(0.21 0.02 277 / 4%), 0 14px 40px oklch(0.21 0.02 277 / 9%);
 
