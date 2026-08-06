@@ -57,6 +57,12 @@ export function EventDialog({
   const { data: calendars = [] } = useCalendars();
   const { data: children = [] } = useChildren();
   const { data: cases = [] } = useCases();
+  const { options: categoryOptions } = useCategoryOptions();
+  const createCategory = useCreateCategory();
+  const [adding, setAdding] = useState(false);
+  const [newLabel, setNewLabel] = useState("");
+
+
 
   const [form, setForm] = useState({
     title: "",
