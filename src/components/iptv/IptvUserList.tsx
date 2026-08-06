@@ -312,10 +312,21 @@ export function IptvUserList() {
   });
 
   const pwMutation = useMutation({
-    mutationFn: (vars: { id: string; password: string }) => setPw({ data: vars }),
+    mutationFn: (vars: { id: string; password: string }) =>
+      updateLine({ data: { id: vars.id, password: vars.password } }),
     onSuccess: () => {
       invalidate();
-      toast.success("Lösenordet sparat och linjen synkad");
+      toast.success("Lösenordet sparat");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const expiryMutation = useMutation({
+    mutationFn: (vars: { id: string; expiresAt: string | null }) =>
+      updateLine({ data: { id: vars.id, expiresAt: vars.expiresAt } }),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Utgångsdatum sparat och lagt i kalendern");
     },
     onError: (error: Error) => toast.error(error.message),
   });
