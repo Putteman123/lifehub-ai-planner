@@ -180,3 +180,145 @@ export const getIptvPanelInfo = createServerFn({ method: "POST" })
       bouquets,
     };
   });
+
+/** Importerar en linje som skapats direkt i panelen till appen. */
+export const importIptvLine = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        customerName: z.string().min(1).max(80),
+        deviceType: z.enum(DEVICE_TYPES),
+        username: z.string().max(80).optional(),
+        password: z.string().max(120).optional(),
+        mac: z.string().max(40).optional(),
+        note: z.string().max(200).optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { lookupLine } = await import("./iptv.server");
+    const { syncExpiryEvent } = await import("./iptv-calendar.server");
+
+    const res = await lookupLine({
+      deviceType: data.deviceType,
+      username: data.username ?? null,
+      password: data.password ?? null,
+      mac: data.mac ?? null,
+    });
+    if (!res.ok || !res.line) throw new Error(`Panelen svarade: ${res.message}`);
+
+    const { data: row, error } = await context.supabase
+      .from("iptv_lines")
+      .insert({
+        user_id: context.userId,
+        customer_name: data.customerName,
+        device_type: data.deviceType,
+        months: 0,
+        note: data.note ?? null,
+        panel_id: res.line.panelId,
+        username: res.line.username ?? data.username ?? null,
+        password: res.line.password ?? data.password ?? null,
+        mac: res.line.mac ?? data.mac ?? null,
+        protocol_code: res.line.protocolCode,
+        m3u_url: res.line.m3uUrl,
+        expires_at: res.line.expiresAt,
+        status: res.line.enabled ? "aktiv" : "pausad",
+        online: res.line.enabled,
+        last_synced_at: new Date().toISOString(),
+      } as never)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+
+    await syncExpiryEvent(context.supabase, context.userId, row as never);
+    return { row };
+  });
+
+/** Uppdaterar kundnamn och anteckning för en linje (anteckningen följer raden). */
+export const updateIptvLine = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        customerName: z.string().min(1).max(80).optional(),
+        note: z.string().max(200).nullable().optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const patch: Record<string, unknown> = {};
+    if (data.customerName !== undefined) patch["customer_name"] = data.customerName;
+    if (data.note !== undefined) patch["note"] = data.note;
+
+    const { data: row, error } = await context.supabase
+      .from("iptv_lines")
+      .update(patch as never)
+      .eq("id", data.id)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+
+    const { syncExpiryEvent } = await import("./iptv-calendar.server");
+    await syncExpiryEvent(context.supabase, context.userId, row as never);
+    return { row };
+  });
+
+/** Tar bort raden ur appen och städar bort kalenderhändelsen. */
+export const deleteIptvLine = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { removeExpiryEvent } = await import("./iptv-calendar.server");
+    await removeExpiryEvent(context.supabase, context.userId, data.id);
+    const { error } = await context.supabase.from("iptv_lines").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Synkar alla linjer mot panelen och uppdaterar kalendern. */
+export const syncIptvLines = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { lookupLine } = await import("./iptv.server");
+    const { syncExpiryEvent } = await import("./iptv-calendar.server");
+
+    const { data: rows, error } = await context.supabase.from("iptv_lines").select("*");
+    if (error) throw new Error(error.message);
+
+    let updated = 0;
+    const failed: string[] = [];
+
+    for (const raw of rows ?? []) {
+      const line = raw as Record<string, string | null> & { id: string; customer_name: string };
+      const res = await lookupLine({
+        deviceType: String(line["device_type"]),
+        username: line["username"],
+        password: line["password"],
+        mac: line["mac"],
+      });
+      if (!res.ok || !res.line) {
+        failed.push(line.customer_name);
+        continue;
+      }
+
+      const patch = {
+        expires_at: res.line.expiresAt,
+        m3u_url: res.line.m3uUrl ?? line["m3u_url"],
+        panel_id: res.line.panelId ?? line["panel_id"],
+        status: res.line.enabled ? "aktiv" : "pausad",
+        online: res.line.enabled,
+        last_synced_at: new Date().toISOString(),
+      };
+      await context.supabase.from("iptv_lines").update(patch as never).eq("id", line.id);
+      await syncExpiryEvent(context.supabase, context.userId, {
+        id: line.id,
+        customer_name: line.customer_name,
+        expires_at: res.line.expiresAt,
+      });
+      updated += 1;
+    }
+
+    return { updated, failed };
+  });
