@@ -186,25 +186,63 @@ export function EventDialog({
 
           <div className="grid gap-2">
             <Label>Kategori</Label>
-            <Select
-              value={form.category}
-              onValueChange={(v) => setForm({ ...form, category: v as Category })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORIES.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>
-                    <span className="flex items-center gap-2">
-                      <span className={`size-2.5 rounded-full ${c.dot}`} />
-                      {c.label}
+            {adding ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  autoFocus
+                  value={newLabel}
+                  maxLength={40}
+                  placeholder="T.ex. Träning"
+                  onChange={(e) => setNewLabel(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addCategory();
+                    }
+                    if (e.key === "Escape") setAdding(false);
+                  }}
+                />
+                <Button size="sm" onClick={addCategory} disabled={createCategory.isPending}>
+                  Spara
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setAdding(false)}>
+                  Avbryt
+                </Button>
+              </div>
+            ) : (
+              <Select
+                value={form.category}
+                onValueChange={(v) => {
+                  if (v === NEW_CATEGORY) {
+                    setNewLabel("");
+                    setAdding(true);
+                    return;
+                  }
+                  setForm({ ...form, category: v as Category });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {categoryOptions.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      <span className="flex items-center gap-2">
+                        <span className={`size-2.5 rounded-full ${c.dot}`} />
+                        {c.label}
+                      </span>
+                    </SelectItem>
+                  ))}
+                  <SelectItem value={NEW_CATEGORY}>
+                    <span className="flex items-center gap-2 text-primary">
+                      <Plus className="size-3.5" /> Ny kategori…
                     </span>
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                </SelectContent>
+              </Select>
+            )}
           </div>
+
 
           <div className="grid gap-2 sm:grid-cols-3">
             <div className="grid gap-2">
