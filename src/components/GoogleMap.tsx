@@ -12,6 +12,8 @@ declare global {
   interface Window {
     google?: typeof google;
     __lifehubMapsReady?: () => void;
+    __lifehubMapsAuthFailed?: boolean;
+    gm_authFailure?: () => void;
   }
 }
 
