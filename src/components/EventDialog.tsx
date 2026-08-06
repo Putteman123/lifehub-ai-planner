@@ -1,3 +1,4 @@
+import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -19,11 +20,14 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { CATEGORIES, type Category, type EventRow } from "@/lib/categories";
+import { type Category, type EventRow } from "@/lib/categories";
 import { suggestCategory } from "@/lib/calendar";
 import { useCalendars, useCases, useChildren, useDeleteRow, useUpsertRow } from "@/lib/db";
+import { useCategoryOptions, useCreateCategory } from "@/lib/event-categories";
 
 const NONE = "__none__";
+const NEW_CATEGORY = "__ny_kategori__";
+
 
 function toLocalInput(value: string) {
   const d = new Date(value);
