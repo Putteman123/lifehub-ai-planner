@@ -80,6 +80,11 @@ function copy(value: string | null | undefined, label: string) {
   toast.success(`${label} kopierad`);
 }
 
+function isExpired(row: IptvRow) {
+  const left = daysLeft(row.expires_at);
+  return row.status === "utgangen" || (left != null && left < 0);
+}
+
 function StatCard({
   icon: Icon,
   value,
@@ -92,32 +97,36 @@ function StatCard({
   tone: string;
 }) {
   return (
-    <div className="card-soft flex items-center gap-3 p-4">
-      <span className={`flex size-11 items-center justify-center rounded-2xl ${tone}`}>
-        <Icon className="size-5" />
+    <div className="card-soft flex items-center gap-4 p-4">
+      <span
+        className={`flex size-14 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm ${tone}`}
+      >
+        <Icon className="size-7" />
       </span>
       <div className="min-w-0">
-        <p className="text-2xl font-semibold leading-none tabular-nums">{value}</p>
-        <p className="truncate text-xs text-muted-foreground">{label}</p>
+        <p className="text-3xl font-semibold leading-none tabular-nums">{value}</p>
+        <p className="mt-1 truncate text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {label}
+        </p>
       </div>
     </div>
   );
 }
 
 function StatusBadge({ row }: { row: IptvRow }) {
-  const left = daysLeft(row.expires_at);
-  const expired = left != null && left < 0;
+  const expired = isExpired(row);
   const cls = expired
-    ? "bg-destructive/15 text-destructive"
+    ? "bg-[hsl(12_85%_58%)] text-white"
     : row.status === "pausad"
       ? "bg-muted text-muted-foreground"
-      : "bg-cat-handla/15 text-cat-handla";
+      : "bg-[hsl(168_60%_42%)] text-white";
   return (
     <span className={`inline-flex rounded-md px-2 py-0.5 text-[11px] font-semibold ${cls}`}>
-      {expired ? "Utgången" : row.status === "pausad" ? "Pausad" : "Aktiv"}
+      {expired ? "Expired" : row.status === "pausad" ? "Pausad" : "Enabled"}
     </span>
   );
 }
+
 
 /** Full användarlista för IPTV-panelen: statistik, sök, anteckningar och åtgärder. */
 export function IptvUserList() {
