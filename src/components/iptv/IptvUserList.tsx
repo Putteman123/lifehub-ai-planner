@@ -185,6 +185,7 @@ export function IptvUserList() {
   const removeLine = useServerFn(deleteIptvLine);
   const updateLine = useServerFn(updateIptvLine);
   const syncAll = useServerFn(syncIptvLines);
+  const setPw = useServerFn(setIptvPassword);
   const panelInfo = useServerFn(getIptvPanelInfo);
 
   const linesQ = useQuery({
