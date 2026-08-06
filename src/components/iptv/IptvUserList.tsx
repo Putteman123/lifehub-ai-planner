@@ -619,7 +619,12 @@ export function IptvUserList() {
                 </div>
               ))}
             </div>
+
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              Visar 1 till {visible.length} av {lines.length} poster
+            </p>
           </>
+
         )}
       </section>
 
