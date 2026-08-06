@@ -19,6 +19,7 @@ import { Route as AuthenticatedAttgoraRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedBarnRouteImport } from './routes/_authenticated/barn'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedHandlaRouteImport } from './routes/_authenticated/handla'
+import { Route as AuthenticatedIptvRouteImport } from './routes/_authenticated/iptv'
 import { Route as AuthenticatedJuristRouteImport } from './routes/_authenticated/jurist'
 import { Route as AuthenticatedKalenderRouteImport } from './routes/_authenticated/kalender'
 import { Route as AuthenticatedKalendrarRouteImport } from './routes/_authenticated/kalendrar'
@@ -79,6 +80,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
 const AuthenticatedHandlaRoute = AuthenticatedHandlaRouteImport.update({
   id: '/handla',
   path: '/handla',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedIptvRoute = AuthenticatedIptvRouteImport.update({
+  id: '/iptv',
+  path: '/iptv',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedJuristRoute = AuthenticatedJuristRouteImport.update({
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/barn': typeof AuthenticatedBarnRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/handla': typeof AuthenticatedHandlaRoute
+  '/iptv': typeof AuthenticatedIptvRoute
   '/jurist': typeof AuthenticatedJuristRoute
   '/kalender': typeof AuthenticatedKalenderRoute
   '/kalendrar': typeof AuthenticatedKalendrarRoute
@@ -164,6 +171,7 @@ export interface FileRoutesByTo {
   '/barn': typeof AuthenticatedBarnRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/handla': typeof AuthenticatedHandlaRoute
+  '/iptv': typeof AuthenticatedIptvRoute
   '/jurist': typeof AuthenticatedJuristRoute
   '/kalender': typeof AuthenticatedKalenderRoute
   '/kalendrar': typeof AuthenticatedKalendrarRoute
@@ -187,6 +195,7 @@ export interface FileRoutesById {
   '/_authenticated/barn': typeof AuthenticatedBarnRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/handla': typeof AuthenticatedHandlaRoute
+  '/_authenticated/iptv': typeof AuthenticatedIptvRoute
   '/_authenticated/jurist': typeof AuthenticatedJuristRoute
   '/_authenticated/kalender': typeof AuthenticatedKalenderRoute
   '/_authenticated/kalendrar': typeof AuthenticatedKalendrarRoute
@@ -210,6 +219,7 @@ export interface FileRouteTypes {
     | '/barn'
     | '/dashboard'
     | '/handla'
+    | '/iptv'
     | '/jurist'
     | '/kalender'
     | '/kalendrar'
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/barn'
     | '/dashboard'
     | '/handla'
+    | '/iptv'
     | '/jurist'
     | '/kalender'
     | '/kalendrar'
@@ -253,6 +264,7 @@ export interface FileRouteTypes {
     | '/_authenticated/barn'
     | '/_authenticated/dashboard'
     | '/_authenticated/handla'
+    | '/_authenticated/iptv'
     | '/_authenticated/jurist'
     | '/_authenticated/kalender'
     | '/_authenticated/kalendrar'
@@ -351,6 +363,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHandlaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/iptv': {
+      id: '/_authenticated/iptv'
+      path: '/iptv'
+      fullPath: '/iptv'
+      preLoaderRoute: typeof AuthenticatedIptvRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/jurist': {
       id: '/_authenticated/jurist'
       path: '/jurist'
@@ -429,6 +448,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBarnRoute: typeof AuthenticatedBarnRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedHandlaRoute: typeof AuthenticatedHandlaRoute
+  AuthenticatedIptvRoute: typeof AuthenticatedIptvRoute
   AuthenticatedJuristRoute: typeof AuthenticatedJuristRoute
   AuthenticatedKalenderRoute: typeof AuthenticatedKalenderRoute
   AuthenticatedKalendrarRoute: typeof AuthenticatedKalendrarRoute
@@ -441,6 +461,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBarnRoute: AuthenticatedBarnRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedHandlaRoute: AuthenticatedHandlaRoute,
+  AuthenticatedIptvRoute: AuthenticatedIptvRoute,
   AuthenticatedJuristRoute: AuthenticatedJuristRoute,
   AuthenticatedKalenderRoute: AuthenticatedKalenderRoute,
   AuthenticatedKalendrarRoute: AuthenticatedKalendrarRoute,
