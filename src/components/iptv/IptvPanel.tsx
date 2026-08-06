@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Plus, RefreshCw, Tv, Trash2, Copy } from "lucide-react";
+import { Copy, Loader2, Plus, RefreshCw, Trash2, Tv, Wallet } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -24,14 +24,23 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { fmt } from "@/lib/calendar";
-import { checkIptvPanel, createIptvLine, renewIptvLine } from "@/lib/iptv.functions";
+import {
+  createIptvLine,
+  getIptvPanelInfo,
+  refreshIptvLine,
+  renewIptvLine,
+} from "@/lib/iptv.functions";
 
-type IptvRow = Tables<"iptv_lines">;
+type IptvRow = Tables<"iptv_lines"> & {
+  mac?: string | null;
+  protocol_code?: string | null;
+  package_name?: string | null;
+};
 
 const DEVICE_TYPES = [
   { value: "m3u", label: "M3U" },
   { value: "mag", label: "MAG" },
-  { value: "enigma", label: "Enigma2" },
+  { value: "protocol", label: "Protokoll" },
 ];
 
 const LENGTHS = [
@@ -61,37 +70,51 @@ function daysLeft(iso: string | null) {
   return Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000);
 }
 
-/** Hanterar IPTV-abonnemang: skapa nya aktiveringar, se kunder och förnya. */
+/** Hanterar IPTV-abonnemang: skapa nya aktiveringar, se kunder, förnya och synka status. */
 export function IptvPanel() {
   const qc = useQueryClient();
   const linesQ = useIptvLines();
   const create = useServerFn(createIptvLine);
   const renew = useServerFn(renewIptvLine);
-  const check = useServerFn(checkIptvPanel);
+  const refresh = useServerFn(refreshIptvLine);
+  const panelInfo = useServerFn(getIptvPanelInfo);
+
+  const infoQ = useQuery({
+    queryKey: ["iptv_panel_info"],
+    queryFn: () => panelInfo({ data: undefined }),
+    staleTime: 5 * 60 * 1000,
+  });
 
   const [open, setOpen] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [deviceType, setDeviceType] = useState("m3u");
-  const [packageId, setPackageId] = useState("all");
+  const [packageId, setPackageId] = useState("");
+  const [mac, setMac] = useState("");
   const [months, setMonths] = useState("12");
   const [note, setNote] = useState("");
+
+  const bouquets = infoQ.data?.bouquets ?? [];
 
   const createMutation = useMutation({
     mutationFn: () =>
       create({
         data: {
           customerName: customerName.trim(),
-          deviceType,
-          packageId: packageId.trim() || "all",
+          deviceType: deviceType as "m3u" | "mag" | "protocol",
+          packageId: packageId.trim(),
+          packageName: bouquets.find((b) => b.id === packageId)?.name,
+          mac: mac.trim() || undefined,
           months: Number(months),
           note: note.trim() || undefined,
         },
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["iptv_lines"] });
+      qc.invalidateQueries({ queryKey: ["iptv_panel_info"] });
       toast.success("Aktivering skapad");
       setOpen(false);
       setCustomerName("");
+      setMac("");
       setNote("");
     },
     onError: (error: Error) => toast.error(error.message),
@@ -99,17 +122,21 @@ export function IptvPanel() {
 
   const renewMutation = useMutation({
     mutationFn: (vars: { id: string; months: number }) => renew({ data: vars }),
-    onSuccess: () => {
+    onSuccess: async (_r, vars) => {
+      await refresh({ data: { id: vars.id } }).catch(() => null);
       qc.invalidateQueries({ queryKey: ["iptv_lines"] });
+      qc.invalidateQueries({ queryKey: ["iptv_panel_info"] });
       toast.success("Abonnemanget förnyat");
     },
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const checkMutation = useMutation({
-    mutationFn: () => check({ data: undefined }),
-    onSuccess: (res) =>
-      res.ok ? toast.success("Panelen svarar – nyckeln fungerar") : toast.error(res.message),
+  const refreshMutation = useMutation({
+    mutationFn: (id: string) => refresh({ data: { id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["iptv_lines"] });
+      toast.success("Status uppdaterad");
+    },
     onError: (error: Error) => toast.error(error.message),
   });
 
@@ -126,6 +153,7 @@ export function IptvPanel() {
   });
 
   const lines = linesQ.data ?? [];
+  const info = infoQ.data;
 
   return (
     <section className="card-soft p-5">
@@ -137,10 +165,15 @@ export function IptvPanel() {
           <Button
             size="sm"
             variant="outline"
-            disabled={checkMutation.isPending}
-            onClick={() => checkMutation.mutate()}
+            disabled={infoQ.isFetching}
+            onClick={() => {
+              infoQ.refetch().then((r) => {
+                if (r.data?.ok) toast.success(`Panelen svarar – ${r.data.credits ?? "?"} krediter`);
+                else toast.error(r.data?.message ?? "Panelen svarar inte");
+              });
+            }}
           >
-            {checkMutation.isPending ? (
+            {infoQ.isFetching ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
               <RefreshCw className="size-4" />
@@ -151,6 +184,21 @@ export function IptvPanel() {
             <Plus className="size-4" /> Ny aktivering
           </Button>
         </div>
+      </div>
+
+      <div className="mt-2 text-xs text-muted-foreground">
+        {infoQ.isLoading ? (
+          "Kontrollerar panelen…"
+        ) : info?.ok ? (
+          <span className="inline-flex items-center gap-1.5">
+            <Wallet className="size-3.5" />
+            {info.username} · {info.credits} krediter · {bouquets.length} paket
+          </span>
+        ) : (
+          <span className="text-destructive">
+            Panelen: {info?.message ?? "kunde inte kontaktas"}
+          </span>
+        )}
       </div>
 
       <div className="mt-4 space-y-2">
@@ -184,6 +232,10 @@ export function IptvPanel() {
                   )}
                 </div>
 
+                {line.package_name ? (
+                  <p className="mt-0.5 text-xs text-muted-foreground">{line.package_name}</p>
+                ) : null}
+
                 {line.m3u_url ? (
                   <button
                     onClick={() => {
@@ -197,11 +249,16 @@ export function IptvPanel() {
                   </button>
                 ) : null}
 
+                {line.protocol_code ? (
+                  <p className="mt-1 text-xs text-muted-foreground">Kod: {line.protocol_code}</p>
+                ) : null}
+                {line.mac ? (
+                  <p className="mt-1 text-xs text-muted-foreground">MAC: {line.mac}</p>
+                ) : null}
+
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <Select
-                    onValueChange={(v) =>
-                      renewMutation.mutate({ id: line.id, months: Number(v) })
-                    }
+                    onValueChange={(v) => renewMutation.mutate({ id: line.id, months: Number(v) })}
                   >
                     <SelectTrigger className="h-8 w-[150px] text-xs">
                       <SelectValue placeholder="Förnya…" />
@@ -214,6 +271,14 @@ export function IptvPanel() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={refreshMutation.isPending}
+                    onClick={() => refreshMutation.mutate(line.id)}
+                  >
+                    <RefreshCw className="size-4" />
+                  </Button>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -281,15 +346,32 @@ export function IptvPanel() {
                 </Select>
               </div>
             </div>
+            {deviceType === "mag" ? (
+              <div className="grid gap-1.5">
+                <Label htmlFor="iptv-mac">MAC-adress</Label>
+                <Input
+                  id="iptv-mac"
+                  value={mac}
+                  maxLength={40}
+                  placeholder="00:1A:79:XX:XX:XX"
+                  onChange={(e) => setMac(e.target.value)}
+                />
+              </div>
+            ) : null}
             <div className="grid gap-1.5">
-              <Label htmlFor="iptv-pack">Paket-ID</Label>
-              <Input
-                id="iptv-pack"
-                value={packageId}
-                maxLength={40}
-                placeholder='"all" eller paketets ID, t.ex. 132'
-                onChange={(e) => setPackageId(e.target.value)}
-              />
+              <Label>Paket</Label>
+              <Select value={packageId} onValueChange={setPackageId}>
+                <SelectTrigger>
+                  <SelectValue placeholder={bouquets.length ? "Välj paket" : "Hämtar paket…"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {bouquets.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="iptv-note">Anteckning</Label>
@@ -303,7 +385,12 @@ export function IptvPanel() {
           </div>
           <DialogFooter>
             <Button
-              disabled={!customerName.trim() || createMutation.isPending}
+              disabled={
+                !customerName.trim() ||
+                !packageId ||
+                (deviceType === "mag" && !mac.trim()) ||
+                createMutation.isPending
+              }
               onClick={() => createMutation.mutate()}
             >
               {createMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
