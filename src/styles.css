@@ -60,6 +60,7 @@
   --color-cat-viktigt: var(--cat-viktigt);
   --color-cat-natt: var(--cat-natt);
   --color-cat-kvall: var(--cat-kvall);
+  --color-cat-iptv: var(--cat-iptv);
 
   /* Ikonfärger per läge */
   --color-nav-oversikt: var(--nav-oversikt);
