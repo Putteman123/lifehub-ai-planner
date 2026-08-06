@@ -13,7 +13,11 @@ import { findFreeSlot, suggestCategory } from "@/lib/calendar";
 
 type Body = { messages?: unknown };
 
-const CATEGORY = z.enum(["jobb", "ledig", "jurist", "barn", "privat", "viktigt"]);
+const CATEGORY = z
+  .string()
+  .describe(
+    'Kategori: "jobb", "ledig", "jurist", "barn", "privat", "viktigt" eller ett eget kategorinamn.',
+  );
 const PLACE_KIND = z.enum(["jobb", "jurist", "hem", "barn", "annat"]);
 
 export const Route = createFileRoute("/api/chat")({

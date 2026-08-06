@@ -28,7 +28,7 @@ export type EventInput = {
   title: string;
   starts_at: string;
   ends_at: string;
-  category: "jobb" | "ledig" | "jurist" | "barn" | "privat" | "viktigt";
+  category: string;
   all_day?: boolean | undefined;
   location?: string | undefined;
   description?: string | undefined;
