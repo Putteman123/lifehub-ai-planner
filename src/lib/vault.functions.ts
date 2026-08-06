@@ -101,28 +101,31 @@ export const finishPasskeyRegistration = createServerFn({ method: "POST" })
       user_id: context.userId,
       credential_id: data.credentialId,
       public_key: data.publicKey,
+      rp_id: new URL(origin).hostname,
       label: data.label ?? "Den här enheten",
     });
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
 
-/** Startar upplåsning med Face ID. */
+/** Startar upplåsning med Face ID (bara nycklar för den här domänen). */
 export const beginPasskeyUnlock = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const origin = await requestOrigin();
+    const host = new URL(origin).hostname;
     const { data, error } = await context.supabase
       .from("vault_credentials")
-      .select("credential_id");
+      .select("credential_id")
+      .eq("rp_id", host);
     if (error) throw new Error(error.message);
     if (!data || data.length === 0) return { ok: false as const, reason: "none" as const };
 
-    const origin = await requestOrigin();
     const challenge = await storeChallenge(context.userId, "unlock");
     return {
       ok: true as const,
       challenge,
-      rpId: new URL(origin).hostname,
+      rpId: host,
       credentialIds: data.map((row) => row.credential_id),
     };
   });
