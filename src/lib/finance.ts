@@ -1,0 +1,261 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
+
+export type AccountRow = Tables<"finance_accounts">;
+export type IncomeRow = Tables<"finance_incomes">;
+export type FixedExpenseRow = Tables<"fixed_expenses">;
+export type SpendRow = Tables<"spend_entries">;
+export type FinanceFileRow = Tables<"finance_files">;
+
+export const FINANCE_BUCKET = "ekonomi";
+
+export const INCOME_KINDS: { value: string; label: string }[] = [
+  { value: "lon", label: "Lön" },
+  { value: "ersattning", label: "Ersättning" },
+  { value: "bidrag", label: "Bidrag" },
+  { value: "annat", label: "Annat" },
+];
+
+export const FILE_KINDS: { value: string; label: string }[] = [
+  { value: "lonespec", label: "Lönespec" },
+  { value: "faktura", label: "Faktura" },
+  { value: "kvitto", label: "Kvitto" },
+  { value: "annat", label: "Annat" },
+];
+
+/** Formaterar belopp i svenska kronor utan decimaler. */
+export function kr(amount: number) {
+  return new Intl.NumberFormat("sv-SE", {
+    style: "currency",
+    currency: "SEK",
+    maximumFractionDigits: 0,
+  }).format(Math.round(amount));
+}
+
+function startOfToday() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+/** Dagar kvar till nästa inbetalning (minst 1 så division alltid går). */
+export function daysUntil(dateIso: string) {
+  const target = new Date(`${dateIso.slice(0, 10)}T00:00:00`);
+  const diff = Math.ceil((target.getTime() - startOfToday().getTime()) / 86_400_000);
+  return Math.max(diff, 0);
+}
+
+/** Nästa inbetalning som ännu inte kommit in. */
+export function nextIncome(incomes: IncomeRow[]) {
+  const today = startOfToday().getTime();
+  return (
+    [...incomes]
+      .filter((i) => !i.is_received)
+      .filter((i) => new Date(`${i.expected_on}T00:00:00`).getTime() >= today)
+      .sort((a, b) => a.expected_on.localeCompare(b.expected_on))[0] ?? null
+  );
+}
+
+export type Budget = {
+  balance: number;
+  income: IncomeRow | null;
+  days: number;
+  fixedLeft: number;
+  spentThisPeriod: number;
+  available: number;
+  perDay: number;
+};
+
+/**
+ * Dagsbudget = totalt saldo minus kvarvarande fasta utgifter före nästa
+ * inbetalning, delat på antal dagar dit.
+ */
+export function buildBudget(
+  accounts: AccountRow[],
+  incomes: IncomeRow[],
+  fixed: FixedExpenseRow[],
+  spends: SpendRow[],
+): Budget {
+  const balance = accounts.reduce((sum, a) => sum + Number(a.balance), 0);
+  const income = nextIncome(incomes);
+  const days = income ? Math.max(daysUntil(income.expected_on), 1) : 30;
+
+  const today = new Date();
+  const limit = income ? new Date(`${income.expected_on}T00:00:00`) : null;
+  const fixedLeft = fixed
+    .filter((e) => e.is_active)
+    .filter((e) => {
+      if (!limit) return false;
+      const due = new Date(today.getFullYear(), today.getMonth(), e.due_day);
+      if (due < today) due.setMonth(due.getMonth() + 1);
+      return due <= limit;
+    })
+    .reduce((sum, e) => sum + Number(e.amount), 0);
+
+  const periodStart = new Date(today.getFullYear(), today.getMonth(), 1).getTime();
+  const spentThisPeriod = spends
+    .filter((s) => new Date(s.spent_at).getTime() >= periodStart)
+    .reduce((sum, s) => sum + Number(s.amount), 0);
+
+  const available = balance - fixedLeft;
+  return {
+    balance,
+    income,
+    days,
+    fixedLeft,
+    spentThisPeriod,
+    available,
+    perDay: available / days,
+  };
+}
+
+async function currentUserId() {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) throw new Error("Du är inte inloggad.");
+  return data.user.id;
+}
+
+function useRows<T>(key: string, table: string, order: { column: string; asc: boolean }) {
+  return useQuery({
+    queryKey: [key],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from(table as any)
+        .select("*")
+        .order(order.column, { ascending: order.asc });
+      if (error) throw new Error(error.message);
+      return (data ?? []) as T[];
+    },
+  });
+}
+
+export const useAccounts = () =>
+  useRows<AccountRow>("finance_accounts", "finance_accounts", {
+    column: "sort_order",
+    asc: true,
+  });
+
+export const useIncomes = () =>
+  useRows<IncomeRow>("finance_incomes", "finance_incomes", {
+    column: "expected_on",
+    asc: true,
+  });
+
+export const useFixedExpenses = () =>
+  useRows<FixedExpenseRow>("fixed_expenses", "fixed_expenses", { column: "due_day", asc: true });
+
+export const useSpends = () =>
+  useRows<SpendRow>("spend_entries", "spend_entries", { column: "spent_at", asc: false });
+
+export const useFinanceFiles = () =>
+  useRows<FinanceFileRow>("finance_files", "finance_files", { column: "created_at", asc: false });
+
+type FinanceTable =
+  | "finance_accounts"
+  | "finance_incomes"
+  | "fixed_expenses"
+  | "spend_entries"
+  | "finance_files";
+
+export function useSaveFinance(table: FinanceTable, message = "Sparat") {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (values: Record<string, unknown>) => {
+      const user_id = await currentUserId();
+      const { error } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from(table as any)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .upsert({ ...values, user_id } as any);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [table] });
+      toast.success(message);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+export function useDeleteFinance(table: FinanceTable, message = "Borttaget") {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await supabase.from(table as any).delete().eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [table] });
+      toast.success(message);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+export function useUploadFinanceFiles() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ files, kind }: { files: File[]; kind: string }) => {
+      const user_id = await currentUserId();
+      for (const file of files) {
+        const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+        const path = `${user_id}/${crypto.randomUUID()}-${safeName}`;
+        const { error: uploadError } = await supabase.storage
+          .from(FINANCE_BUCKET)
+          .upload(path, file, { contentType: file.type || "application/octet-stream" });
+        if (uploadError) throw new Error(uploadError.message);
+        const { error } = await supabase
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .from("finance_files" as any)
+          .insert({
+            user_id,
+            storage_path: path,
+            file_name: file.name,
+            mime_type: file.type || null,
+            size_bytes: file.size,
+            kind,
+          });
+        if (error) throw new Error(error.message);
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["finance_files"] });
+      toast.success("Uppladdat");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+export function useDeleteFinanceFile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: FinanceFileRow) => {
+      await supabase.storage.from(FINANCE_BUCKET).remove([file.storage_path]);
+      const { error } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .from("finance_files" as any)
+        .delete()
+        .eq("id", file.id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["finance_files"] });
+      toast.success("Filen är borttagen");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+/** Tidsbegränsad länk till ett privat ekonomidokument (1 timme). */
+export async function financeSignedUrl(path: string) {
+  const { data, error } = await supabase.storage
+    .from(FINANCE_BUCKET)
+    .createSignedUrl(path, 3600);
+  if (error || !data) throw new Error(error?.message ?? "Kunde inte skapa länk.");
+  return data.signedUrl;
+}
