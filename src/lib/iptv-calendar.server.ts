@@ -18,7 +18,7 @@ async function ensureCategory(supabase: Client, userId: string) {
     user_id: userId,
     value: CATEGORY,
     label: "IPTV",
-    color_token: "cat-viktigt",
+    color_token: "cat-iptv",
     sort_order: 90,
   });
 }
