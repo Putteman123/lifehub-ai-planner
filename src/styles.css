@@ -77,7 +77,7 @@
 }
 
 :root {
-  --radius: 0.75rem;
+  --radius: 1.125rem;
   --background: oklch(0.978 0.004 265);
   --foreground: oklch(0.21 0.02 265);
   --surface: oklch(0.958 0.007 265);
@@ -121,7 +121,7 @@
   --cat-natt: oklch(0.42 0.15 285);
   --cat-kvall: oklch(0.68 0.16 55);
 
-  --shadow-soft: 0 1px 2px oklch(0.21 0.02 277 / 5%), 0 10px 30px oklch(0.21 0.02 277 / 7%);
+  --shadow-soft: 0 1px 2px oklch(0.21 0.02 277 / 4%), 0 14px 40px oklch(0.21 0.02 277 / 9%);
 
   --nav-oversikt: oklch(0.52 0.21 277);
   --nav-kalender: oklch(0.55 0.2 258);

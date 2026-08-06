@@ -6,6 +6,7 @@ import { Loader2, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 
+import { ChatGptTips } from "@/components/ChatGptTips";
 import { AppShell } from "@/components/AppShell";
 import { APP_VERSION } from "@/lib/nav-theme";
 import { DataGate } from "@/components/DataGate";
@@ -141,10 +142,12 @@ function CalendarsPage() {
       }
     >
       <DataGate queries={[calendarsQ]}>
+      <ChatGptTips />
       <GoogleStatusPanel />
       <GooglePanel
         connectedExternalIds={calendars.map((c) => c.external_id).filter((v): v is string => !!v)}
       />
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 
         {calendars.length === 0 ? (
