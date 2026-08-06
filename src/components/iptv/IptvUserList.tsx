@@ -127,6 +127,52 @@ function StatusBadge({ row }: { row: IptvRow }) {
   );
 }
 
+/** Visar lösenordet, eller ett fält för att fylla i det saknade lösenordet från panelen. */
+function PasswordCell({
+  row,
+  onSave,
+  pending,
+}: {
+  row: IptvRow;
+  onSave: (value: string) => void;
+  pending: boolean;
+}) {
+  const [value, setValue] = useState("");
+
+  if (row.password) {
+    return (
+      <button
+        onClick={() => copy(row.password, "Lösenord")}
+        className="block max-w-[9rem] truncate font-mono text-xs text-muted-foreground hover:text-primary"
+      >
+        {row.password}
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <Input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Klistra in lösenord"
+        className="h-8 w-[9.5rem] font-mono text-xs"
+      />
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-8 px-2"
+        disabled={pending || !value.trim()}
+        onClick={() => onSave(value.trim())}
+      >
+        {pending ? <Loader2 className="size-3.5 animate-spin" /> : "Spara"}
+      </Button>
+    </div>
+  );
+}
+
+
+
 
 /** Full användarlista för IPTV-panelen: statistik, sök, anteckningar och åtgärder. */
 export function IptvUserList() {
