@@ -349,12 +349,20 @@ export const syncIptvLines = createServerFn({ method: "POST" })
 
     let updated = 0;
     const failed: string[] = [];
+    const needsPassword: string[] = [];
 
     for (const raw of rows ?? []) {
       const line = raw as unknown as Record<string, string | null> & {
         id: string;
         customer_name: string;
       };
+
+      const isMag = String(line["device_type"]) === "mag";
+      if (isMag ? !line["mac"] : !line["username"] || !line["password"]) {
+        needsPassword.push(line.customer_name);
+        continue;
+      }
+
       const res = await lookupLine({
         deviceType: String(line["device_type"]),
         username: line["username"] ?? null,
@@ -384,5 +392,5 @@ export const syncIptvLines = createServerFn({ method: "POST" })
       updated += 1;
     }
 
-    return { updated, failed };
+    return { updated, failed, needsPassword };
   });
