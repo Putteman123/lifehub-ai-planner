@@ -27,6 +27,8 @@ import { TravelTrendChart } from "@/components/platser/TravelTrendChart";
 
 import { TravelTimeline } from "@/components/platser/TravelTimeline";
 import { PositionHistory } from "@/components/platser/PositionHistory";
+import { VisitLogList } from "@/components/platser/VisitLogList";
+
 
 
 import {
@@ -833,6 +835,9 @@ function PlacesPage() {
             </ul>
           )}
         </section>
+
+        <VisitLogList places={places} />
+
 
         <section className="mt-4 rounded-2xl border border-border bg-card p-4">
           <h2 className="text-sm font-semibold">Automatisk loggning från telefonen</h2>
