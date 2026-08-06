@@ -305,11 +305,14 @@ export type Database = {
           id: string
           last_response: Json | null
           m3u_url: string | null
+          mac: string | null
           months: number
           note: string | null
           package_id: string | null
+          package_name: string | null
           panel_id: string | null
           password: string | null
+          protocol_code: string | null
           status: string
           updated_at: string
           user_id: string
@@ -323,11 +326,14 @@ export type Database = {
           id?: string
           last_response?: Json | null
           m3u_url?: string | null
+          mac?: string | null
           months?: number
           note?: string | null
           package_id?: string | null
+          package_name?: string | null
           panel_id?: string | null
           password?: string | null
+          protocol_code?: string | null
           status?: string
           updated_at?: string
           user_id: string
@@ -341,11 +347,14 @@ export type Database = {
           id?: string
           last_response?: Json | null
           m3u_url?: string | null
+          mac?: string | null
           months?: number
           note?: string | null
           package_id?: string | null
+          package_name?: string | null
           panel_id?: string | null
           password?: string | null
+          protocol_code?: string | null
           status?: string
           updated_at?: string
           user_id?: string
