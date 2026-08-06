@@ -60,8 +60,13 @@ export const createIptvLine = createServerFn({ method: "POST" })
       .select()
       .single();
     if (error) throw new Error(error.message);
+
+    const { syncExpiryEvent } = await import("./iptv-calendar.server");
+    await syncExpiryEvent(context.supabase, context.userId, row as never);
+
     return { row, message: res.message };
   });
+
 
 const renewSchema = z.object({
   id: z.string().uuid(),
