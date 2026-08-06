@@ -152,12 +152,22 @@ export const refreshIptvLine = createServerFn({ method: "POST" })
         expires_at: info.expiresAt,
         m3u_url: info.m3uUrl ?? line.m3u_url,
         status: enabled === "0" || enabled === 0 ? "pausad" : "aktiv",
+        online: !(enabled === "0" || enabled === 0),
+        last_synced_at: new Date().toISOString(),
         last_response: res.raw as never,
-      })
+      } as never)
       .eq("id", data.id);
     if (updateError) throw new Error(updateError.message);
 
+    const { syncExpiryEvent } = await import("./iptv-calendar.server");
+    await syncExpiryEvent(context.supabase, context.userId, {
+      id: data.id,
+      customer_name: line.customer_name,
+      expires_at: info.expiresAt,
+    });
+
     return { message: res.message, expiresAt: info.expiresAt };
+
   });
 
 /** Hälsokoll + paketlista: verifierar nyckeln och hämtar tillgängliga paket och krediter. */
