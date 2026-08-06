@@ -1,13 +1,26 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Fragment, useMemo, useState, type ReactNode } from "react";
-import { Plus, Sparkles, AlertTriangle, Clock, Calendar, ChevronDown } from "lucide-react";
+import {
+  Plus,
+  Sparkles,
+  AlertTriangle,
+  Clock,
+  Calendar,
+  CalendarClock,
+  Bell,
+  Timer,
+  ChevronDown,
+} from "lucide-react";
 
 
 import { AppShell } from "@/components/AppShell";
+import { SectionCard } from "@/components/SectionCard";
+import { ShoppingTaskCard, TodoListCard } from "@/components/dashboard/ShoppingTaskCard";
 import { LiveLocationCard } from "@/components/LiveLocationCard";
 import { DataGate } from "@/components/DataGate";
 import { EventDialog } from "@/components/EventDialog";
 import { InboxCard } from "@/components/google/InboxCard";
+
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
