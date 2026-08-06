@@ -133,9 +133,40 @@ export const CATEGORIES: CategoryOption[] = [
   },
 ];
 
-export function categoryMeta(category: Category) {
-  return CATEGORIES.find((c) => c.value === category) ?? CATEGORIES[4]!;
+/** Slår ihop inbyggda kategorier med användarens egna. */
+export function mergeCategories(custom: CustomCategoryRow[] = []): CategoryOption[] {
+  const extra = [...custom]
+    .sort((a, b) => a.sort_order - b.sort_order || a.label.localeCompare(b.label, "sv"))
+    .filter((row) => !CATEGORIES.some((c) => c.value === row.value))
+    .map((row) => {
+      const palette = paletteByToken(row.color_token);
+      return {
+        value: row.value,
+        label: row.label,
+        dot: palette.dot,
+        chip: palette.chip,
+        bar: palette.bar,
+        custom: true,
+      } satisfies CategoryOption;
+    });
+  return [...CATEGORIES, ...extra];
 }
+
+/** Stil och etikett för en kategori, även egna som inte finns i listan. */
+export function categoryMeta(category: Category, options?: CategoryOption[]): CategoryOption {
+  const found = (options ?? CATEGORIES).find((c) => c.value === category);
+  if (found) return found;
+  const palette = paletteForValue(String(category ?? "privat"));
+  return {
+    value: category,
+    label: String(category ?? "Privat"),
+    dot: palette.dot,
+    chip: palette.chip,
+    bar: palette.bar,
+    custom: true,
+  };
+}
+
 
 export type ShiftType = "natt" | "kvall";
 
