@@ -12,15 +12,15 @@ declare global {
   interface Window {
     google?: typeof google;
     __lifehubMapsReady?: () => void;
+    __lifehubMapsAuthFailed?: boolean;
+    gm_authFailure?: () => void;
   }
 }
 
 const BROWSER_KEY = import.meta.env["VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY"] as
-  | string
-  | undefined;
+  string | undefined;
 const CHANNEL = import.meta.env["VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_TRACKING_ID"] as
-  | string
-  | undefined;
+  string | undefined;
 
 let loader: Promise<void> | null = null;
 
@@ -33,6 +33,10 @@ function loadMaps(): Promise<void> {
 
   loader = new Promise<void>((resolve, reject) => {
     window.__lifehubMapsReady = () => resolve();
+    // Google anropar gm_authFailure när nyckeln inte tillåter den här domänen.
+    window.gm_authFailure = () => {
+      window.__lifehubMapsAuthFailed = true;
+    };
     const script = document.createElement("script");
     const params = new URLSearchParams({
       key: BROWSER_KEY,
@@ -88,8 +92,15 @@ export function GoogleMap({
       .catch((err: Error) => {
         if (!cancelled) setError(err.message);
       });
+    // Kartan kan laddas men nekas av nyckelns domänbegränsning.
+    const timer = window.setInterval(() => {
+      if (window.__lifehubMapsAuthFailed && !cancelled) {
+        setError(`kartnyckeln tillåter inte ${window.location.hostname}`);
+      }
+    }, 1000);
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
     };
   }, []);
 

@@ -42,12 +42,18 @@ async function consumeChallenge(purpose: string, challenge: string) {
   if (data.challenge !== challenge) throw new Error("Utmaningen stämmer inte.");
 }
 
-/** Talar om ifall någon enhet redan är registrerad för Face ID. */
+/**
+ * Talar om ifall någon enhet redan är registrerad för Face ID på just den
+ * här webbadressen. Passnycklar är bundna till domänen (rpId), så en nyckel
+ * som skapats på lovable.app fungerar inte på app.mellberg.online.
+ */
 export const hasLoginPasskey = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const host = new URL(await requestOrigin()).hostname;
   const { count, error } = await supabaseAdmin
     .from("app_passkeys")
-    .select("id", { count: "exact", head: true });
+    .select("id", { count: "exact", head: true })
+    .eq("rp_id", host);
   if (error) throw new Error(error.message);
   return { registered: (count ?? 0) > 0 };
 });
@@ -98,6 +104,7 @@ export const finishLoginPasskeyRegistration = createServerFn({ method: "POST" })
       {
         credential_id: data.credentialId,
         public_key: data.publicKey,
+        rp_id: new URL(origin).hostname,
         label: data.label ?? "Den här enheten",
       },
       { onConflict: "credential_id" },
@@ -106,19 +113,23 @@ export const finishLoginPasskeyRegistration = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
-/** Startar inloggning med Face ID. */
+/** Startar inloggning med Face ID (bara nycklar för den här domänen). */
 export const beginLoginPasskey = createServerFn({ method: "POST" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.from("app_passkeys").select("credential_id");
+  const origin = await requestOrigin();
+  const host = new URL(origin).hostname;
+  const { data, error } = await supabaseAdmin
+    .from("app_passkeys")
+    .select("credential_id")
+    .eq("rp_id", host);
   if (error) throw new Error(error.message);
   if (!data || data.length === 0) return { ok: false as const };
 
-  const origin = await requestOrigin();
   const challenge = await storeChallenge("app-login");
   return {
     ok: true as const,
     challenge,
-    rpId: new URL(origin).hostname,
+    rpId: host,
     credentialIds: data.map((row) => row.credential_id),
   };
 });
