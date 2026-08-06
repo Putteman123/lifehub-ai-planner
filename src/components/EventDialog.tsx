@@ -113,7 +113,18 @@ export function EventDialog({
     });
   }, [open, event, defaultDate, defaultCategory, defaultChildId, defaultCaseId]);
 
+  function addCategory() {
+    createCategory.mutate(newLabel, {
+      onSuccess: (row) => {
+        setForm((prev) => ({ ...prev, category: row.value }));
+        setAdding(false);
+        setNewLabel("");
+      },
+    });
+  }
+
   function save() {
+
     if (!form.title.trim() || !form.startsAt || !form.endsAt) return;
     upsert.mutate(
       {
