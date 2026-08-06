@@ -169,13 +169,15 @@ export const finishPasskeyUnlock = createServerFn({ method: "POST" })
     return { ok: valid };
   });
 
-/** Talar om ifall Face ID redan är registrerat på kontot. */
+/** Talar om ifall Face ID redan är registrerat för den här domänen. */
 export const hasPasskey = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const host = new URL(await requestOrigin()).hostname;
     const { count, error } = await context.supabase
       .from("vault_credentials")
-      .select("id", { count: "exact", head: true });
+      .select("id", { count: "exact", head: true })
+      .eq("rp_id", host);
     if (error) throw new Error(error.message);
     return { registered: (count ?? 0) > 0 };
   });
