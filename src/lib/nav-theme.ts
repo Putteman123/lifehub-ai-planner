@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   ShoppingCart,
   Tv,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 
