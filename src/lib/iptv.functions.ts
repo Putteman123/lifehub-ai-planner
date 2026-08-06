@@ -301,13 +301,17 @@ export const syncIptvLines = createServerFn({ method: "POST" })
     const failed: string[] = [];
 
     for (const raw of rows ?? []) {
-      const line = raw as Record<string, string | null> & { id: string; customer_name: string };
+      const line = raw as unknown as Record<string, string | null> & {
+        id: string;
+        customer_name: string;
+      };
       const res = await lookupLine({
         deviceType: String(line["device_type"]),
-        username: line["username"],
-        password: line["password"],
-        mac: line["mac"],
+        username: line["username"] ?? null,
+        password: line["password"] ?? null,
+        mac: line["mac"] ?? null,
       });
+
       if (!res.ok || !res.line) {
         failed.push(line.customer_name);
         continue;
