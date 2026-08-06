@@ -278,6 +278,7 @@ function Dashboard() {
         />
       </SectionCard>
 
+      <MoneyWidget />
       <ShoppingTaskCard />
       <TodoListCard />
 
