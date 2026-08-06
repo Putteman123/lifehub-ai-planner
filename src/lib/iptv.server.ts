@@ -98,3 +98,51 @@ export async function fetchBouquets(): Promise<Bouquet[]> {
     .filter((b) => b && b["id"] != null)
     .map((b) => ({ id: String(b["id"]), name: String(b["name"] ?? b["id"]).trim() }));
 }
+
+export type PanelLine = {
+  panelId: string | null;
+  username: string | null;
+  password: string | null;
+  mac: string | null;
+  protocolCode: string | null;
+  m3uUrl: string | null;
+  expiresAt: string | null;
+  enabled: boolean;
+};
+
+/**
+ * Hämtar aktuell status för en enskild linje via `device_info`.
+ * Panelens API saknar en listnings-action, därför synkas rad för rad.
+ */
+export async function lookupLine(params: {
+  deviceType: string;
+  username?: string | null;
+  password?: string | null;
+  mac?: string | null;
+}): Promise<{ ok: boolean; message: string; line: PanelLine | null }> {
+  const query: Record<string, string> = { action: "device_info" };
+  if (params.deviceType === "mag") {
+    if (!params.mac) return { ok: false, message: "MAC-adress saknas.", line: null };
+    query["mac"] = params.mac;
+  } else {
+    if (!params.username || !params.password) {
+      return { ok: false, message: "Användarnamn eller lösenord saknas.", line: null };
+    }
+    query["username"] = params.username;
+    query["password"] = params.password;
+  }
+
+  const res = await callPanel(query);
+  if (!res.ok) return { ok: false, message: res.message, line: null };
+
+  const info = extractLine(res);
+  const enabledRaw = res.data["enabled"];
+  return {
+    ok: true,
+    message: res.message,
+    line: {
+      ...info,
+      enabled: !(enabledRaw === "0" || enabledRaw === 0 || enabledRaw === false),
+    },
+  };
+}
