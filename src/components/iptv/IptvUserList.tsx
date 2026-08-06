@@ -43,6 +43,7 @@ import {
   importIptvLine,
   refreshIptvLine,
   renewIptvLine,
+  setIptvPassword,
   syncIptvLines,
   updateIptvLine,
 } from "@/lib/iptv.functions";
