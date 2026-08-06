@@ -43,7 +43,6 @@ import {
   importIptvLine,
   refreshIptvLine,
   renewIptvLine,
-  setIptvPassword,
   syncIptvLines,
   updateIptvLine,
 } from "@/lib/iptv.functions";
@@ -140,14 +139,27 @@ function PasswordCell({
 }) {
   const [value, setValue] = useState("");
 
-  if (row.password) {
+  const [editing, setEditing] = useState(false);
+
+  if (row.password && !editing) {
     return (
-      <button
-        onClick={() => copy(row.password, "Lösenord")}
-        className="block max-w-[9rem] truncate font-mono text-xs text-muted-foreground hover:text-primary"
-      >
-        {row.password}
-      </button>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => copy(row.password, "Lösenord")}
+          className="block max-w-[8rem] truncate font-mono text-xs text-muted-foreground hover:text-primary"
+        >
+          {row.password}
+        </button>
+        <button
+          onClick={() => {
+            setValue(row.password ?? "");
+            setEditing(true);
+          }}
+          className="text-[11px] text-muted-foreground underline hover:text-foreground"
+        >
+          ändra
+        </button>
+      </div>
     );
   }
 
@@ -164,10 +176,48 @@ function PasswordCell({
         variant="outline"
         className="h-8 px-2"
         disabled={pending || !value.trim()}
-        onClick={() => onSave(value.trim())}
+        onClick={() => {
+          onSave(value.trim());
+          setEditing(false);
+        }}
       >
         {pending ? <Loader2 className="size-3.5 animate-spin" /> : "Spara"}
       </Button>
+    </div>
+  );
+}
+
+/** Utgångsdatum som går att klistra in/välja direkt i listan. */
+function ExpiryCell({
+  row,
+  onSave,
+  pending,
+}: {
+  row: IptvRow;
+  onSave: (value: string | null) => void;
+  pending: boolean;
+}) {
+  const [value, setValue] = useState(row.expires_at ? row.expires_at.slice(0, 10) : "");
+
+  return (
+    <div className="flex items-center gap-1">
+      <Input
+        type="date"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        className="h-8 w-[8.5rem] text-xs tabular-nums"
+      />
+      {value !== (row.expires_at ? row.expires_at.slice(0, 10) : "") ? (
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 px-2"
+          disabled={pending}
+          onClick={() => onSave(value ? value : null)}
+        >
+          {pending ? <Loader2 className="size-3.5 animate-spin" /> : "Spara"}
+        </Button>
+      ) : null}
     </div>
   );
 }
@@ -185,7 +235,6 @@ export function IptvUserList() {
   const removeLine = useServerFn(deleteIptvLine);
   const updateLine = useServerFn(updateIptvLine);
   const syncAll = useServerFn(syncIptvLines);
-  const setPw = useServerFn(setIptvPassword);
   const panelInfo = useServerFn(getIptvPanelInfo);
 
   const linesQ = useQuery({
@@ -312,10 +361,21 @@ export function IptvUserList() {
   });
 
   const pwMutation = useMutation({
-    mutationFn: (vars: { id: string; password: string }) => setPw({ data: vars }),
+    mutationFn: (vars: { id: string; password: string }) =>
+      updateLine({ data: { id: vars.id, password: vars.password } }),
     onSuccess: () => {
       invalidate();
-      toast.success("Lösenordet sparat och linjen synkad");
+      toast.success("Lösenordet sparat");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const expiryMutation = useMutation({
+    mutationFn: (vars: { id: string; expiresAt: string | null }) =>
+      updateLine({ data: { id: vars.id, expiresAt: vars.expiresAt } }),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Utgångsdatum sparat och lagt i kalendern");
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -510,7 +570,11 @@ export function IptvUserList() {
                         {row.package_name ?? row.package_id ?? "–"}
                       </td>
                       <td className="whitespace-nowrap py-2 pr-3 text-xs tabular-nums">
-                        {row.expires_at ? fmt(row.expires_at, "d MMM yyyy") : "–"}
+                        <ExpiryCell
+                          row={row}
+                          onSave={(value) => expiryMutation.mutate({ id: row.id, expiresAt: value })}
+                          pending={expiryMutation.isPending}
+                        />
                       </td>
                       <td className="py-2 pr-3">
                         <NoteCell
@@ -573,15 +637,18 @@ export function IptvUserList() {
                     {row.package_name ? <span>{row.package_name}</span> : null}
                   </div>
 
-                  {row.password ? null : (
-                    <div className="mt-2">
-                      <PasswordCell
-                        row={row}
-                        onSave={(value) => pwMutation.mutate({ id: row.id, password: value })}
-                        pending={pwMutation.isPending}
-                      />
-                    </div>
-                  )}
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <PasswordCell
+                      row={row}
+                      onSave={(value) => pwMutation.mutate({ id: row.id, password: value })}
+                      pending={pwMutation.isPending}
+                    />
+                    <ExpiryCell
+                      row={row}
+                      onSave={(value) => expiryMutation.mutate({ id: row.id, expiresAt: value })}
+                      pending={expiryMutation.isPending}
+                    />
+                  </div>
 
 
 

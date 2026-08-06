@@ -9,16 +9,21 @@ const CATEGORY = "iptv";
 async function ensureCategory(supabase: Client, userId: string) {
   const { data } = await supabase
     .from("event_categories")
-    .select("id")
+    .select("id, color_token")
     .eq("user_id", userId)
     .eq("value", CATEGORY)
     .maybeSingle();
-  if (data) return;
+  if (data) {
+    if (data.color_token !== "cat-iptv") {
+      await supabase.from("event_categories").update({ color_token: "cat-iptv" }).eq("id", data.id);
+    }
+    return;
+  }
   await supabase.from("event_categories").insert({
     user_id: userId,
     value: CATEGORY,
     label: "IPTV",
-    color_token: "cat-viktigt",
+    color_token: "cat-iptv",
     sort_order: 90,
   });
 }
