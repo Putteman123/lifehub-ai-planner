@@ -69,6 +69,12 @@ export const CATEGORY_PALETTE: { token: string; dot: string; chip: string; bar: 
     chip: "bg-cat-kvall/14 text-cat-kvall",
     bar: "border-l-cat-kvall",
   },
+  {
+    token: "cat-iptv",
+    dot: "bg-cat-iptv",
+    chip: "bg-cat-iptv/14 text-cat-iptv",
+    bar: "border-l-cat-iptv",
+  },
 ];
 
 export function paletteByToken(token: string) {
