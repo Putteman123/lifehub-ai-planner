@@ -18,11 +18,9 @@ declare global {
 }
 
 const BROWSER_KEY = import.meta.env["VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY"] as
-  | string
-  | undefined;
+  string | undefined;
 const CHANNEL = import.meta.env["VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_TRACKING_ID"] as
-  | string
-  | undefined;
+  string | undefined;
 
 let loader: Promise<void> | null = null;
 

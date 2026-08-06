@@ -27,7 +27,11 @@ async function storeChallenge(userId: string, purpose: string) {
   const { newChallenge } = await import("@/lib/vault-webauthn.server");
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const challenge = newChallenge();
-  await supabaseAdmin.from("vault_challenges").delete().eq("user_id", userId).eq("purpose", purpose);
+  await supabaseAdmin
+    .from("vault_challenges")
+    .delete()
+    .eq("user_id", userId)
+    .eq("purpose", purpose);
   const { error } = await supabaseAdmin
     .from("vault_challenges")
     .insert({ user_id: userId, challenge, purpose });
