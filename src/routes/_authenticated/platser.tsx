@@ -834,6 +834,9 @@ function PlacesPage() {
           )}
         </section>
 
+        <VisitLogList places={places} />
+
+
         <section className="mt-4 rounded-2xl border border-border bg-card p-4">
           <h2 className="text-sm font-semibold">Automatisk loggning från telefonen</h2>
           <p className="mt-1 text-sm text-muted-foreground">
