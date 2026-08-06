@@ -8,7 +8,8 @@ import { EventDialog } from "@/components/EventDialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ShiftLegend } from "@/components/calendar/ShiftLegend";
-import { CATEGORIES, SHIFT_STYLES, type Category, type EventRow } from "@/lib/categories";
+import { SHIFT_STYLES, type Category, type EventRow } from "@/lib/categories";
+import { useCategoryOptions } from "@/lib/event-categories";
 import {
   addDays,
   dayLoad,
@@ -54,14 +55,16 @@ function CalendarPage() {
   const [cursor, setCursor] = useState(() =>
     search.datum ? new Date(`${search.datum}T12:00:00`) : new Date(),
   );
-  const [active, setActive] = useState<Category[]>(CATEGORIES.map((c) => c.value));
+  const { options: categoryOptions } = useCategoryOptions();
+  const [hidden, setHidden] = useState<Category[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selected, setSelected] = useState<EventRow | null>(null);
 
   const events = useMemo(
-    () => mergeDuplicates(rawEvents).filter((e) => active.includes(e.category)),
-    [rawEvents, active],
+    () => mergeDuplicates(rawEvents).filter((e) => !hidden.includes(e.category)),
+    [rawEvents, hidden],
   );
+
 
   useEffect(() => {
     const dateStr = fmt(cursor, "yyyy-MM-dd");
@@ -96,7 +99,7 @@ function CalendarPage() {
   }
 
   function toggle(category: Category) {
-    setActive((prev) =>
+    setHidden((prev) =>
       prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category],
     );
   }
@@ -145,12 +148,12 @@ function CalendarPage() {
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        {CATEGORIES.map((c) => (
+        {categoryOptions.map((c) => (
           <button
             key={c.value}
             onClick={() => toggle(c.value)}
             className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors ${
-              active.includes(c.value)
+              !hidden.includes(c.value)
                 ? `${c.chip} border-transparent`
                 : "border-border text-muted-foreground"
             }`}

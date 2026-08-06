@@ -187,12 +187,45 @@ export type Database = {
         }
         Relationships: []
       }
+      event_categories: {
+        Row: {
+          color_token: string
+          created_at: string
+          id: string
+          label: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+          value: string
+        }
+        Insert: {
+          color_token?: string
+          created_at?: string
+          id?: string
+          label: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+          value: string
+        }
+        Update: {
+          color_token?: string
+          created_at?: string
+          id?: string
+          label?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+          value?: string
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           all_day: boolean
           calendar_id: string | null
           case_id: string | null
-          category: Database["public"]["Enums"]["event_category"]
+          category: string
           child_id: string | null
           created_at: string
           description: string | null
@@ -209,7 +242,7 @@ export type Database = {
           all_day?: boolean
           calendar_id?: string | null
           case_id?: string | null
-          category?: Database["public"]["Enums"]["event_category"]
+          category?: string
           child_id?: string | null
           created_at?: string
           description?: string | null
@@ -226,7 +259,7 @@ export type Database = {
           all_day?: boolean
           calendar_id?: string | null
           case_id?: string | null
-          category?: Database["public"]["Enums"]["event_category"]
+          category?: string
           child_id?: string | null
           created_at?: string
           description?: string | null

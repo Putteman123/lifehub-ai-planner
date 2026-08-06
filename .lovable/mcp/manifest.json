@@ -79,14 +79,6 @@
             },
             "category": {
               "type": "string",
-              "enum": [
-                "jobb",
-                "ledig",
-                "jurist",
-                "barn",
-                "privat",
-                "viktigt"
-              ],
               "description": "Kategori för färgkodning"
             },
             "all_day": {

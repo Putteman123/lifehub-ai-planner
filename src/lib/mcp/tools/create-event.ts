@@ -11,7 +11,7 @@ export default defineTool({
     starts_at: z.string().describe("Starttid i ISO 8601"),
     ends_at: z.string().describe("Sluttid i ISO 8601"),
     category: z
-      .enum(["jobb", "ledig", "jurist", "barn", "privat", "viktigt"])
+      .string()
       .describe("Kategori för färgkodning"),
     all_day: z.boolean().optional().describe("Heldagshändelse"),
     location: z.string().optional().describe("Plats"),
