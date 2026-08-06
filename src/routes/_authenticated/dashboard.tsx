@@ -83,33 +83,6 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-/**
- * Kort som är hopfällt på mobil (minimalt scrollande) men alltid öppet från lg.
- */
-function FoldCard({
-  title,
-  count,
-  children,
-}: {
-  title: string;
-  count?: number;
-  children: ReactNode;
-}) {
-  return (
-    <details className="group card-soft p-3.5 sm:p-5">
-      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 lg:cursor-default">
-        <h2 className="min-w-0 truncate text-[15px] font-semibold">{title}</h2>
-        <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-          {count !== undefined ? (
-            <span className="rounded-full bg-surface px-2 py-0.5 tabular-nums">{count}</span>
-          ) : null}
-          <ChevronDown className="size-4 transition-transform group-open:rotate-180 lg:hidden" />
-        </span>
-      </summary>
-      <div className="hidden group-open:block lg:block">{children}</div>
-    </details>
-  );
-}
 
 
 function PlaceCard() {
