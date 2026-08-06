@@ -30,7 +30,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CATEGORIES, type Category } from "@/lib/categories";
+import { type Category } from "@/lib/categories";
+import { useCategoryOptions } from "@/lib/event-categories";
+import { CategoryManager } from "@/components/CategoryManager";
 import { fmt } from "@/lib/calendar";
 import { syncCalendar } from "@/lib/calendar-sync.functions";
 import { useCalendars, useDeleteRow, useUpsertRow } from "@/lib/db";
@@ -88,6 +90,7 @@ function CalendarsPage() {
   const [name, setName] = useState("");
   const [provider, setProvider] = useState<string>("ics");
   const [url, setUrl] = useState("");
+  const { options: categoryOptions } = useCategoryOptions();
   const [category, setCategory] = useState<Category>("privat");
 
   function openCreate() {
@@ -144,6 +147,7 @@ function CalendarsPage() {
       <DataGate queries={[calendarsQ]}>
       <ChatGptTips />
       <GoogleStatusPanel />
+      <CategoryManager />
       <GooglePanel
         connectedExternalIds={calendars.map((c) => c.external_id).filter((v): v is string => !!v)}
       />
@@ -156,7 +160,7 @@ function CalendarsPage() {
           </div>
         ) : null}
         {calendars.map((c) => {
-          const meta = CATEGORIES.find((x) => x.value === c.color) ?? CATEGORIES[0]!;
+          const meta = categoryOptions.find((x) => x.value === c.color) ?? categoryOptions[0]!;
           return (
             <div key={c.id} className="card-soft min-w-0 p-4">
               <div className="flex min-w-0 items-start justify-between gap-2">
@@ -274,7 +278,7 @@ function CalendarsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map((c) => (
+                  {categoryOptions.map((c) => (
                     <SelectItem key={c.value} value={c.value}>
                       {c.label}
                     </SelectItem>
