@@ -275,6 +275,56 @@ export const updateIptvLine = createServerFn({ method: "POST" })
     return { row };
   });
 
+/** Fyller i lösenordet för en importerad rad och hämtar direkt paket, utgång och länk. */
+export const setIptvPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ id: z.string().uuid(), password: z.string().min(1).max(120) }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { lookupLine } = await import("./iptv.server");
+    const { syncExpiryEvent } = await import("./iptv-calendar.server");
+
+    const { data: row, error } = await context.supabase
+      .from("iptv_lines")
+      .select("*")
+      .eq("id", data.id)
+      .single();
+    if (error) throw new Error(error.message);
+
+    const line = row as unknown as Record<string, string | null> & { customer_name: string };
+    const res = await lookupLine({
+      deviceType: String(line["device_type"]),
+      username: line["username"] ?? null,
+      password: data.password,
+      mac: line["mac"] ?? null,
+    });
+    if (!res.ok || !res.line) throw new Error(`Panelen svarade: ${res.message}`);
+
+    const patch = {
+      password: data.password,
+      expires_at: res.line.expiresAt,
+      m3u_url: res.line.m3uUrl ?? line["m3u_url"],
+      panel_id: res.line.panelId ?? line["panel_id"],
+      status: res.line.enabled ? "aktiv" : "pausad",
+      online: res.line.enabled,
+      last_synced_at: new Date().toISOString(),
+    };
+    const { error: updateError } = await context.supabase
+      .from("iptv_lines")
+      .update(patch as never)
+      .eq("id", data.id);
+    if (updateError) throw new Error(updateError.message);
+
+    await syncExpiryEvent(context.supabase, context.userId, {
+      id: data.id,
+      customer_name: line.customer_name,
+      expires_at: res.line.expiresAt,
+    });
+
+    return { message: res.message, expiresAt: res.line.expiresAt };
+  });
+
 /** Tar bort raden ur appen och städar bort kalenderhändelsen. */
 export const deleteIptvLine = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -299,12 +349,20 @@ export const syncIptvLines = createServerFn({ method: "POST" })
 
     let updated = 0;
     const failed: string[] = [];
+    const needsPassword: string[] = [];
 
     for (const raw of rows ?? []) {
       const line = raw as unknown as Record<string, string | null> & {
         id: string;
         customer_name: string;
       };
+
+      const isMag = String(line["device_type"]) === "mag";
+      if (isMag ? !line["mac"] : !line["username"] || !line["password"]) {
+        needsPassword.push(line.customer_name);
+        continue;
+      }
+
       const res = await lookupLine({
         deviceType: String(line["device_type"]),
         username: line["username"] ?? null,
@@ -334,5 +392,5 @@ export const syncIptvLines = createServerFn({ method: "POST" })
       updated += 1;
     }
 
-    return { updated, failed };
+    return { updated, failed, needsPassword };
   });

@@ -43,6 +43,7 @@ import {
   importIptvLine,
   refreshIptvLine,
   renewIptvLine,
+  setIptvPassword,
   syncIptvLines,
   updateIptvLine,
 } from "@/lib/iptv.functions";
@@ -80,6 +81,11 @@ function copy(value: string | null | undefined, label: string) {
   toast.success(`${label} kopierad`);
 }
 
+function isExpired(row: IptvRow) {
+  const left = daysLeft(row.expires_at);
+  return row.status === "utgangen" || (left != null && left < 0);
+}
+
 function StatCard({
   icon: Icon,
   value,
@@ -92,32 +98,82 @@ function StatCard({
   tone: string;
 }) {
   return (
-    <div className="card-soft flex items-center gap-3 p-4">
-      <span className={`flex size-11 items-center justify-center rounded-2xl ${tone}`}>
-        <Icon className="size-5" />
+    <div className="card-soft flex items-center gap-4 p-4">
+      <span
+        className={`flex size-14 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm ${tone}`}
+      >
+        <Icon className="size-7" />
       </span>
       <div className="min-w-0">
-        <p className="text-2xl font-semibold leading-none tabular-nums">{value}</p>
-        <p className="truncate text-xs text-muted-foreground">{label}</p>
+        <p className="text-3xl font-semibold leading-none tabular-nums">{value}</p>
+        <p className="mt-1 truncate text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {label}
+        </p>
       </div>
     </div>
   );
 }
 
 function StatusBadge({ row }: { row: IptvRow }) {
-  const left = daysLeft(row.expires_at);
-  const expired = left != null && left < 0;
+  const expired = isExpired(row);
   const cls = expired
-    ? "bg-destructive/15 text-destructive"
+    ? "bg-[hsl(12_85%_58%)] text-white"
     : row.status === "pausad"
       ? "bg-muted text-muted-foreground"
-      : "bg-cat-handla/15 text-cat-handla";
+      : "bg-[hsl(168_60%_42%)] text-white";
   return (
     <span className={`inline-flex rounded-md px-2 py-0.5 text-[11px] font-semibold ${cls}`}>
-      {expired ? "Utgången" : row.status === "pausad" ? "Pausad" : "Aktiv"}
+      {expired ? "Expired" : row.status === "pausad" ? "Pausad" : "Enabled"}
     </span>
   );
 }
+
+/** Visar lösenordet, eller ett fält för att fylla i det saknade lösenordet från panelen. */
+function PasswordCell({
+  row,
+  onSave,
+  pending,
+}: {
+  row: IptvRow;
+  onSave: (value: string) => void;
+  pending: boolean;
+}) {
+  const [value, setValue] = useState("");
+
+  if (row.password) {
+    return (
+      <button
+        onClick={() => copy(row.password, "Lösenord")}
+        className="block max-w-[9rem] truncate font-mono text-xs text-muted-foreground hover:text-primary"
+      >
+        {row.password}
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <Input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="Klistra in lösenord"
+        className="h-8 w-[9.5rem] font-mono text-xs"
+      />
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-8 px-2"
+        disabled={pending || !value.trim()}
+        onClick={() => onSave(value.trim())}
+      >
+        {pending ? <Loader2 className="size-3.5 animate-spin" /> : "Spara"}
+      </Button>
+    </div>
+  );
+}
+
+
+
 
 /** Full användarlista för IPTV-panelen: statistik, sök, anteckningar och åtgärder. */
 export function IptvUserList() {
@@ -129,6 +185,7 @@ export function IptvUserList() {
   const removeLine = useServerFn(deleteIptvLine);
   const updateLine = useServerFn(updateIptvLine);
   const syncAll = useServerFn(syncIptvLines);
+  const setPw = useServerFn(setIptvPassword);
   const panelInfo = useServerFn(getIptvPanelInfo);
 
   const linesQ = useQuery({
@@ -173,24 +230,18 @@ export function IptvUserList() {
   const lines = useMemo(() => linesQ.data ?? [], [linesQ.data]);
 
   const stats = useMemo(() => {
-    const expired = lines.filter((l) => {
-      const left = daysLeft(l.expires_at);
-      return left != null && left < 0;
-    }).length;
-    const active = lines.filter((l) => {
-      const left = daysLeft(l.expires_at);
-      return l.status !== "pausad" && (left == null || left >= 0);
-    }).length;
-    return { total: lines.length, active, expired };
+    const expired = lines.filter(isExpired).length;
+    const online = lines.filter((l) => l.online === true && !isExpired(l)).length;
+    return { total: lines.length, online, expired };
   }, [lines]);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     return lines
       .filter((l) => {
-        const left = daysLeft(l.expires_at);
-        if (statusFilter === "aktiva" && !(left == null || left >= 0)) return false;
-        if (statusFilter === "utgangna" && !(left != null && left < 0)) return false;
+        const expired = isExpired(l);
+        if (statusFilter === "aktiva" && expired) return false;
+        if (statusFilter === "utgangna" && !expired) return false;
         if (!q) return true;
         return [l.customer_name, l.username, l.note, l.package_name, l.mac]
           .filter(Boolean)
@@ -202,6 +253,7 @@ export function IptvUserList() {
         return av - bv;
       });
   }, [lines, search, statusFilter]);
+
 
   function invalidate() {
     qc.invalidateQueries({ queryKey: ["iptv_lines"] });
@@ -259,14 +311,26 @@ export function IptvUserList() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const pwMutation = useMutation({
+    mutationFn: (vars: { id: string; password: string }) => setPw({ data: vars }),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Lösenordet sparat och linjen synkad");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
   const syncMutation = useMutation({
     mutationFn: () => syncAll({ data: undefined }),
     onSuccess: (res) => {
       invalidate();
       toast.success(
-        `Synkade ${res.updated} linjer${res.failed.length ? ` · ${res.failed.length} misslyckades` : ""}`,
+        `Synkade ${res.updated} linjer` +
+          (res.needsPassword.length ? ` · ${res.needsPassword.length} saknar lösenord` : "") +
+          (res.failed.length ? ` · ${res.failed.length} misslyckades` : ""),
       );
     },
+
     onError: (error: Error) => toast.error(error.message),
   });
 
@@ -316,28 +380,29 @@ export function IptvUserList() {
         <StatCard
           icon={Users}
           value={stats.total}
-          label="Användare totalt"
-          tone="bg-cat-viktigt/15 text-cat-viktigt"
+          label="Lines Users"
+          tone="bg-[hsl(24_90%_58%)]"
         />
         <StatCard
           icon={Wifi}
-          value={stats.active}
-          label="Aktiva linjer"
-          tone="bg-cat-handla/15 text-cat-handla"
+          value={stats.online}
+          label="Lines Online"
+          tone="bg-[hsl(168_60%_42%)]"
         />
         <StatCard
           icon={AlertTriangle}
           value={stats.expired}
-          label="Utgångna linjer"
-          tone="bg-destructive/15 text-destructive"
+          label="Lines Expired"
+          tone="bg-[hsl(348_78%_54%)]"
         />
       </div>
 
       <section className="card-soft p-4 sm:p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 text-sm font-semibold">
-            <Tv className="size-4 text-primary" /> Användarlista
+            <Tv className="size-4 text-primary" /> Userlist | LINES
           </h2>
+
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
@@ -434,13 +499,13 @@ export function IptvUserList() {
                         </button>
                       </td>
                       <td className="py-2 pr-3">
-                        <button
-                          onClick={() => copy(row.password, "Lösenord")}
-                          className="max-w-[9rem] truncate font-mono text-xs text-muted-foreground hover:text-primary"
-                        >
-                          {row.password ?? "–"}
-                        </button>
+                        <PasswordCell
+                          row={row}
+                          onSave={(value) => pwMutation.mutate({ id: row.id, password: value })}
+                          pending={pwMutation.isPending}
+                        />
                       </td>
+
                       <td className="max-w-[9rem] truncate py-2 pr-3 text-xs text-muted-foreground">
                         {row.package_name ?? row.package_id ?? "–"}
                       </td>
@@ -508,6 +573,18 @@ export function IptvUserList() {
                     {row.package_name ? <span>{row.package_name}</span> : null}
                   </div>
 
+                  {row.password ? null : (
+                    <div className="mt-2">
+                      <PasswordCell
+                        row={row}
+                        onSave={(value) => pwMutation.mutate({ id: row.id, password: value })}
+                        pending={pwMutation.isPending}
+                      />
+                    </div>
+                  )}
+
+
+
                   {row.m3u_url ? (
                     <button
                       onClick={() => copy(row.m3u_url, "M3U-länken")}
@@ -542,7 +619,12 @@ export function IptvUserList() {
                 </div>
               ))}
             </div>
+
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              Visar 1 till {visible.length} av {lines.length} poster
+            </p>
           </>
+
         )}
       </section>
 
