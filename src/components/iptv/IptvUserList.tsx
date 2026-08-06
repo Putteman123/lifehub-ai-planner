@@ -182,24 +182,18 @@ export function IptvUserList() {
   const lines = useMemo(() => linesQ.data ?? [], [linesQ.data]);
 
   const stats = useMemo(() => {
-    const expired = lines.filter((l) => {
-      const left = daysLeft(l.expires_at);
-      return left != null && left < 0;
-    }).length;
-    const active = lines.filter((l) => {
-      const left = daysLeft(l.expires_at);
-      return l.status !== "pausad" && (left == null || left >= 0);
-    }).length;
-    return { total: lines.length, active, expired };
+    const expired = lines.filter(isExpired).length;
+    const online = lines.filter((l) => l.online === true && !isExpired(l)).length;
+    return { total: lines.length, online, expired };
   }, [lines]);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
     return lines
       .filter((l) => {
-        const left = daysLeft(l.expires_at);
-        if (statusFilter === "aktiva" && !(left == null || left >= 0)) return false;
-        if (statusFilter === "utgangna" && !(left != null && left < 0)) return false;
+        const expired = isExpired(l);
+        if (statusFilter === "aktiva" && expired) return false;
+        if (statusFilter === "utgangna" && !expired) return false;
         if (!q) return true;
         return [l.customer_name, l.username, l.note, l.package_name, l.mac]
           .filter(Boolean)
@@ -211,6 +205,7 @@ export function IptvUserList() {
         return av - bv;
       });
   }, [lines, search, statusFilter]);
+
 
   function invalidate() {
     qc.invalidateQueries({ queryKey: ["iptv_lines"] });
