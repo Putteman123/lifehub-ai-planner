@@ -94,8 +94,15 @@ export function GoogleMap({
       .catch((err: Error) => {
         if (!cancelled) setError(err.message);
       });
+    // Kartan kan laddas men nekas av nyckelns domänbegränsning.
+    const timer = window.setInterval(() => {
+      if (window.__lifehubMapsAuthFailed && !cancelled) {
+        setError(`kartnyckeln tillåter inte ${window.location.hostname}`);
+      }
+    }, 1000);
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
     };
   }, []);
 
