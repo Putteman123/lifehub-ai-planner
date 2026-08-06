@@ -35,6 +35,10 @@ function loadMaps(): Promise<void> {
 
   loader = new Promise<void>((resolve, reject) => {
     window.__lifehubMapsReady = () => resolve();
+    // Google anropar gm_authFailure när nyckeln inte tillåter den här domänen.
+    window.gm_authFailure = () => {
+      window.__lifehubMapsAuthFailed = true;
+    };
     const script = document.createElement("script");
     const params = new URLSearchParams({
       key: BROWSER_KEY,
