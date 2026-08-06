@@ -42,12 +42,18 @@ async function consumeChallenge(purpose: string, challenge: string) {
   if (data.challenge !== challenge) throw new Error("Utmaningen stämmer inte.");
 }
 
-/** Talar om ifall någon enhet redan är registrerad för Face ID. */
+/**
+ * Talar om ifall någon enhet redan är registrerad för Face ID på just den
+ * här webbadressen. Passnycklar är bundna till domänen (rpId), så en nyckel
+ * som skapats på lovable.app fungerar inte på app.mellberg.online.
+ */
 export const hasLoginPasskey = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const host = new URL(await requestOrigin()).hostname;
   const { count, error } = await supabaseAdmin
     .from("app_passkeys")
-    .select("id", { count: "exact", head: true });
+    .select("id", { count: "exact", head: true })
+    .eq("rp_id", host);
   if (error) throw new Error(error.message);
   return { registered: (count ?? 0) > 0 };
 });
