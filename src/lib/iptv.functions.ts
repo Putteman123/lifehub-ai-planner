@@ -245,7 +245,7 @@ export const importIptvLine = createServerFn({ method: "POST" })
     return { row };
   });
 
-/** Uppdaterar kundnamn och anteckning för en linje (anteckningen följer raden). */
+/** Uppdaterar kundnamn, anteckning, lösenord och utgångsdatum (allt går att klistra in manuellt). */
 export const updateIptvLine = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
@@ -254,6 +254,8 @@ export const updateIptvLine = createServerFn({ method: "POST" })
         id: z.string().uuid(),
         customerName: z.string().min(1).max(80).optional(),
         note: z.string().max(200).nullable().optional(),
+        password: z.string().max(120).nullable().optional(),
+        expiresAt: z.string().nullable().optional(),
       })
       .parse(data),
   )
@@ -261,6 +263,12 @@ export const updateIptvLine = createServerFn({ method: "POST" })
     const patch: Record<string, unknown> = {};
     if (data.customerName !== undefined) patch["customer_name"] = data.customerName;
     if (data.note !== undefined) patch["note"] = data.note;
+    if (data.password !== undefined) patch["password"] = data.password;
+    if (data.expiresAt !== undefined) {
+      const iso = data.expiresAt ? new Date(data.expiresAt).toISOString() : null;
+      patch["expires_at"] = iso;
+      patch["status"] = iso && new Date(iso).getTime() < Date.now() ? "utgangen" : "aktiv";
+    }
 
     const { data: row, error } = await context.supabase
       .from("iptv_lines")
