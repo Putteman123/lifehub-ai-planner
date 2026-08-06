@@ -45,7 +45,8 @@ async function consumeChallenge(purpose: string, challenge: string) {
 /**
  * Talar om ifall någon enhet redan är registrerad för Face ID på just den
  * här webbadressen. Passnycklar är bundna till domänen (rpId), så en nyckel
- * som skapats på lovable.app fungerar inte på app.mellberg.online.
+ * som skapats på en domän fungerar inte på en annan — registrering sker
+ * därför per domän.
  */
 export const hasLoginPasskey = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
