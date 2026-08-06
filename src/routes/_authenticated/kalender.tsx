@@ -8,7 +8,8 @@ import { EventDialog } from "@/components/EventDialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ShiftLegend } from "@/components/calendar/ShiftLegend";
-import { CATEGORIES, SHIFT_STYLES, type Category, type EventRow } from "@/lib/categories";
+import { SHIFT_STYLES, type Category, type EventRow } from "@/lib/categories";
+import { useCategoryOptions } from "@/lib/event-categories";
 import {
   addDays,
   dayLoad,
@@ -98,7 +99,7 @@ function CalendarPage() {
   }
 
   function toggle(category: Category) {
-    setActive((prev) =>
+    setHidden((prev) =>
       prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category],
     );
   }
@@ -147,12 +148,12 @@ function CalendarPage() {
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        {CATEGORIES.map((c) => (
+        {categoryOptions.map((c) => (
           <button
             key={c.value}
             onClick={() => toggle(c.value)}
             className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors ${
-              active.includes(c.value)
+              !hidden.includes(c.value)
                 ? `${c.chip} border-transparent`
                 : "border-border text-muted-foreground"
             }`}
