@@ -296,6 +296,63 @@ export type Database = {
           },
         ]
       }
+      iptv_lines: {
+        Row: {
+          created_at: string
+          customer_name: string
+          device_type: string
+          expires_at: string | null
+          id: string
+          last_response: Json | null
+          m3u_url: string | null
+          months: number
+          note: string | null
+          package_id: string | null
+          panel_id: string | null
+          password: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_name: string
+          device_type?: string
+          expires_at?: string | null
+          id?: string
+          last_response?: Json | null
+          m3u_url?: string | null
+          months?: number
+          note?: string | null
+          package_id?: string | null
+          panel_id?: string | null
+          password?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string
+          device_type?: string
+          expires_at?: string | null
+          id?: string
+          last_response?: Json | null
+          m3u_url?: string | null
+          months?: number
+          note?: string | null
+          package_id?: string | null
+          panel_id?: string | null
+          password?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
       legal_cases: {
         Row: {
           client_name: string | null
