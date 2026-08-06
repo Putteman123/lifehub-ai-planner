@@ -54,14 +54,16 @@ function CalendarPage() {
   const [cursor, setCursor] = useState(() =>
     search.datum ? new Date(`${search.datum}T12:00:00`) : new Date(),
   );
-  const [active, setActive] = useState<Category[]>(CATEGORIES.map((c) => c.value));
+  const { options: categoryOptions } = useCategoryOptions();
+  const [hidden, setHidden] = useState<Category[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selected, setSelected] = useState<EventRow | null>(null);
 
   const events = useMemo(
-    () => mergeDuplicates(rawEvents).filter((e) => active.includes(e.category)),
-    [rawEvents, active],
+    () => mergeDuplicates(rawEvents).filter((e) => !hidden.includes(e.category)),
+    [rawEvents, hidden],
   );
+
 
   useEffect(() => {
     const dateStr = fmt(cursor, "yyyy-MM-dd");
