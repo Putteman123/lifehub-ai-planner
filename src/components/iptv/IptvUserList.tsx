@@ -573,6 +573,18 @@ export function IptvUserList() {
                     {row.package_name ? <span>{row.package_name}</span> : null}
                   </div>
 
+                  {row.password ? null : (
+                    <div className="mt-2">
+                      <PasswordCell
+                        row={row}
+                        onSave={(value) => pwMutation.mutate({ id: row.id, password: value })}
+                        pending={pwMutation.isPending}
+                      />
+                    </div>
+                  )}
+
+
+
                   {row.m3u_url ? (
                     <button
                       onClick={() => copy(row.m3u_url, "M3U-länken")}
