@@ -1,9 +1,11 @@
-import { useRouterState } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { Andrea } from "@/components/andrea/Andrea";
 import { FloatingNav, MobileNav } from "@/components/FloatingNav";
 import { Menu } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 export function AppShell({
   title,
@@ -16,8 +18,17 @@ export function AppShell({
   actions?: ReactNode;
   children: ReactNode;
 }) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [menuOpen, setMenuOpen] = useState(false);
+
+  async function lockApp() {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -27,9 +38,8 @@ export function AppShell({
         className="fixed inset-x-0 top-0 z-30 bg-background/85 backdrop-blur"
         style={{ height: "env(safe-area-inset-top, 0px)" }}
       />
-      <FloatingNav />
-      <MobileNav open={menuOpen} onOpenChange={setMenuOpen} />
-
+      <FloatingNav onLock={lockApp} />
+      <MobileNav open={menuOpen} onOpenChange={setMenuOpen} onLock={lockApp} />
 
       <div className="sm:pl-[5rem]">
         <header
