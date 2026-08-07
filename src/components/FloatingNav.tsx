@@ -1,11 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { Lock } from "lucide-react";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { NAV_ITEMS } from "@/lib/nav-theme";
 
 /** Flytande vertikal meny längs vänsterkanten – endast surfplatta och dator. */
-export function FloatingNav({ onLock }: { onLock: () => void }) {
+export function FloatingNav() {
+
   return (
     <nav
       aria-label="Huvudmeny"
@@ -36,19 +36,6 @@ export function FloatingNav({ onLock }: { onLock: () => void }) {
             </Link>
           </li>
         ))}
-        <li className="mt-1 border-t border-border/70 pt-1">
-          <button
-            type="button"
-            onClick={onLock}
-            aria-label="Lås appen"
-            className="group relative flex size-11 items-center justify-center rounded-2xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <Lock className="size-[18px] shrink-0" />
-            <span className="pointer-events-none absolute left-[calc(100%+0.5rem)] hidden whitespace-nowrap rounded-lg border border-border bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100 md:block">
-              Lås appen
-            </span>
-          </button>
-        </li>
       </ul>
     </nav>
   );
@@ -58,12 +45,11 @@ export function FloatingNav({ onLock }: { onLock: () => void }) {
 export function MobileNav({
   open,
   onOpenChange,
-  onLock,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onLock: () => void;
 }) {
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -101,19 +87,6 @@ export function MobileNav({
             </ul>
           </nav>
 
-          <div className="border-t border-border px-3 py-3">
-            <button
-              type="button"
-              onClick={() => {
-                onOpenChange(false);
-                onLock();
-              }}
-              className="flex min-h-[52px] w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <Lock className="size-5 shrink-0" />
-              Lås appen
-            </button>
-          </div>
         </div>
       </SheetContent>
     </Sheet>
