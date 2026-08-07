@@ -100,19 +100,6 @@ export function MobileNav({
             </ul>
           </nav>
 
-          <div className="border-t border-border px-3 py-3">
-            <button
-              type="button"
-              onClick={() => {
-                onOpenChange(false);
-                onLock();
-              }}
-              className="flex min-h-[52px] w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <Lock className="size-5 shrink-0" />
-              Lås appen
-            </button>
-          </div>
         </div>
       </SheetContent>
     </Sheet>
