@@ -36,19 +36,6 @@ export function FloatingNav() {
             </Link>
           </li>
         ))}
-        <li className="mt-1 border-t border-border/70 pt-1">
-          <button
-            type="button"
-            onClick={onLock}
-            aria-label="Lås appen"
-            className="group relative flex size-11 items-center justify-center rounded-2xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <Lock className="size-[18px] shrink-0" />
-            <span className="pointer-events-none absolute left-[calc(100%+0.5rem)] hidden whitespace-nowrap rounded-lg border border-border bg-popover px-2 py-1 text-xs text-popover-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100 md:block">
-              Lås appen
-            </span>
-          </button>
-        </li>
       </ul>
     </nav>
   );
