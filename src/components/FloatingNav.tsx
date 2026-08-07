@@ -58,12 +58,11 @@ export function FloatingNav() {
 export function MobileNav({
   open,
   onOpenChange,
-  onLock,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onLock: () => void;
 }) {
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
