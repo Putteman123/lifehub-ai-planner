@@ -26,7 +26,9 @@ import { WeeklyTravelPlan } from "@/components/platser/WeeklyTravelPlan";
 import { TravelTrendChart } from "@/components/platser/TravelTrendChart";
 
 import { TravelTimeline } from "@/components/platser/TravelTimeline";
+import { DayMap } from "@/components/platser/DayMap";
 import { PositionHistory } from "@/components/platser/PositionHistory";
+
 import { VisitLogList } from "@/components/platser/VisitLogList";
 
 
@@ -736,8 +738,13 @@ function PlacesPage() {
         </div>
 
         <div className="mt-4">
+          <DayMap />
+        </div>
+
+        <div className="mt-4">
           <PositionHistory />
         </div>
+
 
         <div className="mt-4">
           <TravelTimeline places={places} />
