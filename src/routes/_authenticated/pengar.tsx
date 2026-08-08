@@ -8,6 +8,8 @@ import {
   Plus,
   Receipt,
   Repeat,
+  Sparkles,
+
   Trash2,
   Wallet,
 } from "lucide-react";
