@@ -25,6 +25,8 @@ import {
   weekDays,
 } from "@/lib/calendar";
 import { useEvents } from "@/lib/db";
+import { PiggyMarker } from "@/components/pengar/PiggyMarker";
+import { useDailyResult } from "@/lib/finance";
 
 type View = "dag" | "vecka" | "manad" | "ar" | "agenda";
 
@@ -56,6 +58,7 @@ function CalendarPage() {
     search.datum ? new Date(`${search.datum}T12:00:00`) : new Date(),
   );
   const { options: categoryOptions } = useCategoryOptions();
+  const piggy = useDailyResult();
   const [hidden, setHidden] = useState<Category[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selected, setSelected] = useState<EventRow | null>(null);
@@ -169,15 +172,17 @@ function CalendarPage() {
       </div>
 
       <div className="mt-5">
-        {view === "dag" ? <DayView events={events} day={cursor} onSelect={open} /> : null}
+        {view === "dag" ? (
+          <DayView events={events} day={cursor} onSelect={open} piggy={piggy} />
+        ) : null}
         {view === "vecka" ? (
-          <WeekView events={events} day={cursor} onSelect={open} onOpenDay={openDay} />
+          <WeekView events={events} day={cursor} onSelect={open} onOpenDay={openDay} piggy={piggy} />
         ) : null}
         {view === "manad" ? (
-          <MonthView events={events} day={cursor} onSelect={open} onOpenDay={openDay} />
+          <MonthView events={events} day={cursor} onSelect={open} onOpenDay={openDay} piggy={piggy} />
         ) : null}
         {view === "ar" ? <YearView events={events} day={cursor} onPick={openDay} /> : null}
-        {view === "agenda" ? <AgendaView events={events} day={cursor} onSelect={open} /> : null}
+        {view === "agenda" ? <AgendaView events={events} day={cursor} onSelect={open} piggy={piggy} /> : null}
 
       </div>
 
@@ -193,6 +198,7 @@ function CalendarPage() {
 }
 
 type SelectFn = (event: EventRow | null, date?: Date) => void;
+type PiggyFn = ((date: Date | string) => number | null) | null;
 
 function OverlapWarning({ events, day }: { events: EventRow[]; day: Date }) {
   const pairs = overlapsOnDay(events, day);
@@ -221,14 +227,27 @@ function EventChip({ event, onSelect }: { event: EventRow; onSelect: SelectFn })
   );
 }
 
-function DayView({ events, day, onSelect }: { events: EventRow[]; day: Date; onSelect: SelectFn }) {
+function DayView({
+  events,
+  day,
+  onSelect,
+  piggy,
+}: {
+  events: EventRow[];
+  day: Date;
+  onSelect: SelectFn;
+  piggy?: PiggyFn;
+}) {
   const items = eventsOnDay(events, day);
   const load = dayLoad(events, day);
   return (
     <div className="card-soft p-5">
-      <div className={`mb-4 flex items-center gap-2 text-sm ${LOAD_STYLES[load].text}`}>
-        <span className={`size-2 rounded-full ${LOAD_STYLES[load].dot}`} />
-        {LOAD_STYLES[load].label}
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <div className={`flex items-center gap-2 text-sm ${LOAD_STYLES[load].text}`}>
+          <span className={`size-2 rounded-full ${LOAD_STYLES[load].dot}`} />
+          {LOAD_STYLES[load].label}
+        </div>
+        <PiggyMarker amount={piggy?.(day) ?? null} size="md" />
       </div>
       <div className="space-y-2">
         {items.length === 0 ? (
@@ -275,11 +294,13 @@ function WeekView({
   day,
   onSelect,
   onOpenDay,
+  piggy,
 }: {
   events: EventRow[];
   day: Date;
   onSelect: SelectFn;
   onOpenDay: (date: Date) => void;
+  piggy?: PiggyFn;
 }) {
   const days = weekDays(day);
   return (
@@ -299,7 +320,10 @@ function WeekView({
             className="card-soft min-h-32 cursor-pointer p-3 text-left transition-colors hover:bg-accent/40"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium capitalize">{fmt(d, "EEE d/M")}</span>
+              <span className="flex items-center gap-1.5 text-xs font-medium capitalize">
+                {fmt(d, "EEE d/M")}
+                <PiggyMarker amount={piggy?.(d) ?? null} />
+              </span>
               <div className="flex items-center gap-1.5">
                 <span className={`size-2 rounded-full ${LOAD_STYLES[load].dot}`} />
                 <button
@@ -332,11 +356,13 @@ function MonthView({
   day,
   onSelect,
   onOpenDay,
+  piggy,
 }: {
   events: EventRow[];
   day: Date;
   onSelect: SelectFn;
   onOpenDay: (date: Date) => void;
+  piggy?: PiggyFn;
 }) {
   const days = monthGrid(day);
   return (
@@ -363,7 +389,10 @@ function MonthView({
                 otherMonth ? "opacity-45" : ""
               }`}
             >
-              <span className="text-[11px] font-medium">{fmt(d, "d")}</span>
+              <span className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-medium">{fmt(d, "d")}</span>
+                {otherMonth ? null : <PiggyMarker amount={piggy?.(d) ?? null} />}
+              </span>
               <div className="mt-1 space-y-0.5">
                 {items.slice(0, 3).map((e) => (
                   <EventChip key={e.id} event={e} onSelect={onSelect} />
@@ -455,10 +484,12 @@ function AgendaView({
   events,
   day,
   onSelect,
+  piggy,
 }: {
   events: EventRow[];
   day: Date;
   onSelect: SelectFn;
+  piggy?: PiggyFn;
 }) {
   const days = Array.from({ length: 30 }, (_, i) => addDays(day, i));
   const withEvents = days
@@ -477,8 +508,9 @@ function AgendaView({
     <div className="space-y-4">
       {withEvents.map(({ day: d, items }) => (
         <section key={d.toISOString()} className="card-soft p-4">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <h3 className="flex items-center justify-between gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {fmt(d, "EEEE d MMMM")}
+            <PiggyMarker amount={piggy?.(d) ?? null} />
           </h3>
           <div className="mt-3 space-y-2">
             {items.map((e) => {

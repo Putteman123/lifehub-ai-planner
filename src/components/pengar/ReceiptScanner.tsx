@@ -14,9 +14,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { analyzeReceipt } from "@/lib/finance.functions";
-import { kr, useSaveFinance, useUploadFinanceFiles, type AccountRow, type SpendRow } from "@/lib/finance";
+import { kr, useSaveSpend, useUploadFinanceFiles, type AccountRow, type SpendRow } from "@/lib/finance";
 import { spendCategories } from "@/lib/spend-categories";
-import { useActiveList, useAddItems } from "@/lib/shopping";
+import { useAddPantryItems } from "@/lib/shopping";
 
 type Read = Awaited<ReturnType<typeof analyzeReceipt>>;
 
@@ -51,9 +51,8 @@ export function ReceiptScanner({
   spends: SpendRow[];
 }) {
   const upload = useUploadFinanceFiles();
-  const saveSpend = useSaveFinance("spend_entries", "Utgift registrerad");
-  const listQ = useActiveList();
-  const addItems = useAddItems(listQ.data?.id);
+  const saveSpend = useSaveSpend();
+  const addPantry = useAddPantryItems();
 
   const cameraRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -105,20 +104,25 @@ export function ReceiptScanner({
       toast.error("Ange ett belopp.");
       return;
     }
+    const spentAt = date
+      ? new Date(`${date}T12:00:00`).toISOString()
+      : new Date().toISOString();
     saveSpend.mutate(
       {
-        amount: value,
-        note: note.trim() || null,
-        category: category.trim() || null,
-        account_id: accountId || null,
-        spent_at: date ? new Date(`${date}T12:00:00`).toISOString() : new Date().toISOString(),
+        values: {
+          amount: value,
+          note: note.trim() || null,
+          category: category.trim() || null,
+          account_id: accountId || null,
+          spent_at: spentAt,
+        },
       },
       {
         onSuccess: async () => {
           const names = [...picked];
           if (names.length) {
-            await addItems.mutateAsync({ names, source: "ai" });
-            toast.success(`${names.length} varor lades till i Handla`);
+            await addPantry.mutateAsync({ names, purchasedAt: spentAt });
+            toast.success(`${names.length} varor sparades i Skafferiet`);
           }
           reset();
         },
@@ -249,7 +253,7 @@ export function ReceiptScanner({
           {read.groceries.length > 0 ? (
             <div>
               <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                <ShoppingCart className="size-3.5" /> Dagligvaror till Handla – tryck för att välja
+                <ShoppingCart className="size-3.5" /> Dagligvaror till Skafferiet – tryck för att välja
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {read.groceries.map((item) => {

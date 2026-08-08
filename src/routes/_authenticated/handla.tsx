@@ -13,7 +13,9 @@ import { ShoppingRow } from "@/components/handla/ShoppingRow";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  daysSincePurchase,
   nameKey,
+
   useActiveList,
   useAddItems,
   useDeleteItem,
@@ -196,35 +198,46 @@ function ShoppingPage() {
             {frequent.length ? (
               <div>
                 <p className="mb-2 text-xs font-medium text-muted-foreground">
-                  Dina vanligaste varor
+                  Skafferiet – tryck på en vara för att lägga den i listan
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {frequent.map((row) => (
-                    <span
-                      key={row.id}
-                      className="flex items-center gap-1 rounded-full border border-border bg-card pl-3 pr-1 text-sm"
-                    >
-                      <button
-                        type="button"
-                        className="py-1.5"
-                        onClick={() => addItems.mutate({ names: [row.name] })}
+                  {frequent.map((row) => {
+                    const days = daysSincePurchase(row);
+                    return (
+                      <span
+                        key={row.id}
+                        className="flex items-center gap-1 rounded-full border border-border bg-card pl-3 pr-1 text-sm"
                       >
-                        {row.name}
-                      </button>
-                      <button
-                        type="button"
-                        aria-label={`Glöm ${row.name}`}
-                        className="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                        onClick={() => deletePantry.mutate(row.id)}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
-                    </span>
-                  ))}
+                        <button
+                          type="button"
+                          className="flex items-center gap-2 py-1.5"
+                          onClick={() => addItems.mutate({ names: [row.name] })}
+                        >
+                          {row.name}
+                          <span className="text-[11px] text-muted-foreground">
+                            {days === null
+                              ? "ej köpt"
+                              : days === 0
+                                ? "idag"
+                                : `${days} d sedan`}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          aria-label={`Glöm ${row.name}`}
+                          className="flex size-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => deletePantry.mutate(row.id)}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             ) : null}
           </section>
+
 
           {items.length === 0 ? (
             <div className="card-soft p-8 text-center">

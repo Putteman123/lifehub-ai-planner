@@ -49,6 +49,8 @@ import {
   useFixedExpenses,
   useIncomes,
   useSaveFinance,
+  useSaveSpend,
+  useDeleteSpend,
   useSpends,
   useUploadFinanceFiles,
   type AccountRow,
@@ -180,7 +182,7 @@ function BudgetCard({
 
 /** Stor inmatningsruta för hur mycket som spenderats. */
 function SpendCard({ accounts, spends }: { accounts: AccountRow[]; spends: SpendRow[] }) {
-  const save = useSaveFinance("spend_entries", "Utgift registrerad");
+  const save = useSaveSpend();
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [category, setCategory] = useState("");
@@ -194,11 +196,13 @@ function SpendCard({ accounts, spends }: { accounts: AccountRow[]; spends: Spend
     if (!value) return;
     save.mutate(
       {
-        amount: value,
-        note: note.trim() || null,
-        category: (category || suggestion || "").trim() || null,
-        account_id: accountId || null,
-        spent_at: new Date().toISOString(),
+        values: {
+          amount: value,
+          note: note.trim() || null,
+          category: (category || suggestion || "").trim() || null,
+          account_id: accountId || null,
+          spent_at: new Date().toISOString(),
+        },
       },
       {
         onSuccess: () => {
@@ -695,8 +699,8 @@ function FixedCard({ expenses }: { expenses: FixedExpenseRow[] }) {
 }
 
 function SpendListCard({ accounts, spends: all }: { accounts: AccountRow[]; spends: SpendRow[] }) {
-  const remove = useDeleteFinance("spend_entries", "Utgift borttagen");
-  const save = useSaveFinance("spend_entries", "Utgift uppdaterad");
+  const remove = useDeleteSpend();
+  const save = useSaveSpend("Utgift uppdaterad");
   const [edit, setEdit] = useState<SpendRow | null>(null);
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
@@ -722,12 +726,15 @@ function SpendListCard({ accounts, spends: all }: { accounts: AccountRow[]; spen
     if (!value) return;
     save.mutate(
       {
-        id: edit.id,
-        amount: value,
-        note: note.trim() || null,
-        category: category.trim() || null,
-        account_id: accountId || null,
-        spent_at: new Date(`${date}T12:00:00`).toISOString(),
+        values: {
+          id: edit.id,
+          amount: value,
+          note: note.trim() || null,
+          category: category.trim() || null,
+          account_id: accountId || null,
+          spent_at: new Date(`${date}T12:00:00`).toISOString(),
+        },
+        previous: edit,
       },
       { onSuccess: () => setEdit(null) },
     );
@@ -778,7 +785,7 @@ function SpendListCard({ accounts, spends: all }: { accounts: AccountRow[]; spen
                 </button>
                 <button
                   type="button"
-                  onClick={() => remove.mutate(row.id)}
+                  onClick={() => remove.mutate(row)}
                   aria-label="Ta bort"
                   className="flex size-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 >

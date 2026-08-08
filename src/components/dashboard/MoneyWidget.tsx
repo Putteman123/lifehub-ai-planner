@@ -2,10 +2,12 @@ import { Link } from "@tanstack/react-router";
 import { Wallet } from "lucide-react";
 
 import { SectionCard } from "@/components/SectionCard";
+import { PiggyMarker } from "@/components/pengar/PiggyMarker";
 import {
   buildBudget,
   kr,
   useAccounts,
+  useDayTick,
   useFixedExpenses,
   useIncomes,
   useSpends,
@@ -17,12 +19,13 @@ export function MoneyWidget() {
   const incomesQ = useIncomes();
   const fixedQ = useFixedExpenses();
   const spendsQ = useSpends();
+  useDayTick();
 
   const accounts = accountsQ.data ?? [];
   if (accountsQ.isLoading || accounts.length === 0) return null;
 
   const budget = buildBudget(accounts, incomesQ.data ?? [], fixedQ.data ?? [], spendsQ.data ?? []);
-  const negative = budget.perDay <= 0;
+  const negative = budget.todayLeft <= 0;
 
   return (
     <SectionCard
@@ -33,25 +36,29 @@ export function MoneyWidget() {
       className="transition-shadow hover:shadow-lg"
     >
       <Link to="/pengar" className="block">
-        <p className="text-xs text-muted-foreground">Kan göras av per dag</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">Att spendera idag</p>
+          <PiggyMarker amount={budget.todayLeft} />
+        </div>
         <p
           className={`mt-1 text-[34px] font-semibold tracking-tight tabular-nums ${
             negative ? "text-destructive" : "text-nav-pengar"
           }`}
         >
-          {kr(budget.perDay)}
+          {kr(budget.todayLeft)}
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
+          {kr(budget.perDay)} per dag ·{" "}
           {budget.income
-            ? `${budget.days} dagar till ${budget.income.label} (${kr(Number(budget.income.amount))})`
-            : "Ingen kommande inbetalning inlagd"}
+            ? `${budget.days} dagar till ${budget.income.label}`
+            : "ingen kommande inbetalning inlagd"}
         </p>
 
         <div className="mt-4 grid grid-cols-3 gap-2">
           {[
             { label: "Saldo", value: kr(budget.balance) },
             { label: "Fasta kvar", value: kr(budget.fixedLeft) },
-            { label: "Spenderat", value: kr(budget.spentThisPeriod) },
+            { label: "Idag", value: kr(budget.spentToday) },
           ].map((item) => (
             <div key={item.label} className="rounded-xl bg-surface px-3 py-2">
               <p className="text-[11px] text-muted-foreground">{item.label}</p>
@@ -67,3 +74,4 @@ export function MoneyWidget() {
     </SectionCard>
   );
 }
+

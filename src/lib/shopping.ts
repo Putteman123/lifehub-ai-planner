@@ -249,3 +249,58 @@ export function useShoppingRealtime(listId: string | undefined) {
     };
   }, [qc, listId]);
 }
+
+/** Dagar sedan varan senast köptes, eller null om det inte är känt. */
+export function daysSincePurchase(row: PantryItem): number | null {
+  const iso = row.last_purchased_at ?? null;
+  if (!iso) return null;
+  const diff = Date.now() - new Date(iso).getTime();
+  return Math.max(0, Math.floor(diff / 86_400_000));
+}
+
+/**
+ * Lägger inlästa kvittovaror i skafferiet (inte direkt i inköpslistan)
+ * och stämplar när de köptes.
+ */
+export function useAddPantryItems() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { names: string[]; purchasedAt?: string }) => {
+      const user_id = await currentUserId();
+      const purchased = input.purchasedAt ?? new Date().toISOString();
+      let saved = 0;
+      for (const raw of input.names) {
+        const key = nameKey(raw);
+        if (!key) continue;
+        const { data: existing } = await supabase
+          .from("pantry_items")
+          .select("id, times_added")
+          .eq("name_key", key)
+          .maybeSingle();
+        if (existing) {
+          await supabase
+            .from("pantry_items")
+            .update({
+              times_added: existing.times_added + 1,
+              last_added_at: purchased,
+              last_purchased_at: purchased,
+            })
+            .eq("id", existing.id);
+        } else {
+          await supabase.from("pantry_items").insert({
+            user_id,
+            name: prettyName(raw),
+            name_key: key,
+            source: "ai",
+            last_added_at: purchased,
+            last_purchased_at: purchased,
+          });
+        }
+        saved += 1;
+      }
+      return saved;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["pantry_items"] }),
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
