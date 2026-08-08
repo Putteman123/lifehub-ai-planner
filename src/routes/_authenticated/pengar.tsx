@@ -115,12 +115,15 @@ function MoneyPage() {
             fixedLeft={budget.fixedLeft}
             spent={budget.spentThisPeriod}
           />
-          <SpendCard />
+          <SpendCard accounts={accounts} spends={spends} />
+          <ReceiptScanner accounts={accounts} spends={spends} />
+          <InsightCard perDay={budget.perDay} days={budget.days} />
           <AccountsCard accounts={accounts} />
           <IncomesCard incomes={incomes} />
           <FixedCard expenses={fixed} />
-          <SpendListCard />
+          <SpendListCard accounts={accounts} spends={spends} />
           <FilesCard files={files} className="lg:col-span-2" />
+
         </div>
       </DataGate>
     </AppShell>
