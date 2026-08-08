@@ -33,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ReceiptScanner } from "@/components/pengar/ReceiptScanner";
 import {
   buildBudget,
   financeSignedUrl,
@@ -51,8 +52,12 @@ import {
   type AccountRow,
   type FixedExpenseRow,
   type IncomeRow,
+  type SpendRow,
 } from "@/lib/finance";
+import { financeInsight } from "@/lib/finance.functions";
+import { guessCategory, spendCategories } from "@/lib/spend-categories";
 import { formatBytes } from "@/lib/vault";
+
 
 export const Route = createFileRoute("/_authenticated/pengar")({
   head: () => ({
