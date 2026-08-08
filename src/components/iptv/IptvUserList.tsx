@@ -261,6 +261,8 @@ export function IptvUserList() {
   const [createOpen, setCreateOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [noteDraft, setNoteDraft] = useState<{ id: string; value: string } | null>(null);
+  const [newCredentials, setNewCredentials] = useState<IptvRow | null>(null);
+
 
   const [customerName, setCustomerName] = useState("");
   const [deviceType, setDeviceType] = useState("m3u");
