@@ -1,0 +1,1 @@
+ALTER TABLE public.pantry_items ADD COLUMN IF NOT EXISTS last_purchased_at timestamp with time zone;

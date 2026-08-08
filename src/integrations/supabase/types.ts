@@ -617,6 +617,7 @@ export type Database = {
           created_at: string
           id: string
           last_added_at: string
+          last_purchased_at: string | null
           name: string
           name_key: string
           source: Database["public"]["Enums"]["shopping_source"]
@@ -629,6 +630,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_added_at?: string
+          last_purchased_at?: string | null
           name: string
           name_key: string
           source?: Database["public"]["Enums"]["shopping_source"]
@@ -641,6 +643,7 @@ export type Database = {
           created_at?: string
           id?: string
           last_added_at?: string
+          last_purchased_at?: string | null
           name?: string
           name_key?: string
           source?: Database["public"]["Enums"]["shopping_source"]
