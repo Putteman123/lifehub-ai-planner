@@ -68,13 +68,26 @@ export type Budget = {
   days: number;
   fixedLeft: number;
   spentThisPeriod: number;
+  spentToday: number;
   available: number;
   perDay: number;
+  todayLeft: number;
 };
+
+/** Summerar utgifter per svensk kalenderdag. */
+export function spendByDay(spends: SpendRow[]): Record<string, number> {
+  const map: Record<string, number> = {};
+  for (const s of spends) {
+    const key = dayKey(s.spent_at);
+    map[key] = (map[key] ?? 0) + Number(s.amount);
+  }
+  return map;
+}
 
 /**
  * Dagsbudget = totalt saldo minus kvarvarande fasta utgifter före nästa
- * inbetalning, delat på antal dagar dit.
+ * inbetalning, delat på antal dagar dit. Nollställs varje dygn eftersom
+ * "spenderat idag" räknas från dagens början.
  */
 export function buildBudget(
   accounts: AccountRow[],
@@ -103,17 +116,46 @@ export function buildBudget(
     .filter((s) => new Date(s.spent_at).getTime() >= periodStart)
     .reduce((sum, s) => sum + Number(s.amount), 0);
 
+  const todayKey = dayKey(today);
+  const spentToday = spends
+    .filter((s) => dayKey(s.spent_at) === todayKey)
+    .reduce((sum, s) => sum + Number(s.amount), 0);
+
   const available = balance - fixedLeft;
+  const perDay = available / days;
   return {
     balance,
     income,
     days,
     fixedLeft,
     spentThisPeriod,
+    spentToday,
     available,
-    perDay: available / days,
+    perDay,
+    todayLeft: perDay - spentToday,
   };
 }
+
+/** Ger dagens datumnyckel och byter värde exakt vid midnatt (svensk tid). */
+export function useDayTick(): string {
+  const [key, setKey] = useState(() => dayKey(new Date()));
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const schedule = () => {
+      const now = new Date();
+      const next = new Date(now);
+      next.setHours(24, 0, 2, 0);
+      timer = setTimeout(() => {
+        setKey(dayKey(new Date()));
+        schedule();
+      }, Math.max(next.getTime() - now.getTime(), 1000));
+    };
+    schedule();
+    return () => clearTimeout(timer);
+  }, []);
+  return key;
+}
+
 
 async function currentUserId() {
   const { data, error } = await supabase.auth.getUser();
