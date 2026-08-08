@@ -8,6 +8,8 @@ import {
   Plus,
   Receipt,
   Repeat,
+  Sparkles,
+
   Trash2,
   Wallet,
 } from "lucide-react";
@@ -33,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ReceiptScanner } from "@/components/pengar/ReceiptScanner";
 import {
   buildBudget,
   financeSignedUrl,
@@ -51,8 +54,12 @@ import {
   type AccountRow,
   type FixedExpenseRow,
   type IncomeRow,
+  type SpendRow,
 } from "@/lib/finance";
+import { financeInsight } from "@/lib/finance.functions";
+import { guessCategory, spendCategories } from "@/lib/spend-categories";
 import { formatBytes } from "@/lib/vault";
+
 
 export const Route = createFileRoute("/_authenticated/pengar")({
   head: () => ({
@@ -110,12 +117,15 @@ function MoneyPage() {
             fixedLeft={budget.fixedLeft}
             spent={budget.spentThisPeriod}
           />
-          <SpendCard />
+          <SpendCard accounts={accounts} spends={spends} />
+          <ReceiptScanner accounts={accounts} spends={spends} />
+          <InsightCard perDay={budget.perDay} days={budget.days} />
           <AccountsCard accounts={accounts} />
           <IncomesCard incomes={incomes} />
           <FixedCard expenses={fixed} />
-          <SpendListCard />
+          <SpendListCard accounts={accounts} spends={spends} />
           <FilesCard files={files} className="lg:col-span-2" />
+
         </div>
       </DataGate>
     </AppShell>
@@ -169,20 +179,32 @@ function BudgetCard({
 }
 
 /** Stor inmatningsruta för hur mycket som spenderats. */
-function SpendCard() {
+function SpendCard({ accounts, spends }: { accounts: AccountRow[]; spends: SpendRow[] }) {
   const save = useSaveFinance("spend_entries", "Utgift registrerad");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
+  const [category, setCategory] = useState("");
+  const [accountId, setAccountId] = useState("");
+
+  const categories = spendCategories(spends);
+  const suggestion = guessCategory(note, spends);
 
   function submit() {
     const value = num(amount);
     if (!value) return;
     save.mutate(
-      { amount: value, note: note.trim() || null, spent_at: new Date().toISOString() },
+      {
+        amount: value,
+        note: note.trim() || null,
+        category: (category || suggestion || "").trim() || null,
+        account_id: accountId || null,
+        spent_at: new Date().toISOString(),
+      },
       {
         onSuccess: () => {
           setAmount("");
           setNote("");
+          setCategory("");
         },
       },
     );
@@ -204,6 +226,37 @@ function SpendCard() {
         placeholder="Vad gällde det? (valfritt)"
         className="mt-3 h-12"
       />
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <Select value={accountId} onValueChange={setAccountId}>
+          <SelectTrigger className="h-12" aria-label="Konto">
+            <SelectValue placeholder="Från konto" />
+          </SelectTrigger>
+          <SelectContent>
+            {accounts.map((acc) => (
+              <SelectItem key={acc.id} value={acc.id}>
+                {acc.name} · {kr(Number(acc.balance))}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={category} onValueChange={setCategory}>
+          <SelectTrigger className="h-12" aria-label="Kategori">
+            <SelectValue placeholder={suggestion ?? "Kategori"} />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((name) => (
+              <SelectItem key={name} value={name}>
+                {name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {!category && suggestion ? (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Andrea föreslår kategorin {suggestion}.
+        </p>
+      ) : null}
       <Button
         className="mt-3 h-12 w-full text-base"
         onClick={submit}
@@ -215,6 +268,46 @@ function SpendCard() {
     </SectionCard>
   );
 }
+
+/** Andreas korta analys av utgifterna. */
+function InsightCard({ perDay, days }: { perDay: number; days: number }) {
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function run() {
+    setBusy(true);
+    try {
+      const res = await financeInsight({ data: { perDay, days } });
+      setText(res.text);
+    } catch (error) {
+      setText(error instanceof Error ? error.message : "Kunde inte hämta analys.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <SectionCard
+      title="Andreas ekonomikoll"
+      icon={Sparkles}
+      accent="text-nav-pengar"
+      tint="bg-nav-pengar/12"
+    >
+      {text ? (
+        <p className="whitespace-pre-wrap text-sm leading-relaxed">{text}</p>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Låt Andrea analysera dina utgifter och ge konkreta spartips.
+        </p>
+      )}
+      <Button variant="outline" className="mt-3 h-11 w-full" onClick={run} disabled={busy}>
+        {busy ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+        {text ? "Uppdatera analysen" : "Analysera mina utgifter"}
+      </Button>
+    </SectionCard>
+  );
+}
+
 
 function Row({
   title,
@@ -601,10 +694,44 @@ function FixedCard({ expenses }: { expenses: FixedExpenseRow[] }) {
   );
 }
 
-function SpendListCard() {
-  const spendsQ = useSpends();
+function SpendListCard({ accounts, spends: all }: { accounts: AccountRow[]; spends: SpendRow[] }) {
   const remove = useDeleteFinance("spend_entries", "Utgift borttagen");
-  const spends = (spendsQ.data ?? []).slice(0, 20);
+  const save = useSaveFinance("spend_entries", "Utgift uppdaterad");
+  const [edit, setEdit] = useState<SpendRow | null>(null);
+  const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+  const [category, setCategory] = useState("");
+  const [accountId, setAccountId] = useState("");
+  const [date, setDate] = useState("");
+
+  const spends = all.slice(0, 20);
+  const categories = spendCategories(all);
+
+  function open(row: SpendRow) {
+    setEdit(row);
+    setAmount(String(Number(row.amount)));
+    setNote(row.note ?? "");
+    setCategory(row.category ?? "");
+    setAccountId(row.account_id ?? "");
+    setDate(row.spent_at.slice(0, 10));
+  }
+
+  function submit() {
+    if (!edit) return;
+    const value = num(amount);
+    if (!value) return;
+    save.mutate(
+      {
+        id: edit.id,
+        amount: value,
+        note: note.trim() || null,
+        category: category.trim() || null,
+        account_id: accountId || null,
+        spent_at: new Date(`${date}T12:00:00`).toISOString(),
+      },
+      { onSuccess: () => setEdit(null) },
+    );
+  }
 
   return (
     <SectionCard
@@ -618,40 +745,125 @@ function SpendListCard() {
         <p className="text-sm text-muted-foreground">Inga registrerade utgifter ännu.</p>
       ) : (
         <ul className="space-y-2">
-          {spends.map((row) => (
-            <li
-              key={row.id}
-              className="flex items-center gap-3 rounded-2xl bg-surface px-3 py-2.5"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{row.note ?? "Utgift"}</p>
-                <p className="text-xs text-muted-foreground">
-                  {new Date(row.spent_at).toLocaleString("sv-SE", {
-                    day: "numeric",
-                    month: "short",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
-              </div>
-              <span className="shrink-0 text-sm font-semibold tabular-nums">
-                {kr(Number(row.amount))}
-              </span>
-              <button
-                type="button"
-                onClick={() => remove.mutate(row.id)}
-                aria-label="Ta bort"
-                className="flex size-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          {spends.map((row) => {
+            const account = accounts.find((acc) => acc.id === row.account_id);
+            return (
+              <li
+                key={row.id}
+                className="flex items-center gap-3 rounded-2xl bg-surface px-3 py-2.5"
               >
-                <Trash2 className="size-4" />
-              </button>
-            </li>
-          ))}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{row.note ?? "Utgift"}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {new Date(row.spent_at).toLocaleString("sv-SE", {
+                      day: "numeric",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                    {row.category ? ` · ${row.category}` : ""}
+                    {account ? ` · ${account.name}` : ""}
+                  </p>
+                </div>
+                <span className="shrink-0 text-sm font-semibold tabular-nums">
+                  {kr(Number(row.amount))}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => open(row)}
+                  aria-label="Redigera"
+                  className="flex size-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted"
+                >
+                  <Pencil className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove.mutate(row.id)}
+                  aria-label="Ta bort"
+                  className="flex size-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash2 className="size-4" />
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
+
+      <Dialog open={Boolean(edit)} onOpenChange={(open) => !open && setEdit(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Redigera utgift</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="ed-amount">Belopp</Label>
+                <Input
+                  id="ed-amount"
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="ed-date">Datum</Label>
+                <Input
+                  id="ed-date"
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="ed-note">Beskrivning</Label>
+              <Input id="ed-note" value={note} onChange={(e) => setNote(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Kategori</Label>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Välj" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[...new Set([category, ...categories].filter(Boolean))].map((name) => (
+                      <SelectItem key={name} value={name}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Konto</Label>
+                <Select value={accountId} onValueChange={setAccountId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Välj konto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((acc) => (
+                      <SelectItem key={acc.id} value={acc.id}>
+                        {acc.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={submit} disabled={save.isPending}>
+              Spara
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SectionCard>
   );
 }
+
 
 function FilesCard({
   files,

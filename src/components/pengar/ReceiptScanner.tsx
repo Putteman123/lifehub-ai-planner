@@ -1,0 +1,297 @@
+import { useRef, useState } from "react";
+import { Camera, Loader2, ScanLine, ShoppingCart, Sparkles, Upload } from "lucide-react";
+import { toast } from "sonner";
+
+import { SectionCard } from "@/components/SectionCard";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { analyzeReceipt } from "@/lib/finance.functions";
+import { kr, useSaveFinance, useUploadFinanceFiles, type AccountRow, type SpendRow } from "@/lib/finance";
+import { spendCategories } from "@/lib/spend-categories";
+import { useActiveList, useAddItems } from "@/lib/shopping";
+
+type Read = Awaited<ReturnType<typeof analyzeReceipt>>;
+
+/** Skalar ner bilden så uppladdning och AI-analys går snabbt. */
+async function toDataUrl(file: File): Promise<string> {
+  if (!file.type.startsWith("image/")) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error("Kunde inte läsa filen."));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  const bitmap = await createImageBitmap(file);
+  const max = 1600;
+  const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Kunde inte bearbeta bilden.");
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", 0.85);
+}
+
+export function ReceiptScanner({
+  accounts,
+  spends,
+}: {
+  accounts: AccountRow[];
+  spends: SpendRow[];
+}) {
+  const upload = useUploadFinanceFiles();
+  const saveSpend = useSaveFinance("spend_entries", "Utgift registrerad");
+  const listQ = useActiveList();
+  const addItems = useAddItems(listQ.data?.id);
+
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const [busy, setBusy] = useState(false);
+  const [read, setRead] = useState<Read | null>(null);
+  const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+  const [date, setDate] = useState("");
+  const [category, setCategory] = useState("");
+  const [accountId, setAccountId] = useState("");
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+
+  const categories = spendCategories(spends);
+
+  async function handleFile(file: File) {
+    setBusy(true);
+    try {
+      const dataUrl = await toDataUrl(file);
+      const result = await analyzeReceipt({
+        data: { dataUrl, mimeType: file.type || "image/jpeg", fileName: file.name },
+      });
+      setRead(result);
+      setAmount(result.total ? String(result.total) : "");
+      setNote(result.merchant ?? "");
+      setDate(result.date ?? new Date().toISOString().slice(0, 10));
+      setCategory(result.category ?? "");
+      setPicked(new Set(result.groceries.map((item) => item.name)));
+      upload.mutate({ files: [file], kind: result.kind === "faktura" ? "faktura" : "kvitto" });
+      toast.success("Andrea läste av kvittot");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Något gick fel.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function reset() {
+    setRead(null);
+    setAmount("");
+    setNote("");
+    setCategory("");
+    setPicked(new Set());
+  }
+
+  async function save() {
+    const value = Number(amount.replace(/\s/g, "").replace(",", "."));
+    if (!Number.isFinite(value) || value <= 0) {
+      toast.error("Ange ett belopp.");
+      return;
+    }
+    saveSpend.mutate(
+      {
+        amount: value,
+        note: note.trim() || null,
+        category: category.trim() || null,
+        account_id: accountId || null,
+        spent_at: date ? new Date(`${date}T12:00:00`).toISOString() : new Date().toISOString(),
+      },
+      {
+        onSuccess: async () => {
+          const names = [...picked];
+          if (names.length) {
+            await addItems.mutateAsync({ names, source: "ai" });
+            toast.success(`${names.length} varor lades till i Handla`);
+          }
+          reset();
+        },
+      },
+    );
+  }
+
+  return (
+    <SectionCard
+      title="Kvitto & faktura"
+      icon={ScanLine}
+      accent="text-nav-handla"
+      tint="bg-nav-handla/12"
+    >
+      <p className="text-sm text-muted-foreground">
+        Fotografera eller ladda upp – Andrea läser belopp, kategori och dagligvaror.
+      </p>
+
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Button
+          variant="outline"
+          className="h-12"
+          disabled={busy}
+          onClick={() => cameraRef.current?.click()}
+        >
+          {busy ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
+          Fotografera
+        </Button>
+        <Button
+          variant="outline"
+          className="h-12"
+          disabled={busy}
+          onClick={() => fileRef.current?.click()}
+        >
+          <Upload className="size-4" /> Ladda upp
+        </Button>
+      </div>
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        hidden
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) void handleFile(file);
+          e.target.value = "";
+        }}
+      />
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*,application/pdf"
+        hidden
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) void handleFile(file);
+          e.target.value = "";
+        }}
+      />
+
+      {read ? (
+        <div className="mt-4 space-y-3 rounded-2xl bg-surface p-3">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Sparkles className="size-4 text-nav-handla" />
+            {read.merchant ?? "Kvitto"} {read.total ? `· ${kr(read.total)}` : ""}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="rec-amount">Belopp</Label>
+              <Input
+                id="rec-amount"
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="rec-date">Datum</Label>
+              <Input
+                id="rec-date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="rec-note">Beskrivning</Label>
+            <Input id="rec-note" value={note} onChange={(e) => setNote(e.target.value)} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Kategori</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Välj" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[...new Set([category, ...categories].filter(Boolean))].map((name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Konto</Label>
+              <Select value={accountId} onValueChange={setAccountId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Välj konto" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((acc) => (
+                    <SelectItem key={acc.id} value={acc.id}>
+                      {acc.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {read.groceries.length > 0 ? (
+            <div>
+              <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <ShoppingCart className="size-3.5" /> Dagligvaror till Handla – tryck för att välja
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {read.groceries.map((item) => {
+                  const on = picked.has(item.name);
+                  return (
+                    <button
+                      key={item.name}
+                      type="button"
+                      onClick={() =>
+                        setPicked((prev) => {
+                          const next = new Set(prev);
+                          if (on) next.delete(item.name);
+                          else next.add(item.name);
+                          return next;
+                        })
+                      }
+                      className={`rounded-full px-3 py-1.5 text-sm ${
+                        on
+                          ? "bg-nav-handla text-white"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {item.name}
+                      {item.quantity ? ` · ${item.quantity}` : ""}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="flex gap-2">
+            <Button className="h-11 flex-1" onClick={save} disabled={saveSpend.isPending}>
+              {saveSpend.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+              Spara utgift
+            </Button>
+            <Button variant="ghost" className="h-11" onClick={reset}>
+              Avbryt
+            </Button>
+          </div>
+        </div>
+      ) : null}
+    </SectionCard>
+  );
+}
