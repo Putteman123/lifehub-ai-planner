@@ -304,3 +304,108 @@ export async function financeSignedUrl(path: string) {
   if (error || !data) throw new Error(error?.message ?? "Kunde inte skapa länk.");
   return data.signedUrl;
 }
+
+/** Justerar saldot på ett konto med angiven förändring. */
+async function adjustBalance(accountId: string | null | undefined, delta: number) {
+  if (!accountId || !delta) return;
+  const { data, error } = await supabase
+    .from("finance_accounts")
+    .select("balance")
+    .eq("id", accountId)
+    .maybeSingle();
+  if (error || !data) return;
+  const { error: updateError } = await supabase
+    .from("finance_accounts")
+    .update({ balance: Number(data.balance) + delta })
+    .eq("id", accountId);
+  if (updateError) throw new Error(updateError.message);
+}
+
+export type SpendInput = {
+  id?: string;
+  amount: number;
+  note?: string | null;
+  category?: string | null;
+  account_id?: string | null;
+  spent_at?: string;
+};
+
+/**
+ * Sparar en utgift och drar beloppet från valt konto. Vid redigering
+ * återförs det gamla beloppet först så saldot alltid stämmer.
+ */
+export function useSaveSpend(message = "Utgift registrerad") {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      values,
+      previous,
+    }: {
+      values: SpendInput;
+      previous?: SpendRow | null;
+    }) => {
+      const user_id = await currentUserId();
+      const { error } = await supabase
+        .from("spend_entries")
+        .upsert({ ...values, user_id, amount: values.amount });
+      if (error) throw new Error(error.message);
+
+      if (previous) await adjustBalance(previous.account_id, Number(previous.amount));
+      await adjustBalance(values.account_id ?? null, -values.amount);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["spend_entries"] });
+      qc.invalidateQueries({ queryKey: ["finance_accounts"] });
+      toast.success(message);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+/** Tar bort en utgift och lägger tillbaka beloppet på kontot. */
+export function useDeleteSpend(message = "Utgift borttagen") {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (row: SpendRow) => {
+      const { error } = await supabase.from("spend_entries").delete().eq("id", row.id);
+      if (error) throw new Error(error.message);
+      await adjustBalance(row.account_id, Number(row.amount));
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["spend_entries"] });
+      qc.invalidateQueries({ queryKey: ["finance_accounts"] });
+      toast.success(message);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+/**
+ * Ger dagsresultat per datum: dagsbudget minus det som spenderades den dagen.
+ * Positivt = sparat, negativt = överspenderat.
+ */
+export function useDailyResult() {
+  const accountsQ = useAccounts();
+  const incomesQ = useIncomes();
+  const fixedQ = useFixedExpenses();
+  const spendsQ = useSpends();
+  const today = useDayTick();
+
+  const accounts = accountsQ.data;
+  const incomes = incomesQ.data;
+  const fixed = fixedQ.data;
+  const spends = spendsQ.data;
+
+  return useMemo(() => {
+    if (!accounts?.length) return null;
+    const budget = buildBudget(accounts, incomes ?? [], fixed ?? [], spends ?? []);
+    const perDayMap = spendByDay(spends ?? []);
+    return (date: Date | string) => {
+      const key = dayKey(date);
+      if (key > today) return null;
+      const spent = perDayMap[key];
+      if (spent === undefined && key !== today) return null;
+      return budget.perDay - (spent ?? 0);
+    };
+  }, [accounts, incomes, fixed, spends, today]);
+}
