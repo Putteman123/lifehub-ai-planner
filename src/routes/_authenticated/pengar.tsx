@@ -785,7 +785,7 @@ function SpendListCard({ accounts, spends: all }: { accounts: AccountRow[]; spen
                 </button>
                 <button
                   type="button"
-                  onClick={() => remove.mutate(row.id)}
+                  onClick={() => remove.mutate(row)}
                   aria-label="Ta bort"
                   className="flex size-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 >
