@@ -323,15 +323,18 @@ export function IptvUserList() {
           note: note.trim() || undefined,
         },
       }),
-    onSuccess: () => {
+    onSuccess: (result) => {
       invalidate();
       qc.invalidateQueries({ queryKey: ["iptv_panel_info"] });
       toast.success("Användaren skapad");
       setCreateOpen(false);
+      const row = result?.row as IptvRow | undefined;
+      if (row) setNewCredentials(row);
       setCustomerName("");
       setMac("");
       setNote("");
     },
+
     onError: (error: Error) => toast.error(error.message),
   });
 
