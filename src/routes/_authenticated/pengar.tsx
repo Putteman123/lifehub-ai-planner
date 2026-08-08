@@ -174,20 +174,32 @@ function BudgetCard({
 }
 
 /** Stor inmatningsruta för hur mycket som spenderats. */
-function SpendCard() {
+function SpendCard({ accounts, spends }: { accounts: AccountRow[]; spends: SpendRow[] }) {
   const save = useSaveFinance("spend_entries", "Utgift registrerad");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
+  const [category, setCategory] = useState("");
+  const [accountId, setAccountId] = useState("");
+
+  const categories = spendCategories(spends);
+  const suggestion = guessCategory(note, spends);
 
   function submit() {
     const value = num(amount);
     if (!value) return;
     save.mutate(
-      { amount: value, note: note.trim() || null, spent_at: new Date().toISOString() },
+      {
+        amount: value,
+        note: note.trim() || null,
+        category: (category || suggestion || "").trim() || null,
+        account_id: accountId || null,
+        spent_at: new Date().toISOString(),
+      },
       {
         onSuccess: () => {
           setAmount("");
           setNote("");
+          setCategory("");
         },
       },
     );
@@ -209,6 +221,37 @@ function SpendCard() {
         placeholder="Vad gällde det? (valfritt)"
         className="mt-3 h-12"
       />
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <Select value={accountId} onValueChange={setAccountId}>
+          <SelectTrigger className="h-12" aria-label="Konto">
+            <SelectValue placeholder="Från konto" />
+          </SelectTrigger>
+          <SelectContent>
+            {accounts.map((acc) => (
+              <SelectItem key={acc.id} value={acc.id}>
+                {acc.name} · {kr(Number(acc.balance))}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={category} onValueChange={setCategory}>
+          <SelectTrigger className="h-12" aria-label="Kategori">
+            <SelectValue placeholder={suggestion ?? "Kategori"} />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map((name) => (
+              <SelectItem key={name} value={name}>
+                {name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {!category && suggestion ? (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Andrea föreslår kategorin {suggestion}.
+        </p>
+      ) : null}
       <Button
         className="mt-3 h-12 w-full text-base"
         onClick={submit}
@@ -220,6 +263,46 @@ function SpendCard() {
     </SectionCard>
   );
 }
+
+/** Andreas korta analys av utgifterna. */
+function InsightCard({ perDay, days }: { perDay: number; days: number }) {
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function run() {
+    setBusy(true);
+    try {
+      const res = await financeInsight({ data: { perDay, days } });
+      setText(res.text);
+    } catch (error) {
+      setText(error instanceof Error ? error.message : "Kunde inte hämta analys.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <SectionCard
+      title="Andreas ekonomikoll"
+      icon={Sparkles}
+      accent="text-nav-pengar"
+      tint="bg-nav-pengar/12"
+    >
+      {text ? (
+        <p className="whitespace-pre-wrap text-sm leading-relaxed">{text}</p>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Låt Andrea analysera dina utgifter och ge konkreta spartips.
+        </p>
+      )}
+      <Button variant="outline" className="mt-3 h-11 w-full" onClick={run} disabled={busy}>
+        {busy ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+        {text ? "Uppdatera analysen" : "Analysera mina utgifter"}
+      </Button>
+    </SectionCard>
+  );
+}
+
 
 function Row({
   title,
