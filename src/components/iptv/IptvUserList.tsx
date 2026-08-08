@@ -261,6 +261,8 @@ export function IptvUserList() {
   const [createOpen, setCreateOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [noteDraft, setNoteDraft] = useState<{ id: string; value: string } | null>(null);
+  const [newCredentials, setNewCredentials] = useState<IptvRow | null>(null);
+
 
   const [customerName, setCustomerName] = useState("");
   const [deviceType, setDeviceType] = useState("m3u");
@@ -323,15 +325,18 @@ export function IptvUserList() {
           note: note.trim() || undefined,
         },
       }),
-    onSuccess: () => {
+    onSuccess: (result) => {
       invalidate();
       qc.invalidateQueries({ queryKey: ["iptv_panel_info"] });
       toast.success("Användaren skapad");
       setCreateOpen(false);
+      const row = result?.row as IptvRow | undefined;
+      if (row) setNewCredentials(row);
       setCustomerName("");
       setMac("");
       setNote("");
     },
+
     onError: (error: Error) => toast.error(error.message),
   });
 
@@ -788,6 +793,50 @@ export function IptvUserList() {
               Skapa
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!newCredentials} onOpenChange={(o) => !o && setNewCredentials(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Inloggning för {newCredentials?.customer_name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 text-sm">
+            {[
+              ["Användarnamn", newCredentials?.username],
+              ["Lösenord", newCredentials?.password],
+              ["M3U-länk", newCredentials?.m3u_url],
+              ["MAC", newCredentials?.mac],
+              ["Kod", newCredentials?.protocol_code],
+            ]
+              .filter(([, value]) => Boolean(value))
+              .map(([label, value]) => (
+                <div
+                  key={label as string}
+                  className="flex items-center justify-between gap-2 rounded-xl border bg-muted/40 px-3 py-2"
+                >
+                  <div className="min-w-0">
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      {label}
+                    </p>
+                    <p className="truncate font-mono text-xs">{value}</p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(String(value));
+                      toast.success(`${label} kopierat`);
+                    }}
+                  >
+                    Kopiera
+                  </Button>
+                </div>
+              ))}
+            <p className="text-xs text-muted-foreground">
+              Uppgifterna finns kvar i listan och kan visas igen när som helst.
+            </p>
+          </div>
         </DialogContent>
       </Dialog>
 

@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      andrea_profile: {
+        Row: {
+          call_name: string | null
+          created_at: string
+          directness: number
+          focus: string | null
+          id: string
+          notes: string | null
+          tone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          call_name?: string | null
+          created_at?: string
+          directness?: number
+          focus?: string | null
+          id?: string
+          notes?: string | null
+          tone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          call_name?: string | null
+          created_at?: string
+          directness?: number
+          focus?: string | null
+          id?: string
+          notes?: string | null
+          tone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_challenges: {
         Row: {
           challenge: string
@@ -186,6 +222,93 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      day_segments: {
+        Row: {
+          confidence: number
+          created_at: string
+          day: string
+          distance_m: number
+          end_lat: number | null
+          end_lng: number | null
+          ends_at: string
+          entry_kind: Database["public"]["Enums"]["visit_kind"]
+          id: string
+          lat: number | null
+          lng: number | null
+          place_id: string | null
+          reasoning: string | null
+          starts_at: string
+          status: string
+          suggested_activity: string | null
+          suggested_label: string | null
+          travel_mode: Database["public"]["Enums"]["travel_mode"]
+          updated_at: string
+          user_id: string
+          visit_id: string | null
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string
+          day: string
+          distance_m?: number
+          end_lat?: number | null
+          end_lng?: number | null
+          ends_at: string
+          entry_kind?: Database["public"]["Enums"]["visit_kind"]
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          place_id?: string | null
+          reasoning?: string | null
+          starts_at: string
+          status?: string
+          suggested_activity?: string | null
+          suggested_label?: string | null
+          travel_mode?: Database["public"]["Enums"]["travel_mode"]
+          updated_at?: string
+          user_id: string
+          visit_id?: string | null
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          day?: string
+          distance_m?: number
+          end_lat?: number | null
+          end_lng?: number | null
+          ends_at?: string
+          entry_kind?: Database["public"]["Enums"]["visit_kind"]
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          place_id?: string | null
+          reasoning?: string | null
+          starts_at?: string
+          status?: string
+          suggested_activity?: string | null
+          suggested_label?: string | null
+          travel_mode?: Database["public"]["Enums"]["travel_mode"]
+          updated_at?: string
+          user_id?: string
+          visit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "day_segments_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "day_segments_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "visits"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       event_categories: {
         Row: {

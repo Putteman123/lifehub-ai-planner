@@ -404,6 +404,244 @@ export const Route = createFileRoute("/api/chat")({
               execute: async (input) => agent.saveTravelPreference(userId, input),
             }),
 
+            update_todo: tool({
+              description: "Rätta en uppgift i Att göra: titel, datum eller anteckning.",
+              inputSchema: z.object({
+                todo_id: z.string(),
+                title: z.string().nullable(),
+                due_date: z.string().nullable(),
+                notes: z.string().nullable(),
+              }),
+              needsApproval: true,
+              execute: async ({ todo_id, title, due_date, notes }) =>
+                agent.updateTodo(userId, {
+                  todo_id,
+                  ...(title !== null ? { title } : {}),
+                  ...(due_date !== null ? { due_date } : {}),
+                  ...(notes !== null ? { notes } : {}),
+                }),
+            }),
+            update_reminder: tool({
+              description: "Rätta eller bocka av en påminnelse.",
+              inputSchema: z.object({
+                reminder_id: z.string(),
+                title: z.string().nullable(),
+                remind_at: z.string().nullable(),
+                is_done: z.boolean().nullable(),
+              }),
+              needsApproval: true,
+              execute: async ({ reminder_id, title, remind_at, is_done }) =>
+                agent.updateReminder(userId, {
+                  reminder_id,
+                  ...(title !== null ? { title } : {}),
+                  ...(remind_at !== null ? { remind_at } : {}),
+                  ...(is_done !== null ? { is_done } : {}),
+                }),
+            }),
+            delete_reminder: tool({
+              description: "Ta bort en påminnelse.",
+              inputSchema: z.object({ reminder_id: z.string() }),
+              needsApproval: true,
+              execute: async ({ reminder_id }) => agent.deleteReminder(userId, reminder_id),
+            }),
+            update_case: tool({
+              description: "Rätta ett juristärende i LifeHub.",
+              inputSchema: z.object({
+                case_id: z.string(),
+                title: z.string().nullable(),
+                client_name: z.string().nullable(),
+                status: z.string().nullable(),
+                description: z.string().nullable(),
+              }),
+              needsApproval: true,
+              execute: async ({ case_id, title, client_name, status, description }) =>
+                agent.updateCase(userId, {
+                  case_id,
+                  ...(title !== null ? { title } : {}),
+                  ...(client_name !== null ? { client_name } : {}),
+                  ...(status !== null ? { status } : {}),
+                  ...(description !== null ? { description } : {}),
+                }),
+            }),
+            update_case_task: tool({
+              description: "Rätta eller bocka av en juristuppgift.",
+              inputSchema: z.object({
+                task_id: z.string(),
+                title: z.string().nullable(),
+                due_date: z.string().nullable(),
+                is_done: z.boolean().nullable(),
+              }),
+              needsApproval: true,
+              execute: async ({ task_id, title, due_date, is_done }) =>
+                agent.updateCaseTask(userId, {
+                  task_id,
+                  ...(title !== null ? { title } : {}),
+                  ...(due_date !== null ? { due_date } : {}),
+                  ...(is_done !== null ? { is_done } : {}),
+                }),
+            }),
+            update_visit: tool({
+              description:
+                "Rätta en post i platsloggen: namn, tider, sträcka i km, färdsätt eller typ (besök/resa).",
+              inputSchema: z.object({
+                visit_id: z.string(),
+                label: z.string().nullable(),
+                arrived_at: z.string().nullable(),
+                left_at: z.string().nullable(),
+                distance_km: z.number().nullable(),
+                travel_mode: z.enum(["bil", "kollektivt", "gang_cykel", "okant"]).nullable(),
+                entry_kind: z.enum(["besok", "resa"]).nullable(),
+                note: z.string().nullable(),
+              }),
+              needsApproval: true,
+              execute: async (input) =>
+                agent.updateVisit(userId, {
+                  visit_id: input.visit_id,
+                  ...(input.label !== null ? { label: input.label } : {}),
+                  ...(input.arrived_at !== null ? { arrived_at: input.arrived_at } : {}),
+                  ...(input.left_at !== null ? { left_at: input.left_at } : {}),
+                  ...(input.distance_km !== null ? { distance_km: input.distance_km } : {}),
+                  ...(input.travel_mode !== null ? { travel_mode: input.travel_mode } : {}),
+                  ...(input.entry_kind !== null ? { entry_kind: input.entry_kind } : {}),
+                  ...(input.note !== null ? { note: input.note } : {}),
+                }),
+            }),
+            analyze_day: tool({
+              description:
+                "Kartlägg en dag utifrån positionshistoriken: dela upp i stopp och resor med förslag på platsnamn och aktivitet. Datum som ÅÅÅÅ-MM-DD.",
+              inputSchema: z.object({ day: z.string() }),
+              execute: async ({ day }) => agent.analyzeDayForUser(userId, day),
+            }),
+            finance_overview: tool({
+              description:
+                "Hämta ekonomiöversikt: kontosaldon, nästa inbetalning, dagsbudget, fasta utgifter och utgifter senaste 30 dagarna.",
+              inputSchema: z.object({}),
+              execute: async () => agent.financeOverview(userId),
+            }),
+            add_spend: tool({
+              description:
+                "Registrera en utgift. Anges kontonamn dras beloppet från det kontot.",
+              inputSchema: z.object({
+                amount: z.number(),
+                note: z.string().nullable(),
+                category: z.string().nullable(),
+                account_name: z.string().nullable(),
+                spent_at: z.string().nullable(),
+              }),
+              needsApproval: true,
+              execute: async ({ amount, note, category, account_name, spent_at }) =>
+                agent.addSpend(userId, {
+                  amount,
+                  ...(note !== null ? { note } : {}),
+                  ...(category !== null ? { category } : {}),
+                  ...(account_name !== null ? { account_name } : {}),
+                  ...(spent_at !== null ? { spent_at } : {}),
+                }),
+            }),
+            set_account_balance: tool({
+              description: "Sätt saldot på ett konto.",
+              inputSchema: z.object({ account_name: z.string(), balance: z.number() }),
+              needsApproval: true,
+              execute: async (input) => agent.setAccountBalance(userId, input),
+            }),
+            save_fixed_expense: tool({
+              description: "Lägg till eller ändra en fast månadsutgift (hyra, el, bredband).",
+              inputSchema: z.object({
+                name: z.string(),
+                amount: z.number(),
+                due_day: z.number().min(1).max(31),
+                category: z.string().nullable(),
+              }),
+              needsApproval: true,
+              execute: async ({ name, amount, due_day, category }) =>
+                agent.saveFixedExpense(userId, {
+                  name,
+                  amount,
+                  due_day,
+                  ...(category !== null ? { category } : {}),
+                }),
+            }),
+            vault_lookup: tool({
+              description:
+                "Slå upp lösenord, pinkoder och koder i kassaskåpet. Läs bara upp hemligheten när Patrick själv frågar efter den.",
+              inputSchema: z.object({ query: z.string() }),
+              needsApproval: true,
+              execute: async ({ query }) => agent.vaultLookup(userId, query),
+            }),
+            vault_save: tool({
+              description: "Spara eller uppdatera ett lösenord/en kod i kassaskåpet.",
+              inputSchema: z.object({
+                title: z.string(),
+                secret: z.string(),
+                kind: z.enum(["losenord", "pinkod", "kod", "anteckning"]).nullable(),
+                username: z.string().nullable(),
+                url: z.string().nullable(),
+                notes: z.string().nullable(),
+              }),
+              needsApproval: true,
+              execute: async ({ title, secret, kind, username, url, notes }) =>
+                agent.vaultSave(userId, {
+                  title,
+                  secret,
+                  ...(kind !== null ? { kind } : {}),
+                  ...(username !== null ? { username } : {}),
+                  ...(url !== null ? { url } : {}),
+                  ...(notes !== null ? { notes } : {}),
+                }),
+            }),
+            vault_delete: tool({
+              description: "Ta bort en post ur kassaskåpet.",
+              inputSchema: z.object({ item_id: z.string() }),
+              needsApproval: true,
+              execute: async ({ item_id }) => agent.vaultDelete(userId, item_id),
+            }),
+            remember_about_me: tool({
+              description:
+                "Spara hur du ska bemöta Patrick: tilltalsnamn, ton, hur rakt du ska svara (1-5) och vad du ska fokusera på.",
+              inputSchema: z.object({
+                call_name: z.string().nullable(),
+                tone: z.string().nullable(),
+                directness: z.number().min(1).max(5).nullable(),
+                focus: z.string().nullable(),
+                notes: z.string().nullable(),
+              }),
+              needsApproval: true,
+              execute: async ({ call_name, tone, directness, focus, notes }) =>
+                agent.saveAndreaProfile(userId, {
+                  ...(call_name !== null ? { call_name } : {}),
+                  ...(tone !== null ? { tone } : {}),
+                  ...(directness !== null ? { directness } : {}),
+                  ...(focus !== null ? { focus } : {}),
+                  ...(notes !== null ? { notes } : {}),
+                }),
+            }),
+            legal_search_cases: tool({
+              description:
+                "Sök ärenden i juristappen (PM Juridik). Endast läsning. Använd vid juridiska frågor om pågående ärenden.",
+              inputSchema: z.object({ query: z.string() }),
+              execute: async ({ query }) => agent.applesCases(query),
+            }),
+            legal_get_case: tool({
+              description: "Hämta ett ärende med sakomständigheter och dokument ur juristappen.",
+              inputSchema: z.object({ case_id: z.string() }),
+              execute: async ({ case_id }) => agent.applesCase(case_id),
+            }),
+            legal_search_clients: tool({
+              description: "Sök klienter i juristappen (namn, klientkod eller e-post).",
+              inputSchema: z.object({ query: z.string() }),
+              execute: async ({ query }) => agent.applesClients(query),
+            }),
+            legal_search_documents: tool({
+              description: "Sök dokument i juristappen på titel.",
+              inputSchema: z.object({ query: z.string() }),
+              execute: async ({ query }) => agent.applesDocuments(query),
+            }),
+            legal_deadlines: tool({
+              description: "Kommande deadlines och förhandlingar i juristappen.",
+              inputSchema: z.object({ days: z.number().min(1).max(180).nullable() }),
+              execute: async ({ days }) => agent.applesDeadlines(days ?? 30),
+            }),
+
           },
           providerOptions: {
             openai: {
