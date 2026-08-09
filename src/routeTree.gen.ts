@@ -26,6 +26,7 @@ import { Route as AuthenticatedKalendrarRouteImport } from './routes/_authentica
 import { Route as AuthenticatedKassaskapRouteImport } from './routes/_authenticated/kassaskap'
 import { Route as AuthenticatedPengarRouteImport } from './routes/_authenticated/pengar'
 import { Route as AuthenticatedPlatserRouteImport } from './routes/_authenticated/platser'
+import { Route as ApiApplesTestRouteImport } from './routes/api/apples-test'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiTtsRouteImport } from './routes/api/tts'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
@@ -118,6 +119,11 @@ const AuthenticatedPlatserRoute = AuthenticatedPlatserRouteImport.update({
   path: '/platser',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiApplesTestRoute = ApiApplesTestRouteImport.update({
+  id: '/api/apples-test',
+  path: '/api/apples-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/kassaskap': typeof AuthenticatedKassaskapRoute
   '/pengar': typeof AuthenticatedPengarRoute
   '/platser': typeof AuthenticatedPlatserRoute
+  '/api/apples-test': typeof ApiApplesTestRoute
   '/api/chat': typeof ApiChatRoute
   '/api/tts': typeof ApiTtsRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -185,6 +192,7 @@ export interface FileRoutesByTo {
   '/kassaskap': typeof AuthenticatedKassaskapRoute
   '/pengar': typeof AuthenticatedPengarRoute
   '/platser': typeof AuthenticatedPlatserRoute
+  '/api/apples-test': typeof ApiApplesTestRoute
   '/api/chat': typeof ApiChatRoute
   '/api/tts': typeof ApiTtsRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -210,6 +218,7 @@ export interface FileRoutesById {
   '/_authenticated/kassaskap': typeof AuthenticatedKassaskapRoute
   '/_authenticated/pengar': typeof AuthenticatedPengarRoute
   '/_authenticated/platser': typeof AuthenticatedPlatserRoute
+  '/api/apples-test': typeof ApiApplesTestRoute
   '/api/chat': typeof ApiChatRoute
   '/api/tts': typeof ApiTtsRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -235,6 +244,7 @@ export interface FileRouteTypes {
     | '/kassaskap'
     | '/pengar'
     | '/platser'
+    | '/api/apples-test'
     | '/api/chat'
     | '/api/tts'
     | '/.lovable/oauth/consent'
@@ -258,6 +268,7 @@ export interface FileRouteTypes {
     | '/kassaskap'
     | '/pengar'
     | '/platser'
+    | '/api/apples-test'
     | '/api/chat'
     | '/api/tts'
     | '/.lovable/oauth/consent'
@@ -282,6 +293,7 @@ export interface FileRouteTypes {
     | '/_authenticated/kassaskap'
     | '/_authenticated/pengar'
     | '/_authenticated/platser'
+    | '/api/apples-test'
     | '/api/chat'
     | '/api/tts'
     | '/.lovable/oauth/consent'
@@ -296,6 +308,7 @@ export interface RootRouteChildren {
   McpRoute: typeof McpRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  ApiApplesTestRoute: typeof ApiApplesTestRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiTtsRoute: typeof ApiTtsRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
@@ -424,6 +437,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlatserRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/apples-test': {
+      id: '/api/apples-test'
+      path: '/api/apples-test'
+      fullPath: '/api/apples-test'
+      preLoaderRoute: typeof ApiApplesTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/chat': {
       id: '/api/chat'
       path: '/api/chat'
@@ -501,6 +521,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  ApiApplesTestRoute: ApiApplesTestRoute,
   ApiChatRoute: ApiChatRoute,
   ApiTtsRoute: ApiTtsRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
