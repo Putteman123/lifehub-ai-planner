@@ -79,7 +79,7 @@ function bucketLabel(iso: string, now: Date) {
   return weekdayLocal(iso).toUpperCase();
 }
 
-export async function buildAndreaContext() {
+export async function buildAndreaContext(userId: string) {
   const now = new Date();
   const until = new Date(now.getTime() + 21 * 86400000);
 
@@ -87,26 +87,41 @@ export async function buildAndreaContext() {
     supabaseAdmin
       .from("events")
       .select("*")
+      .eq("user_id", userId)
       .gte("ends_at", new Date(now.getTime() - 86400000).toISOString())
       .lte("starts_at", until.toISOString())
       .order("starts_at"),
-    supabaseAdmin.from("children").select("id, name"),
-    supabaseAdmin.from("legal_cases").select("id, title, client_name, status"),
-    supabaseAdmin.from("case_tasks").select("id, title, due_date, is_done"),
-    supabaseAdmin.from("reminders").select("id, title, remind_at, is_done"),
+    supabaseAdmin.from("children").select("id, name").eq("user_id", userId),
+    supabaseAdmin
+      .from("legal_cases")
+      .select("id, title, client_name, status")
+      .eq("user_id", userId),
+    supabaseAdmin
+      .from("case_tasks")
+      .select("id, title, due_date, is_done")
+      .eq("user_id", userId),
+    supabaseAdmin
+      .from("reminders")
+      .select("id, title, remind_at, is_done")
+      .eq("user_id", userId),
   ]);
 
-  const todosRes = await supabaseAdmin.from("todos").select("id, title, due_date, is_done");
+  const todosRes = await supabaseAdmin
+    .from("todos")
+    .select("id, title, due_date, is_done")
+    .eq("user_id", userId);
 
   const weekStart = startOfWeek(now);
   const [placesRes, visitsRes] = await Promise.all([
-    supabaseAdmin.from("places").select("*"),
+    supabaseAdmin.from("places").select("*").eq("user_id", userId),
     supabaseAdmin
       .from("visits")
       .select("*")
+      .eq("user_id", userId)
       .gte("arrived_at", weekStart.toISOString())
       .order("arrived_at", { ascending: true }),
   ]);
+
   const places = placesRes.data ?? [];
   const weekVisits = visitsRes.data ?? [];
   const todayStart = startOfDay(now);
@@ -139,7 +154,12 @@ export async function buildAndreaContext() {
   }
 
 
-  const profileRes = await supabaseAdmin.from("andrea_profile").select("*").maybeSingle();
+  const profileRes = await supabaseAdmin
+    .from("andrea_profile")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+
   const profile = profileRes.data;
   const profileLines = profile
     ? [

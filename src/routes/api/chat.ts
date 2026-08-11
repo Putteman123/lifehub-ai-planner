@@ -47,7 +47,7 @@ export const Route = createFileRoute("/api/chat")({
         const { createOpenAI } = await import("@ai-sdk/openai");
         const agent = await import("@/lib/agent.server");
 
-        const context = await buildAndreaContext();
+        const context = await buildAndreaContext(userId);
         // ChatGPT-modellerna körs via Lovable AI Gateways Responses API.
         const openai = createOpenAI({
           baseURL: "https://ai.gateway.lovable.dev/v1",
