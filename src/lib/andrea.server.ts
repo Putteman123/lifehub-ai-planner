@@ -154,7 +154,12 @@ export async function buildAndreaContext(userId: string) {
   }
 
 
-  const profileRes = await supabaseAdmin.from("andrea_profile").select("*").maybeSingle();
+  const profileRes = await supabaseAdmin
+    .from("andrea_profile")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+
   const profile = profileRes.data;
   const profileLines = profile
     ? [
