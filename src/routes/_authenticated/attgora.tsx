@@ -146,11 +146,13 @@ function TodoPage() {
                     >
                       <button
                         type="button"
-                        aria-label="Markera som klar"
+                        role="checkbox"
+                        aria-checked={todo.is_done}
+                        aria-label={`Markera "${todo.title}" som klar`}
                         onClick={() => toggle(todo)}
-                        className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border border-border text-transparent transition-colors hover:border-primary hover:text-primary"
+                        className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md border-2 border-border bg-background text-transparent transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       >
-                        <Check className="size-3.5" />
+                        <Check className="size-4" />
                       </button>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">{todo.title}</p>
@@ -163,6 +165,7 @@ function TodoPage() {
                           <p className={`mt-1 text-xs font-medium ${TONE_CLASS[tone]}`}>{label}</p>
                         ) : null}
                       </div>
+
                       <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
                         <button
                           type="button"
