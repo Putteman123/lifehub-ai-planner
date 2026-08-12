@@ -146,11 +146,13 @@ function TodoPage() {
                     >
                       <button
                         type="button"
-                        aria-label="Markera som klar"
+                        role="checkbox"
+                        aria-checked={todo.is_done}
+                        aria-label={`Markera "${todo.title}" som klar`}
                         onClick={() => toggle(todo)}
-                        className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border border-border text-transparent transition-colors hover:border-primary hover:text-primary"
+                        className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md border-2 border-border bg-background text-transparent transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       >
-                        <Check className="size-3.5" />
+                        <Check className="size-4" />
                       </button>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">{todo.title}</p>
@@ -163,6 +165,7 @@ function TodoPage() {
                           <p className={`mt-1 text-xs font-medium ${TONE_CLASS[tone]}`}>{label}</p>
                         ) : null}
                       </div>
+
                       <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
                         <button
                           type="button"
@@ -209,9 +212,20 @@ function TodoPage() {
               <ul className={`mt-3 space-y-2 ${showArchive ? "" : "max-h-64 overflow-hidden"}`}>
                 {(showArchive ? archived : archived.slice(0, 5)).map((todo) => (
                   <li key={todo.id} className="group flex items-center gap-2 text-sm">
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked="true"
+                      aria-label={`Återöppna "${todo.title}"`}
+                      onClick={() => toggle(todo)}
+                      className="flex size-5 shrink-0 items-center justify-center rounded-md border-2 border-primary bg-primary text-primary-foreground transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    >
+                      <Check className="size-3.5" />
+                    </button>
                     <span className="min-w-0 flex-1 truncate text-muted-foreground line-through">
                       {todo.title}
                     </span>
+
                     <button
                       type="button"
                       aria-label="Återaktivera uppgift"
