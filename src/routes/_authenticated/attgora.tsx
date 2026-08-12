@@ -212,9 +212,20 @@ function TodoPage() {
               <ul className={`mt-3 space-y-2 ${showArchive ? "" : "max-h-64 overflow-hidden"}`}>
                 {(showArchive ? archived : archived.slice(0, 5)).map((todo) => (
                   <li key={todo.id} className="group flex items-center gap-2 text-sm">
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked="true"
+                      aria-label={`Återöppna "${todo.title}"`}
+                      onClick={() => toggle(todo)}
+                      className="flex size-5 shrink-0 items-center justify-center rounded-md border-2 border-primary bg-primary text-primary-foreground transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    >
+                      <Check className="size-3.5" />
+                    </button>
                     <span className="min-w-0 flex-1 truncate text-muted-foreground line-through">
                       {todo.title}
                     </span>
+
                     <button
                       type="button"
                       aria-label="Återaktivera uppgift"
