@@ -34,7 +34,7 @@ function Head({
         {Icon ? (
           <span
             className={cn(
-              "flex size-9 shrink-0 items-center justify-center rounded-xl",
+              "flex size-9 shrink-0 items-center justify-center rounded-xl border border-border/60",
               tint,
               accent,
             )}
@@ -42,13 +42,15 @@ function Head({
             <Icon className="size-[18px]" />
           </span>
         ) : null}
-        <h2 className="min-w-0 truncate text-base font-semibold tracking-tight">{title}</h2>
+        <h2 className="min-w-0 truncate font-display text-[17px] font-semibold tracking-tight">
+          {title}
+        </h2>
       </span>
       <span className="flex shrink-0 items-center gap-2">
         {count !== undefined ? (
           <span
             className={cn(
-              "rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums",
+              "min-w-7 rounded-full border border-border/60 px-2.5 py-1 text-center text-xs font-semibold tabular-nums",
               tint,
               accent,
             )}
@@ -62,6 +64,7 @@ function Head({
         ) : null}
       </span>
     </>
+
   );
 }
 
