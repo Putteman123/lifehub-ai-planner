@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ReceiptScanner } from "@/components/pengar/ReceiptScanner";
+import { SpendPieCard } from "@/components/pengar/SpendPieCard";
 import {
   buildBudget,
   financeSignedUrl,
@@ -121,6 +122,7 @@ function MoneyPage() {
           />
           <SpendCard accounts={accounts} spends={spends} />
           <ReceiptScanner accounts={accounts} spends={spends} />
+          <SpendPieCard spends={spends} fixed={fixed} />
           <InsightCard perDay={budget.perDay} days={budget.days} />
           <AccountsCard accounts={accounts} />
           <IncomesCard incomes={incomes} />
