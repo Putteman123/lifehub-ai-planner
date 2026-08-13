@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { TodoPlanCard } from "@/components/TodoPlanCard";
 import { useDeleteRow, useTodos, useUpsertRow } from "@/lib/db";
 import { dueLabel, dueTone, sortTodos, toLocalInput, type TodoRow } from "@/lib/todos";
 
