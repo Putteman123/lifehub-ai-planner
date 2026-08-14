@@ -2,7 +2,8 @@
  * Kartlogik som bara får köras på servern (anropar Google via gatewayen).
  */
 import { estimateRouteMeters } from "./geo";
-import { geocodeLatLng, hasGoogle, mapsRoute } from "./google.server";
+import { geocodeAddress, geocodeLatLng, hasGoogle, mapsRoute } from "./google.server";
+
 
 export type Point = { lat: number; lng: number };
 export type TravelKind = "bil" | "kollektivt" | "gang_cykel";
