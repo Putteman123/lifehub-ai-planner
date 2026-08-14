@@ -71,3 +71,14 @@ export async function resolvePlaceName(lat: number, lng: number) {
     return null;
   }
 }
+
+/** Koordinater för en adress (t.ex. butiksadressen på ett kvitto). */
+export async function resolveAddressPoint(query: string) {
+  if (!hasGoogle("maps")) return null;
+  try {
+    return await geocodeAddress(query);
+  } catch (error) {
+    console.error("Google-adressuppslag misslyckades:", error);
+    return null;
+  }
+}
