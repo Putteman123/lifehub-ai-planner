@@ -2,7 +2,8 @@
  * Kartlogik som bara får köras på servern (anropar Google via gatewayen).
  */
 import { estimateRouteMeters } from "./geo";
-import { geocodeLatLng, hasGoogle, mapsRoute } from "./google.server";
+import { geocodeAddress, geocodeLatLng, hasGoogle, mapsRoute } from "./google.server";
+
 
 export type Point = { lat: number; lng: number };
 export type TravelKind = "bil" | "kollektivt" | "gang_cykel";
@@ -67,6 +68,17 @@ export async function resolvePlaceName(lat: number, lng: number) {
     return await geocodeLatLng(lat, lng);
   } catch (error) {
     console.error("Google-geokodning misslyckades:", error);
+    return null;
+  }
+}
+
+/** Koordinater för en adress (t.ex. butiksadressen på ett kvitto). */
+export async function resolveAddressPoint(query: string) {
+  if (!hasGoogle("maps")) return null;
+  try {
+    return await geocodeAddress(query);
+  } catch (error) {
+    console.error("Google-adressuppslag misslyckades:", error);
     return null;
   }
 }

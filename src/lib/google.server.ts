@@ -404,6 +404,48 @@ export async function geocodeLatLng(
   };
 }
 
+export type GeocodedPoint = GeocodedPlace & { lat: number; lng: number };
+
+/** Slår upp koordinater för en adress eller ett butiksnamn. */
+export async function geocodeAddress(query: string): Promise<GeocodedPoint | null> {
+  const trimmed = query.trim();
+  if (!trimmed) return null;
+  const data = (await call(
+    "maps",
+    `/maps/api/geocode/json?address=${encodeURIComponent(trimmed)}&language=sv&region=se`,
+  )) as {
+    results?: Array<{
+      formatted_address?: string;
+      geometry?: { location?: { lat?: number; lng?: number } };
+      address_components?: Array<{ short_name?: string; types?: string[] }>;
+    }>;
+  };
+
+  const first = data.results?.[0];
+  const lat = first?.geometry?.location?.lat;
+  const lng = first?.geometry?.location?.lng;
+  if (!first || typeof lat !== "number" || typeof lng !== "number") return null;
+
+  const components = first.address_components ?? [];
+  const pick = (type: string) =>
+    components.find((c) => c.types?.includes(type))?.short_name ?? null;
+  const shortName =
+    pick("point_of_interest") ??
+    pick("establishment") ??
+    pick("premise") ??
+    first.formatted_address ??
+    trimmed;
+
+  return {
+    lat,
+    lng,
+    address: first.formatted_address ?? trimmed,
+    shortName,
+  };
+}
+
+
+
 
 /** Lägger på användarens sparade mejlregler på en Gmail-sökfråga. */
 export async function mailQueryWithRules(base: string): Promise<string> {
