@@ -1,5 +1,5 @@
-import { Trophy } from "lucide-react";
-import { useMemo } from "react";
+import { CalendarClock, ChevronDown, Plus, Trophy } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { SectionCard } from "@/components/SectionCard";
 import type { Tables } from "@/integrations/supabase/types";
@@ -7,6 +7,30 @@ import type { Tables } from "@/integrations/supabase/types";
 type PantryRow = Tables<"pantry_items">;
 
 const MEDAL = ["text-cat-jurist", "text-muted-foreground", "text-cat-kvall"];
+
+const dateFmt = new Intl.DateTimeFormat("sv-SE", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
+
+function fmt(iso: string | null) {
+  if (!iso) return null;
+  return dateFmt.format(new Date(iso));
+}
+
+function daysAgo(iso: string | null) {
+  if (!iso) return null;
+  return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000));
+}
+
+/** Snittintervall mellan köpen, beräknat på första och senaste tillfället. */
+function avgInterval(row: PantryRow) {
+  const first = new Date(row.created_at).getTime();
+  const last = new Date(row.last_purchased_at ?? row.last_added_at).getTime();
+  if (row.times_added < 2 || last <= first) return null;
+  return Math.round((last - first) / 86_400_000 / (row.times_added - 1));
+}
 
 /** Topplista över de varor som oftast hamnar i inköpslistan. */
 export function PantryTopCard({
@@ -16,6 +40,8 @@ export function PantryTopCard({
   pantry: PantryRow[];
   onPick?: (name: string) => void;
 }) {
+  const [openId, setOpenId] = useState<string | null>(null);
+
   const top = useMemo(
     () =>
       [...pantry]
@@ -26,6 +52,7 @@ export function PantryTopCard({
   );
 
   const max = top[0]?.times_added ?? 1;
+
 
   return (
     <SectionCard
