@@ -225,6 +225,7 @@ export type Database = {
       }
       day_segments: {
         Row: {
+          address: string | null
           confidence: number
           created_at: string
           day: string
@@ -238,6 +239,8 @@ export type Database = {
           lng: number | null
           place_id: string | null
           reasoning: string | null
+          seen_count: number
+          spend_total: number
           starts_at: string
           status: string
           suggested_activity: string | null
@@ -248,6 +251,7 @@ export type Database = {
           visit_id: string | null
         }
         Insert: {
+          address?: string | null
           confidence?: number
           created_at?: string
           day: string
@@ -261,6 +265,8 @@ export type Database = {
           lng?: number | null
           place_id?: string | null
           reasoning?: string | null
+          seen_count?: number
+          spend_total?: number
           starts_at: string
           status?: string
           suggested_activity?: string | null
@@ -271,6 +277,7 @@ export type Database = {
           visit_id?: string | null
         }
         Update: {
+          address?: string | null
           confidence?: number
           created_at?: string
           day?: string
@@ -284,6 +291,8 @@ export type Database = {
           lng?: number | null
           place_id?: string | null
           reasoning?: string | null
+          seen_count?: number
+          spend_total?: number
           starts_at?: string
           status?: string
           suggested_activity?: string | null
@@ -1257,6 +1266,7 @@ export type Database = {
       }
       visits: {
         Row: {
+          address: string | null
           arrived_at: string
           created_at: string
           distance_m: number
@@ -1278,6 +1288,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          address?: string | null
           arrived_at: string
           created_at?: string
           distance_m?: number
@@ -1299,6 +1310,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          address?: string | null
           arrived_at?: string
           created_at?: string
           distance_m?: number
