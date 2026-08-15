@@ -145,6 +145,13 @@ function travelModeFor(distanceM: number, minutesSpent: number) {
 
 type Suggestion = { index: number; label: string; activity: string; reasoning: string };
 
+type Purchase = {
+  amount: number;
+  note: string | null;
+  category: string | null;
+  spent_at: string;
+};
+
 /** Frågar AI om namn och aktivitet för stopp som inte matchar en sparad plats. */
 async function suggestLabels(
   apiKey: string,
@@ -152,6 +159,7 @@ async function suggestLabels(
   places: PlaceRow[],
   events: { title: string; starts_at: string; ends_at: string; location: string | null }[],
   history: { label: string | null; lat: number | null; lng: number | null }[],
+  extras: Map<number, { address: string | null; seen: number; purchases: Purchase[] }>,
 ): Promise<Suggestion[]> {
   const unknown = segments
     .map((s, index) => ({ s, index }))
@@ -160,12 +168,23 @@ async function suggestLabels(
 
   const { completeText } = await import("@/lib/ai-complete.server");
 
-  const lines = unknown.map(
-    ({ s, index }) =>
+  const lines = unknown.map(({ s, index }) => {
+    const extra = extras.get(index);
+    const parts = [
       `#${index} ${timeLocal(s.starts_at)}–${timeLocal(s.ends_at)} (${Math.round(
         minutes(s.starts_at, s.ends_at),
       )} min) vid ${s.lat.toFixed(5)},${s.lng.toFixed(5)}`,
-  );
+    ];
+    if (extra?.address) parts.push(`adress: ${extra.address}`);
+    if (extra?.seen) parts.push(`du har varit här ${extra.seen} gånger tidigare`);
+    if (extra?.purchases.length)
+      parts.push(
+        `köp under stoppet: ${extra.purchases
+          .map((p) => `${Math.round(p.amount)} kr ${p.note ?? p.category ?? ""}`.trim())
+          .join("; ")}`,
+      );
+    return parts.join(" | ");
+  });
 
   const input = [
     "OKÄNDA STOPP:",
@@ -193,9 +212,10 @@ async function suggestLabels(
     apiKey,
     system:
       "Du kartlägger en persons dag utifrån GPS-stopp. Föreslå ett kort platsnamn och en aktivitet " +
-      "för varje okänt stopp. Använd koordinatnärhet till sparade platser och tidigare besök, samt " +
-      "kalenderns händelser. Är du osäker: skriv label 'Okänd plats' och activity ''. " +
-      "Svara på svenska. Svara som JSON.",
+      "för varje okänt stopp. Använd i tur och ordning: adressen från kartan, kvitton/köp under stoppet, " +
+      "koordinatnärhet till sparade platser och tidigare besök, hur ofta personen varit där, samt " +
+      "kalenderns händelser. Skriv butiksnamn när ett köp matchar. Är du osäker: skriv label 'Okänd plats' " +
+      "och activity ''. Motivera kort i reasoning vilken ledtråd du använde. Svara på svenska. Svara som JSON.",
     input,
     jsonSchema: {
       name: "stop_suggestions",
@@ -230,6 +250,7 @@ async function suggestLabels(
     return [];
   }
 }
+
 
 /** Bygger (och sparar) dagens segment som förslag. Befintliga förslag ersätts. */
 export async function analyzeDay(userId: string, day: string) {
