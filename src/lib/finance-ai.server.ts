@@ -2,8 +2,10 @@ import { ANDREA_FAST_MODEL } from "@/lib/ai-models";
 
 export type ReceiptRead = {
   merchant: string | null;
+  address: string | null;
   total: number | null;
   date: string | null;
+  time: string | null;
   category: string | null;
   kind: "kvitto" | "faktura" | "annat";
   groceries: { name: string; quantity: string | null }[];
@@ -14,8 +16,10 @@ const SCHEMA = {
   additionalProperties: false,
   properties: {
     merchant: { type: "string" },
+    address: { type: "string" },
     total: { type: "number" },
     date: { type: "string" },
+    time: { type: "string" },
     category: { type: "string" },
     kind: { type: "string", enum: ["kvitto", "faktura", "annat"] },
     groceries: {
@@ -31,8 +35,9 @@ const SCHEMA = {
       },
     },
   },
-  required: ["merchant", "total", "date", "category", "kind", "groceries"],
+  required: ["merchant", "address", "total", "date", "time", "category", "kind", "groceries"],
 } as const;
+
 
 /**
  * Läser av ett kvitto eller en faktura från en bild eller PDF och plockar ut
