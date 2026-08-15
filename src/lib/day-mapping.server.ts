@@ -452,6 +452,7 @@ export async function acceptSegment(userId: string, segmentId: string) {
       entry_kind: seg.entry_kind,
       distance_m: seg.distance_m,
       travel_mode: seg.travel_mode,
+      address: seg.address,
       source: "ai",
       is_manual: false,
     })
