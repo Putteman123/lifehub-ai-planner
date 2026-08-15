@@ -40,6 +40,75 @@ export const analyzeReceipt = createServerFn({ method: "POST" })
     });
   });
 
+/**
+ * Markerar butiken från ett kvitto som ett besök i platsloggen, så att köpet
+ * syns på kartan och i "Min dag".
+ */
+export const logReceiptVisit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        merchant: z.string().trim().min(1),
+        address: z.string().trim().optional(),
+        spentAt: z.string().min(10),
+        amount: z.number().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { resolveAddressPoint } = await import("./maps.server");
+    const query = [data.address, data.merchant].filter(Boolean).join(", ");
+    const point =
+      (await resolveAddressPoint(query)) ??
+      (data.address ? null : await resolveAddressPoint(`${data.merchant}, Sverige`));
+
+    if (!point) {
+      return { ok: false as const, message: "Hittade ingen adress för butiken." };
+    }
+
+    const arrived = new Date(data.spentAt);
+    const left = new Date(arrived.getTime() + 15 * 60_000);
+
+    // Finns redan ett besök samma dag på samma butik? Skriv inte dubbelt.
+    const dayStart = new Date(arrived);
+    dayStart.setHours(0, 0, 0, 0);
+    const { data: existing } = await context.supabase
+      .from("visits")
+      .select("id")
+      .eq("label", data.merchant)
+      .gte("arrived_at", dayStart.toISOString())
+      .lte("arrived_at", new Date(dayStart.getTime() + 86_400_000).toISOString())
+      .limit(1);
+    if (existing?.length) {
+      return { ok: true as const, message: "Besöket fanns redan på kartan.", ...point };
+    }
+
+    const { data: places } = await context.supabase.from("places").select("*");
+    const { matchPlace } = await import("./geo");
+    const place = matchPlace(places ?? [], point.lat, point.lng);
+
+    const { error } = await context.supabase.from("visits").insert({
+      user_id: context.userId,
+      place_id: place?.id ?? null,
+      label: data.merchant,
+      address: point.address,
+      lat: point.lat,
+      lng: point.lng,
+      arrived_at: arrived.toISOString(),
+      left_at: left.toISOString(),
+      entry_kind: "besok",
+      distance_m: 0,
+      travel_mode: "okant",
+      source: "kvitto",
+      is_manual: false,
+      note: data.amount ? `Köp ${Math.round(data.amount)} kr` : null,
+    });
+    if (error) throw new Error(error.message);
+
+    return { ok: true as const, message: `${data.merchant} markerad på kartan.`, ...point };
+  });
+
 /** Kort AI-analys av utgifterna i förhållande till dagsbudgeten. */
 export const financeInsight = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
