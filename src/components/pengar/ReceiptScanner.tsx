@@ -246,6 +246,36 @@ export function ReceiptScanner({
             <Input id="rec-note" value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
 
+          <div className="grid grid-cols-[1fr_110px] gap-3">
+            <div>
+              <Label htmlFor="rec-address">Butikens adress</Label>
+              <Input
+                id="rec-address"
+                value={address}
+                placeholder="Adress från kvittot"
+                onChange={(e) => setAddress(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="rec-time">Klockslag</Label>
+              <Input
+                id="rec-time"
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <label className="flex items-center justify-between gap-3 rounded-xl border bg-background/60 px-3 py-2">
+            <span className="flex items-center gap-2 text-sm">
+              <MapPin className="size-4 text-nav-handla" />
+              Markera butiken som besök på kartan
+            </span>
+            <Switch checked={markMap} onCheckedChange={setMarkMap} />
+          </label>
+
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Kategori</Label>
