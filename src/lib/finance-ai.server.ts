@@ -2,8 +2,10 @@ import { ANDREA_FAST_MODEL } from "@/lib/ai-models";
 
 export type ReceiptRead = {
   merchant: string | null;
+  address: string | null;
   total: number | null;
   date: string | null;
+  time: string | null;
   category: string | null;
   kind: "kvitto" | "faktura" | "annat";
   groceries: { name: string; quantity: string | null }[];
@@ -14,8 +16,10 @@ const SCHEMA = {
   additionalProperties: false,
   properties: {
     merchant: { type: "string" },
+    address: { type: "string" },
     total: { type: "number" },
     date: { type: "string" },
+    time: { type: "string" },
     category: { type: "string" },
     kind: { type: "string", enum: ["kvitto", "faktura", "annat"] },
     groceries: {
@@ -31,8 +35,9 @@ const SCHEMA = {
       },
     },
   },
-  required: ["merchant", "total", "date", "category", "kind", "groceries"],
+  required: ["merchant", "address", "total", "date", "time", "category", "kind", "groceries"],
 } as const;
+
 
 /**
  * Läser av ett kvitto eller en faktura från en bild eller PDF och plockar ut
@@ -52,7 +57,7 @@ export async function readReceipt(opts: {
       text:
         `Läs av detta kvitto/faktura. Använd i första hand någon av användarens befintliga kategorier: ${
           opts.knownCategories.join(", ") || "inga ännu"
-        }. Skapa bara en ny kategori om ingen passar. Datum i formatet YYYY-MM-DD. total = totalbeloppet i kronor som ett tal. groceries = endast dagligvaror (mat, dryck, hushåll) med korta svenska varunamn i singular, quantity kan vara tom sträng. Är det en faktura eller ett dokument utan varor ska groceries vara tom.`,
+        }. Skapa bara en ny kategori om ingen passar. Datum i formatet YYYY-MM-DD. time = klockslaget på kvittot i formatet HH:MM, tom sträng om det saknas. address = butikens fullständiga gatuadress med ort precis som den står på kvittot (tom sträng om den saknas). total = totalbeloppet i kronor som ett tal. groceries = endast dagligvaror (mat, dryck, hushåll) med korta svenska varunamn i singular, quantity kan vara tom sträng. Är det en faktura eller ett dokument utan varor ska groceries vara tom.`,
     },
     isPdf
       ? {
@@ -110,8 +115,10 @@ export async function readReceipt(opts: {
   const total = Number(parsed.total);
   return {
     merchant: parsed.merchant?.trim() || null,
+    address: parsed.address?.trim() || null,
     total: Number.isFinite(total) && total > 0 ? total : null,
     date: parsed.date?.slice(0, 10) || null,
+    time: /^\d{1,2}:\d{2}$/.test(parsed.time?.trim() ?? "") ? parsed.time!.trim() : null,
     category: parsed.category?.trim() || null,
     kind: parsed.kind === "faktura" || parsed.kind === "annat" ? parsed.kind : "kvitto",
     groceries: (parsed.groceries ?? [])

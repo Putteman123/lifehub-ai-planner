@@ -202,9 +202,27 @@ export function DayMap() {
                         : ""}
                       {accepted ? " · sparad" : ""}
                     </p>
+                    {!isTrip && s.address ? (
+                      <p className="truncate text-[11px] text-muted-foreground/80">{s.address}</p>
+                    ) : null}
+                    {!isTrip && ((s.seen_count ?? 0) > 0 || Number(s.spend_total ?? 0) > 0) ? (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {(s.seen_count ?? 0) > 0 ? (
+                          <span className="rounded-full bg-surface px-2 py-0.5 text-[10px] font-medium">
+                            {s.seen_count} tidigare besök
+                          </span>
+                        ) : null}
+                        {Number(s.spend_total ?? 0) > 0 ? (
+                          <span className="rounded-full bg-nav-handla/15 px-2 py-0.5 text-[10px] font-medium text-nav-handla">
+                            {Math.round(Number(s.spend_total))} kr spenderat
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
                     {s.reasoning && !accepted ? (
                       <p className="mt-1 text-[11px] text-muted-foreground/80">{s.reasoning}</p>
                     ) : null}
+
                   </div>
 
                   {accepted ? null : (

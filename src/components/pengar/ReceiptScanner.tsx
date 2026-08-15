@@ -1,11 +1,12 @@
 import { useRef, useState } from "react";
-import { Camera, Loader2, ScanLine, ShoppingCart, Sparkles, Upload } from "lucide-react";
+import { Camera, Loader2, MapPin, ScanLine, ShoppingCart, Sparkles, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { SectionCard } from "@/components/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -13,10 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { analyzeReceipt } from "@/lib/finance.functions";
+import { analyzeReceipt, logReceiptVisit } from "@/lib/finance.functions";
 import { kr, useSaveSpend, useUploadFinanceFiles, type AccountRow, type SpendRow } from "@/lib/finance";
 import { spendCategories } from "@/lib/spend-categories";
 import { useAddPantryItems } from "@/lib/shopping";
+
 
 type Read = Awaited<ReturnType<typeof analyzeReceipt>>;
 
@@ -62,6 +64,9 @@ export function ReceiptScanner({
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [address, setAddress] = useState("");
+  const [markMap, setMarkMap] = useState(true);
   const [category, setCategory] = useState("");
   const [accountId, setAccountId] = useState("");
   const [picked, setPicked] = useState<Set<string>>(new Set());
@@ -79,6 +84,9 @@ export function ReceiptScanner({
       setAmount(result.total ? String(result.total) : "");
       setNote(result.merchant ?? "");
       setDate(result.date ?? new Date().toISOString().slice(0, 10));
+      setTime(result.time ?? "");
+      setAddress(result.address ?? "");
+      setMarkMap(result.kind !== "faktura");
       setCategory(result.category ?? "");
       setPicked(new Set(result.groceries.map((item) => item.name)));
       upload.mutate({ files: [file], kind: result.kind === "faktura" ? "faktura" : "kvitto" });
@@ -94,6 +102,8 @@ export function ReceiptScanner({
     setRead(null);
     setAmount("");
     setNote("");
+    setTime("");
+    setAddress("");
     setCategory("");
     setPicked(new Set());
   }
@@ -104,14 +114,16 @@ export function ReceiptScanner({
       toast.error("Ange ett belopp.");
       return;
     }
+    const clock = /^\d{1,2}:\d{2}$/.test(time) ? time.padStart(5, "0") : "12:00";
     const spentAt = date
-      ? new Date(`${date}T12:00:00`).toISOString()
+      ? new Date(`${date}T${clock}:00`).toISOString()
       : new Date().toISOString();
+    const merchant = note.trim();
     saveSpend.mutate(
       {
         values: {
           amount: value,
-          note: note.trim() || null,
+          note: merchant || null,
           category: category.trim() || null,
           account_id: accountId || null,
           spent_at: spentAt,
@@ -124,11 +136,28 @@ export function ReceiptScanner({
             await addPantry.mutateAsync({ names, purchasedAt: spentAt });
             toast.success(`${names.length} varor sparades i Skafferiet`);
           }
+          if (markMap && merchant) {
+            try {
+              const res = await logReceiptVisit({
+                data: {
+                  merchant,
+                  address: address.trim() || undefined,
+                  spentAt,
+                  amount: value,
+                },
+              });
+              if (res.ok) toast.success(res.message);
+              else toast.info(res.message);
+            } catch {
+              toast.info("Kunde inte markera butiken på kartan.");
+            }
+          }
           reset();
         },
       },
     );
   }
+
 
   return (
     <SectionCard
@@ -216,6 +245,36 @@ export function ReceiptScanner({
             <Label htmlFor="rec-note">Beskrivning</Label>
             <Input id="rec-note" value={note} onChange={(e) => setNote(e.target.value)} />
           </div>
+
+          <div className="grid grid-cols-[1fr_110px] gap-3">
+            <div>
+              <Label htmlFor="rec-address">Butikens adress</Label>
+              <Input
+                id="rec-address"
+                value={address}
+                placeholder="Adress från kvittot"
+                onChange={(e) => setAddress(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="rec-time">Klockslag</Label>
+              <Input
+                id="rec-time"
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <label className="flex items-center justify-between gap-3 rounded-xl border bg-background/60 px-3 py-2">
+            <span className="flex items-center gap-2 text-sm">
+              <MapPin className="size-4 text-nav-handla" />
+              Markera butiken som besök på kartan
+            </span>
+            <Switch checked={markMap} onCheckedChange={setMarkMap} />
+          </label>
+
 
           <div className="grid grid-cols-2 gap-3">
             <div>
