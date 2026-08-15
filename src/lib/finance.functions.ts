@@ -109,6 +109,69 @@ export const logReceiptVisit = createServerFn({ method: "POST" })
     return { ok: true as const, message: `${data.merchant} markerad på kartan.`, ...point };
   });
 
+/**
+ * Lägger automatiskt in ett kalenderhändelse för kvittot när det finns ett
+ * datum och/eller en plats att utgå från.
+ */
+export const logReceiptEvent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        merchant: z.string().trim().optional(),
+        address: z.string().trim().optional(),
+        spentAt: z.string().min(10),
+        amount: z.number().optional(),
+        category: z.string().trim().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const place = data.address?.trim() || data.merchant?.trim() || "";
+    const when = new Date(data.spentAt);
+    if (Number.isNaN(when.getTime())) {
+      return { ok: false as const, message: "Kvittot saknar giltigt datum." };
+    }
+    if (!place && !data.spentAt) {
+      return { ok: false as const, message: "Kvittot saknade både datum och plats." };
+    }
+
+    const title = data.merchant?.trim()
+      ? `Köp – ${data.merchant.trim()}${data.amount ? ` (${Math.round(data.amount)} kr)` : ""}`
+      : `Köp${data.amount ? ` ${Math.round(data.amount)} kr` : ""}`;
+    const ends = new Date(when.getTime() + 30 * 60_000);
+
+    const dayStart = new Date(when);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(dayStart.getTime() + 86_400_000);
+
+    const { data: existing } = await context.supabase
+      .from("events")
+      .select("id")
+      .eq("title", title)
+      .gte("starts_at", dayStart.toISOString())
+      .lt("starts_at", dayEnd.toISOString())
+      .limit(1);
+    if (existing?.length) {
+      return { ok: true as const, message: "Händelsen fanns redan i kalendern." };
+    }
+
+    const { error } = await context.supabase.from("events").insert({
+      user_id: context.userId,
+      title,
+      description: data.category ? `Kategori: ${data.category}` : "Skapad från kvitto",
+      location: place || null,
+      starts_at: when.toISOString(),
+      ends_at: ends.toISOString(),
+      all_day: false,
+      category: "privat",
+    });
+    if (error) throw new Error(error.message);
+
+    return { ok: true as const, message: "Kvittot lades till i kalendern." };
+  });
+
+
 /** Kort AI-analys av utgifterna i förhållande till dagsbudgeten. */
 export const financeInsight = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
