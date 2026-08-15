@@ -57,7 +57,7 @@ export async function readReceipt(opts: {
       text:
         `Läs av detta kvitto/faktura. Använd i första hand någon av användarens befintliga kategorier: ${
           opts.knownCategories.join(", ") || "inga ännu"
-        }. Skapa bara en ny kategori om ingen passar. Datum i formatet YYYY-MM-DD. total = totalbeloppet i kronor som ett tal. groceries = endast dagligvaror (mat, dryck, hushåll) med korta svenska varunamn i singular, quantity kan vara tom sträng. Är det en faktura eller ett dokument utan varor ska groceries vara tom.`,
+        }. Skapa bara en ny kategori om ingen passar. Datum i formatet YYYY-MM-DD. time = klockslaget på kvittot i formatet HH:MM, tom sträng om det saknas. address = butikens fullständiga gatuadress med ort precis som den står på kvittot (tom sträng om den saknas). total = totalbeloppet i kronor som ett tal. groceries = endast dagligvaror (mat, dryck, hushåll) med korta svenska varunamn i singular, quantity kan vara tom sträng. Är det en faktura eller ett dokument utan varor ska groceries vara tom.`,
     },
     isPdf
       ? {
