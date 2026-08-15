@@ -256,7 +256,7 @@ async function suggestLabels(
 export async function analyzeDay(userId: string, day: string) {
   const { start, end } = dayRange(day);
 
-  const [pingsRes, placesRes, eventsRes, historyRes] = await Promise.all([
+  const [pingsRes, placesRes, eventsRes, historyRes, spendRes] = await Promise.all([
     supabaseAdmin
       .from("location_pings")
       .select("*")
@@ -273,11 +273,16 @@ export async function analyzeDay(userId: string, day: string) {
       .lte("starts_at", end.toISOString()),
     supabaseAdmin
       .from("visits")
-      .select("label, lat, lng")
+      .select("label, lat, lng, arrived_at")
       .eq("user_id", userId)
-      .not("label", "is", null)
       .order("arrived_at", { ascending: false })
-      .limit(200),
+      .limit(600),
+    supabaseAdmin
+      .from("spend_entries")
+      .select("amount, note, category, spent_at")
+      .eq("user_id", userId)
+      .gte("spent_at", start.toISOString())
+      .lt("spent_at", end.toISOString()),
   ]);
 
   const pings = pingsRes.data ?? [];
@@ -291,6 +296,59 @@ export async function analyzeDay(userId: string, day: string) {
     return { ok: false as const, message: "Hittade inga tydliga stopp den dagen.", count: 0 };
   }
 
+  const allVisits = historyRes.data ?? [];
+  const purchases = (spendRes.data ?? []).map((row) => ({
+    amount: Number(row.amount),
+    note: row.note,
+    category: row.category,
+    spent_at: row.spent_at,
+  }));
+
+  /** Extra sammanhang per stopp: adress, hur ofta du varit där och köp. */
+  const extras = new Map<
+    number,
+    { address: string | null; seen: number; purchases: Purchase[] }
+  >();
+
+  const stopIndexes = segments
+    .map((s, index) => ({ s, index }))
+    .filter(({ s }) => s.entry_kind === "besok");
+
+  // Adressuppslag för stoppen (begränsat antal för att hålla analysen snabb).
+  const { resolvePlaceName } = await import("@/lib/maps.server");
+  const geocoded = await Promise.all(
+    stopIndexes
+      .slice(0, 12)
+      .map(async ({ s, index }) => ({
+        index,
+        place: await resolvePlaceName(s.lat, s.lng).catch(() => null),
+      })),
+  );
+  const addressByIndex = new Map(
+    geocoded.map((g) => [g.index, g.place ? `${g.place.shortName} – ${g.place.address}` : null]),
+  );
+
+  for (const { s, index } of stopIndexes) {
+    const seen = allVisits.filter(
+      (v) =>
+        v.lat != null &&
+        v.lng != null &&
+        v.arrived_at < s.starts_at &&
+        haversineMeters(v.lat, v.lng, s.lat, s.lng) <= 200,
+    ).length;
+    const from = new Date(s.starts_at).getTime() - 20 * 60_000;
+    const to = new Date(s.ends_at).getTime() + 20 * 60_000;
+    const bought = purchases.filter((p) => {
+      const t = new Date(p.spent_at).getTime();
+      return t >= from && t <= to;
+    });
+    extras.set(index, {
+      address: addressByIndex.get(index) ?? null,
+      seen,
+      purchases: bought,
+    });
+  }
+
   const apiKey = process.env["LOVABLE_API_KEY"];
   let suggestions: Suggestion[] = [];
   if (apiKey) {
@@ -300,7 +358,8 @@ export async function analyzeDay(userId: string, day: string) {
         segments,
         places,
         eventsRes.data ?? [],
-        historyRes.data ?? [],
+        allVisits.filter((v) => v.label),
+        extras,
       );
     } catch {
       // AI kan vara otillgänglig – segmenten är fortfarande användbara.
@@ -319,7 +378,11 @@ export async function analyzeDay(userId: string, day: string) {
   const rows = segments.map((s, index) => {
     const place = s.place_id ? places.find((p) => p.id === s.place_id) : null;
     const ai = byIndex.get(index);
+    const extra = extras.get(index);
     const spent = minutes(s.starts_at, s.ends_at);
+    const spendTotal = (extra?.purchases ?? []).reduce((sum, p) => sum + p.amount, 0);
+    // Ett köp under stoppet gör namnet nästan säkert.
+    const receiptName = extra?.purchases.find((p) => p.note?.trim())?.note?.trim() ?? null;
     return {
       user_id: userId,
       day,
@@ -334,16 +397,20 @@ export async function analyzeDay(userId: string, day: string) {
       travel_mode:
         s.entry_kind === "resa" ? travelModeFor(s.distance_m, spent) : ("okant" as const),
       place_id: s.place_id,
+      address: s.entry_kind === "besok" ? (extra?.address ?? null) : null,
+      seen_count: extra?.seen ?? 0,
+      spend_total: Math.round(spendTotal),
       suggested_label:
         s.entry_kind === "resa"
           ? "Resa"
-          : (place?.name ?? ai?.label ?? "Okänd plats"),
+          : (place?.name ?? receiptName ?? ai?.label ?? "Okänd plats"),
       suggested_activity: s.entry_kind === "resa" ? null : (ai?.activity ?? null),
       reasoning: ai?.reasoning ?? null,
-      confidence: place ? 1 : ai ? 0.6 : 0.3,
+      confidence: place ? 1 : receiptName ? 0.9 : ai ? 0.6 : 0.3,
       status: "pending",
     };
   });
+
 
   const { error } = await supabaseAdmin.from("day_segments").insert(rows);
   if (error) throw new Error(error.message);
