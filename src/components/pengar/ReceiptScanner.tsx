@@ -64,6 +64,9 @@ export function ReceiptScanner({
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [address, setAddress] = useState("");
+  const [markMap, setMarkMap] = useState(true);
   const [category, setCategory] = useState("");
   const [accountId, setAccountId] = useState("");
   const [picked, setPicked] = useState<Set<string>>(new Set());
@@ -81,6 +84,9 @@ export function ReceiptScanner({
       setAmount(result.total ? String(result.total) : "");
       setNote(result.merchant ?? "");
       setDate(result.date ?? new Date().toISOString().slice(0, 10));
+      setTime(result.time ?? "");
+      setAddress(result.address ?? "");
+      setMarkMap(result.kind !== "faktura");
       setCategory(result.category ?? "");
       setPicked(new Set(result.groceries.map((item) => item.name)));
       upload.mutate({ files: [file], kind: result.kind === "faktura" ? "faktura" : "kvitto" });
@@ -96,6 +102,8 @@ export function ReceiptScanner({
     setRead(null);
     setAmount("");
     setNote("");
+    setTime("");
+    setAddress("");
     setCategory("");
     setPicked(new Set());
   }
@@ -106,14 +114,16 @@ export function ReceiptScanner({
       toast.error("Ange ett belopp.");
       return;
     }
+    const clock = /^\d{1,2}:\d{2}$/.test(time) ? time.padStart(5, "0") : "12:00";
     const spentAt = date
-      ? new Date(`${date}T12:00:00`).toISOString()
+      ? new Date(`${date}T${clock}:00`).toISOString()
       : new Date().toISOString();
+    const merchant = note.trim();
     saveSpend.mutate(
       {
         values: {
           amount: value,
-          note: note.trim() || null,
+          note: merchant || null,
           category: category.trim() || null,
           account_id: accountId || null,
           spent_at: spentAt,
@@ -126,11 +136,28 @@ export function ReceiptScanner({
             await addPantry.mutateAsync({ names, purchasedAt: spentAt });
             toast.success(`${names.length} varor sparades i Skafferiet`);
           }
+          if (markMap && merchant) {
+            try {
+              const res = await logReceiptVisit({
+                data: {
+                  merchant,
+                  address: address.trim() || undefined,
+                  spentAt,
+                  amount: value,
+                },
+              });
+              if (res.ok) toast.success(res.message);
+              else toast.info(res.message);
+            } catch {
+              toast.info("Kunde inte markera butiken på kartan.");
+            }
+          }
           reset();
         },
       },
     );
   }
+
 
   return (
     <SectionCard
