@@ -115,8 +115,10 @@ export async function readReceipt(opts: {
   const total = Number(parsed.total);
   return {
     merchant: parsed.merchant?.trim() || null,
+    address: parsed.address?.trim() || null,
     total: Number.isFinite(total) && total > 0 ? total : null,
     date: parsed.date?.slice(0, 10) || null,
+    time: /^\d{1,2}:\d{2}$/.test(parsed.time?.trim() ?? "") ? parsed.time!.trim() : null,
     category: parsed.category?.trim() || null,
     kind: parsed.kind === "faktura" || parsed.kind === "annat" ? parsed.kind : "kvitto",
     groceries: (parsed.groceries ?? [])
