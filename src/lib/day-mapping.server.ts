@@ -360,6 +360,19 @@ export async function analyzeDay(userId: string, day: string) {
     geocoded.map((g) => [g.index, g.place ? `${g.place.shortName} – ${g.place.address}` : null]),
   );
 
+  /** Kvittobesök som matchar ett stopp (närhet i tid och rum). */
+  const receiptByIndex = new Map<number, (typeof receiptVisits)[number]>();
+  for (const { s, index } of stopIndexes) {
+    const from = new Date(s.starts_at).getTime() - 25 * 60_000;
+    const to = new Date(s.ends_at).getTime() + 25 * 60_000;
+    const hit = receiptVisits.find((v) => {
+      const t = new Date(v.arrived_at).getTime();
+      const near = haversineMeters(v.lat as number, v.lng as number, s.lat, s.lng) <= 300;
+      return near || (t >= from && t <= to);
+    });
+    if (hit) receiptByIndex.set(index, hit);
+  }
+
   for (const { s, index } of stopIndexes) {
     const seen = allVisits.filter(
       (v) =>
@@ -375,11 +388,12 @@ export async function analyzeDay(userId: string, day: string) {
       return t >= from && t <= to;
     });
     extras.set(index, {
-      address: addressByIndex.get(index) ?? null,
+      address: receiptByIndex.get(index)?.address ?? addressByIndex.get(index) ?? null,
       seen,
       purchases: bought,
     });
   }
+
 
   const apiKey = process.env["LOVABLE_API_KEY"];
   let suggestions: Suggestion[] = [];
