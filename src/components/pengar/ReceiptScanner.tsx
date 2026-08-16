@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Camera, Loader2, MapPin, ScanLine, ShoppingCart, Sparkles, Upload } from "lucide-react";
+import { CalendarPlus, Camera, Loader2, MapPin, ScanLine, ShoppingCart, Sparkles, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { SectionCard } from "@/components/SectionCard";
