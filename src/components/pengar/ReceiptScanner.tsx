@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/select";
 import { useQueryClient } from "@tanstack/react-query";
 import { analyzeReceipt, logReceiptEvent, logReceiptVisit } from "@/lib/finance.functions";
+import { analyzeDaySegments } from "@/lib/day-mapping.functions";
+
 import { kr, useSaveSpend, useUploadFinanceFiles, type AccountRow, type SpendRow } from "@/lib/finance";
 import { spendCategories } from "@/lib/spend-categories";
 import { useAddPantryItems } from "@/lib/shopping";
