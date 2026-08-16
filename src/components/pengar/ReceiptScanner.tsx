@@ -68,6 +68,8 @@ export function ReceiptScanner({
   const [time, setTime] = useState("");
   const [address, setAddress] = useState("");
   const [markMap, setMarkMap] = useState(true);
+  const [addEvent, setAddEvent] = useState(true);
+  const queryClient = useQueryClient();
   const [category, setCategory] = useState("");
   const [accountId, setAccountId] = useState("");
   const [picked, setPicked] = useState<Set<string>>(new Set());
