@@ -425,10 +425,12 @@ export async function analyzeDay(userId: string, day: string) {
     const place = s.place_id ? places.find((p) => p.id === s.place_id) : null;
     const ai = byIndex.get(index);
     const extra = extras.get(index);
+    const receipt = receiptByIndex.get(index);
     const spent = minutes(s.starts_at, s.ends_at);
     const spendTotal = (extra?.purchases ?? []).reduce((sum, p) => sum + p.amount, 0);
     // Ett köp under stoppet gör namnet nästan säkert.
-    const receiptName = extra?.purchases.find((p) => p.note?.trim())?.note?.trim() ?? null;
+    const receiptName =
+      receipt?.label?.trim() || (extra?.purchases.find((p) => p.note?.trim())?.note?.trim() ?? null);
     return {
       user_id: userId,
       day,
@@ -450,12 +452,16 @@ export async function analyzeDay(userId: string, day: string) {
         s.entry_kind === "resa"
           ? "Resa"
           : (place?.name ?? receiptName ?? ai?.label ?? "Okänd plats"),
-      suggested_activity: s.entry_kind === "resa" ? null : (ai?.activity ?? null),
-      reasoning: ai?.reasoning ?? null,
-      confidence: place ? 1 : receiptName ? 0.9 : ai ? 0.6 : 0.3,
+      suggested_activity:
+        s.entry_kind === "resa" ? null : (ai?.activity ?? (receipt ? "Handlade" : null)),
+      reasoning: receipt
+        ? `Kvitto från ${receipt.label ?? "butik"} kopplat till stoppet.`
+        : (ai?.reasoning ?? null),
+      confidence: place ? 1 : receipt ? 0.95 : receiptName ? 0.9 : ai ? 0.6 : 0.3,
       status: "pending",
     };
   });
+
 
 
   const { error } = await supabaseAdmin.from("day_segments").insert(rows);
