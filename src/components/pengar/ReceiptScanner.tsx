@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Camera, Loader2, MapPin, ScanLine, ShoppingCart, Sparkles, Upload } from "lucide-react";
+import { CalendarPlus, Camera, Loader2, MapPin, ScanLine, ShoppingCart, Sparkles, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { SectionCard } from "@/components/SectionCard";
@@ -14,7 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { analyzeReceipt, logReceiptVisit } from "@/lib/finance.functions";
+import { useQueryClient } from "@tanstack/react-query";
+import { analyzeReceipt, logReceiptEvent, logReceiptVisit } from "@/lib/finance.functions";
 import { kr, useSaveSpend, useUploadFinanceFiles, type AccountRow, type SpendRow } from "@/lib/finance";
 import { spendCategories } from "@/lib/spend-categories";
 import { useAddPantryItems } from "@/lib/shopping";
@@ -67,6 +68,8 @@ export function ReceiptScanner({
   const [time, setTime] = useState("");
   const [address, setAddress] = useState("");
   const [markMap, setMarkMap] = useState(true);
+  const [addEvent, setAddEvent] = useState(true);
+  const queryClient = useQueryClient();
   const [category, setCategory] = useState("");
   const [accountId, setAccountId] = useState("");
   const [picked, setPicked] = useState<Set<string>>(new Set());
@@ -152,6 +155,24 @@ export function ReceiptScanner({
               toast.info("Kunde inte markera butiken på kartan.");
             }
           }
+          if (addEvent && (date || merchant || address.trim())) {
+            try {
+              const res = await logReceiptEvent({
+                data: {
+                  merchant: merchant || undefined,
+                  address: address.trim() || undefined,
+                  spentAt,
+                  amount: value,
+                  category: category.trim() || undefined,
+                },
+              });
+              if (res.ok) toast.success(res.message);
+            } catch {
+              toast.info("Kunde inte lägga till kvittot i kalendern.");
+            }
+            void queryClient.invalidateQueries({ queryKey: ["events"] });
+          }
+
           reset();
         },
       },
@@ -274,6 +295,16 @@ export function ReceiptScanner({
             </span>
             <Switch checked={markMap} onCheckedChange={setMarkMap} />
           </label>
+
+          <label className="flex items-center justify-between gap-3 rounded-xl border bg-background/60 px-3 py-2">
+            <span className="flex items-center gap-2 text-sm">
+              <CalendarPlus className="size-4 text-nav-kalender" />
+              Lägg in köpet i kalendern
+            </span>
+            <Switch checked={addEvent} onCheckedChange={setAddEvent} />
+          </label>
+
+
 
 
           <div className="grid grid-cols-2 gap-3">
