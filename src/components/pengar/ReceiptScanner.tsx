@@ -152,6 +152,24 @@ export function ReceiptScanner({
               toast.info("Kunde inte markera butiken på kartan.");
             }
           }
+          if (addEvent && (date || merchant || address.trim())) {
+            try {
+              const res = await logReceiptEvent({
+                data: {
+                  merchant: merchant || undefined,
+                  address: address.trim() || undefined,
+                  spentAt,
+                  amount: value,
+                  category: category.trim() || undefined,
+                },
+              });
+              if (res.ok) toast.success(res.message);
+            } catch {
+              toast.info("Kunde inte lägga till kvittot i kalendern.");
+            }
+            void queryClient.invalidateQueries({ queryKey: ["events"] });
+          }
+
           reset();
         },
       },
