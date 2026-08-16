@@ -14,7 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { analyzeReceipt, logReceiptVisit } from "@/lib/finance.functions";
+import { useQueryClient } from "@tanstack/react-query";
+import { analyzeReceipt, logReceiptEvent, logReceiptVisit } from "@/lib/finance.functions";
 import { kr, useSaveSpend, useUploadFinanceFiles, type AccountRow, type SpendRow } from "@/lib/finance";
 import { spendCategories } from "@/lib/spend-categories";
 import { useAddPantryItems } from "@/lib/shopping";
