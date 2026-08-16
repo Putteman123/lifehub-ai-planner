@@ -296,6 +296,16 @@ export function ReceiptScanner({
             <Switch checked={markMap} onCheckedChange={setMarkMap} />
           </label>
 
+          <label className="flex items-center justify-between gap-3 rounded-xl border bg-background/60 px-3 py-2">
+            <span className="flex items-center gap-2 text-sm">
+              <CalendarPlus className="size-4 text-nav-kalender" />
+              Lägg in köpet i kalendern
+            </span>
+            <Switch checked={addEvent} onCheckedChange={setAddEvent} />
+          </label>
+
+
+
 
           <div className="grid grid-cols-2 gap-3">
             <div>
