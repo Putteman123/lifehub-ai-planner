@@ -256,7 +256,7 @@ async function suggestLabels(
 export async function analyzeDay(userId: string, day: string) {
   const { start, end } = dayRange(day);
 
-  const [pingsRes, placesRes, eventsRes, historyRes, spendRes] = await Promise.all([
+  const [pingsRes, placesRes, eventsRes, historyRes, spendRes, receiptRes] = await Promise.all([
     supabaseAdmin
       .from("location_pings")
       .select("*")
@@ -283,26 +283,58 @@ export async function analyzeDay(userId: string, day: string) {
       .eq("user_id", userId)
       .gte("spent_at", start.toISOString())
       .lt("spent_at", end.toISOString()),
+    // Butiksbesök som skapats från kvitton – används som fasta hållpunkter.
+    supabaseAdmin
+      .from("visits")
+      .select("id, label, address, lat, lng, arrived_at, left_at, place_id, note")
+      .eq("user_id", userId)
+      .eq("source", "kvitto")
+      .gte("arrived_at", start.toISOString())
+      .lt("arrived_at", end.toISOString())
+      .order("arrived_at"),
   ]);
 
   const pings = pingsRes.data ?? [];
   const places = placesRes.data ?? [];
-  if (pings.length < 2) {
-    return { ok: false as const, message: "Det finns för få positioner för den dagen.", count: 0 };
-  }
+  const receiptVisits = (receiptRes.data ?? []).filter((v) => v.lat != null && v.lng != null);
 
-  const segments = segmentPings(pings, places);
-  if (!segments.length) {
-    return { ok: false as const, message: "Hittade inga tydliga stopp den dagen.", count: 0 };
-  }
-
-  const allVisits = historyRes.data ?? [];
   const purchases = (spendRes.data ?? []).map((row) => ({
     amount: Number(row.amount),
     note: row.note,
     category: row.category,
     spent_at: row.spent_at,
   }));
+
+  let segments = pings.length >= 2 ? segmentPings(pings, places) : [];
+
+  // Saknas GPS-data helt kan kvittobesöken ändå bygga upp dagen.
+  if (!segments.length && receiptVisits.length) {
+    segments = receiptVisits.map((v) => ({
+      entry_kind: "besok" as const,
+      starts_at: v.arrived_at,
+      ends_at: v.left_at ?? new Date(new Date(v.arrived_at).getTime() + 15 * 60_000).toISOString(),
+      lat: v.lat as number,
+      lng: v.lng as number,
+      end_lat: null,
+      end_lng: null,
+      distance_m: 0,
+      place_id: v.place_id,
+    }));
+  }
+
+  if (!segments.length) {
+    return {
+      ok: false as const,
+      message:
+        pings.length < 2
+          ? "Det finns för få positioner för den dagen."
+          : "Hittade inga tydliga stopp den dagen.",
+      count: 0,
+    };
+  }
+
+  const allVisits = historyRes.data ?? [];
+
 
   /** Extra sammanhang per stopp: adress, hur ofta du varit där och köp. */
   const extras = new Map<
@@ -328,6 +360,19 @@ export async function analyzeDay(userId: string, day: string) {
     geocoded.map((g) => [g.index, g.place ? `${g.place.shortName} – ${g.place.address}` : null]),
   );
 
+  /** Kvittobesök som matchar ett stopp (närhet i tid och rum). */
+  const receiptByIndex = new Map<number, (typeof receiptVisits)[number]>();
+  for (const { s, index } of stopIndexes) {
+    const from = new Date(s.starts_at).getTime() - 25 * 60_000;
+    const to = new Date(s.ends_at).getTime() + 25 * 60_000;
+    const hit = receiptVisits.find((v) => {
+      const t = new Date(v.arrived_at).getTime();
+      const near = haversineMeters(v.lat as number, v.lng as number, s.lat, s.lng) <= 300;
+      return near || (t >= from && t <= to);
+    });
+    if (hit) receiptByIndex.set(index, hit);
+  }
+
   for (const { s, index } of stopIndexes) {
     const seen = allVisits.filter(
       (v) =>
@@ -343,11 +388,12 @@ export async function analyzeDay(userId: string, day: string) {
       return t >= from && t <= to;
     });
     extras.set(index, {
-      address: addressByIndex.get(index) ?? null,
+      address: receiptByIndex.get(index)?.address ?? addressByIndex.get(index) ?? null,
       seen,
       purchases: bought,
     });
   }
+
 
   const apiKey = process.env["LOVABLE_API_KEY"];
   let suggestions: Suggestion[] = [];
@@ -379,10 +425,12 @@ export async function analyzeDay(userId: string, day: string) {
     const place = s.place_id ? places.find((p) => p.id === s.place_id) : null;
     const ai = byIndex.get(index);
     const extra = extras.get(index);
+    const receipt = receiptByIndex.get(index);
     const spent = minutes(s.starts_at, s.ends_at);
     const spendTotal = (extra?.purchases ?? []).reduce((sum, p) => sum + p.amount, 0);
     // Ett köp under stoppet gör namnet nästan säkert.
-    const receiptName = extra?.purchases.find((p) => p.note?.trim())?.note?.trim() ?? null;
+    const receiptName =
+      receipt?.label?.trim() || (extra?.purchases.find((p) => p.note?.trim())?.note?.trim() ?? null);
     return {
       user_id: userId,
       day,
@@ -404,12 +452,16 @@ export async function analyzeDay(userId: string, day: string) {
         s.entry_kind === "resa"
           ? "Resa"
           : (place?.name ?? receiptName ?? ai?.label ?? "Okänd plats"),
-      suggested_activity: s.entry_kind === "resa" ? null : (ai?.activity ?? null),
-      reasoning: ai?.reasoning ?? null,
-      confidence: place ? 1 : receiptName ? 0.9 : ai ? 0.6 : 0.3,
+      suggested_activity:
+        s.entry_kind === "resa" ? null : (ai?.activity ?? (receipt ? "Handlade" : null)),
+      reasoning: receipt
+        ? `Kvitto från ${receipt.label ?? "butik"} kopplat till stoppet.`
+        : (ai?.reasoning ?? null),
+      confidence: place ? 1 : receipt ? 0.95 : receiptName ? 0.9 : ai ? 0.6 : 0.3,
       status: "pending",
     };
   });
+
 
 
   const { error } = await supabaseAdmin.from("day_segments").insert(rows);

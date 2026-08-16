@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/select";
 import { useQueryClient } from "@tanstack/react-query";
 import { analyzeReceipt, logReceiptEvent, logReceiptVisit } from "@/lib/finance.functions";
+import { analyzeDaySegments } from "@/lib/day-mapping.functions";
+
 import { kr, useSaveSpend, useUploadFinanceFiles, type AccountRow, type SpendRow } from "@/lib/finance";
 import { spendCategories } from "@/lib/spend-categories";
 import { useAddPantryItems } from "@/lib/shopping";
@@ -151,10 +153,25 @@ export function ReceiptScanner({
               });
               if (res.ok) toast.success(res.message);
               else toast.info(res.message);
+
+              if (res.ok) {
+                // Uppdatera "Min dag" så att butiksstoppet kommer med direkt.
+                const day = new Date(spentAt).toLocaleDateString("sv-SE", {
+                  timeZone: "Europe/Stockholm",
+                });
+                try {
+                  await analyzeDaySegments({ data: { day } });
+                } catch {
+                  // Dagskartläggningen kan sakna GPS-data – besöket finns ändå på kartan.
+                }
+                void queryClient.invalidateQueries({ queryKey: ["day_segments", day] });
+                void queryClient.invalidateQueries({ queryKey: ["visits"] });
+              }
             } catch {
               toast.info("Kunde inte markera butiken på kartan.");
             }
           }
+
           if (addEvent && (date || merchant || address.trim())) {
             try {
               const res = await logReceiptEvent({
