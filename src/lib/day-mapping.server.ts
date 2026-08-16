@@ -256,7 +256,7 @@ async function suggestLabels(
 export async function analyzeDay(userId: string, day: string) {
   const { start, end } = dayRange(day);
 
-  const [pingsRes, placesRes, eventsRes, historyRes, spendRes] = await Promise.all([
+  const [pingsRes, placesRes, eventsRes, historyRes, spendRes, receiptRes] = await Promise.all([
     supabaseAdmin
       .from("location_pings")
       .select("*")
@@ -283,26 +283,58 @@ export async function analyzeDay(userId: string, day: string) {
       .eq("user_id", userId)
       .gte("spent_at", start.toISOString())
       .lt("spent_at", end.toISOString()),
+    // Butiksbesök som skapats från kvitton – används som fasta hållpunkter.
+    supabaseAdmin
+      .from("visits")
+      .select("id, label, address, lat, lng, arrived_at, left_at, place_id, note")
+      .eq("user_id", userId)
+      .eq("source", "kvitto")
+      .gte("arrived_at", start.toISOString())
+      .lt("arrived_at", end.toISOString())
+      .order("arrived_at"),
   ]);
 
   const pings = pingsRes.data ?? [];
   const places = placesRes.data ?? [];
-  if (pings.length < 2) {
-    return { ok: false as const, message: "Det finns för få positioner för den dagen.", count: 0 };
-  }
+  const receiptVisits = (receiptRes.data ?? []).filter((v) => v.lat != null && v.lng != null);
 
-  const segments = segmentPings(pings, places);
-  if (!segments.length) {
-    return { ok: false as const, message: "Hittade inga tydliga stopp den dagen.", count: 0 };
-  }
-
-  const allVisits = historyRes.data ?? [];
   const purchases = (spendRes.data ?? []).map((row) => ({
     amount: Number(row.amount),
     note: row.note,
     category: row.category,
     spent_at: row.spent_at,
   }));
+
+  let segments = pings.length >= 2 ? segmentPings(pings, places) : [];
+
+  // Saknas GPS-data helt kan kvittobesöken ändå bygga upp dagen.
+  if (!segments.length && receiptVisits.length) {
+    segments = receiptVisits.map((v) => ({
+      entry_kind: "besok" as const,
+      starts_at: v.arrived_at,
+      ends_at: v.left_at ?? new Date(new Date(v.arrived_at).getTime() + 15 * 60_000).toISOString(),
+      lat: v.lat as number,
+      lng: v.lng as number,
+      end_lat: null,
+      end_lng: null,
+      distance_m: 0,
+      place_id: v.place_id,
+    }));
+  }
+
+  if (!segments.length) {
+    return {
+      ok: false as const,
+      message:
+        pings.length < 2
+          ? "Det finns för få positioner för den dagen."
+          : "Hittade inga tydliga stopp den dagen.",
+      count: 0,
+    };
+  }
+
+  const allVisits = historyRes.data ?? [];
+
 
   /** Extra sammanhang per stopp: adress, hur ofta du varit där och köp. */
   const extras = new Map<
