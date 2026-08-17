@@ -193,6 +193,31 @@ function SpendCard({ accounts, spends }: { accounts: AccountRow[]; spends: Spend
   const categories = spendCategories(spends);
   const suggestion = guessCategory(note, spends);
 
+  /** Kontot som snabbknapparna drar från (SEB om det finns). */
+  const sebAccount =
+    accounts.find((acc) => acc.name.toLowerCase().includes("seb")) ?? accounts[0] ?? null;
+
+  function quickSpend(label: string, value: number, cat: string) {
+    if (!sebAccount) {
+      toast.info("Lägg till ett konto först.");
+      return;
+    }
+    save.mutate(
+      {
+        values: {
+          amount: value,
+          note: label,
+          category: cat,
+          account_id: sebAccount.id,
+          spent_at: new Date().toISOString(),
+        },
+      },
+      {
+        onSuccess: () => toast.success(`${label} ${kr(value)} från ${sebAccount.name}`),
+      },
+    );
+  }
+
   function submit() {
     const value = num(amount);
     if (!value) return;
@@ -215,6 +240,7 @@ function SpendCard({ accounts, spends }: { accounts: AccountRow[]; spends: Spend
       },
     );
   }
+
 
   return (
     <SectionCard title="Spenderat" icon={Receipt} accent="text-cat-viktigt" tint="bg-cat-viktigt/12">
