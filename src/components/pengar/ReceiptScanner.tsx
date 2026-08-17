@@ -398,7 +398,29 @@ export function ReceiptScanner({
             </div>
           </div>
 
+          {tobaccoSplits.length > 0 ? (
+            <div className="rounded-2xl border border-border/60 bg-muted/40 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  <Cigarette className="size-3.5" /> Tobak hittad – bokförs separat
+                </p>
+                <Switch checked={splitTobacco} onCheckedChange={setSplitTobacco} />
+              </div>
+              <ul className="mt-2 space-y-1 text-sm">
+                {tobaccoSplits.map((row) => (
+                  <li key={row.category} className="flex justify-between tabular-nums">
+                    <span>
+                      {row.category} · {row.names.join(", ")}
+                    </span>
+                    <span>{Math.round(row.amount)} kr</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           {read.groceries.length > 0 ? (
+
             <div>
               <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                 <ShoppingCart className="size-3.5" /> Dagligvaror till Skafferiet – tryck för att välja
