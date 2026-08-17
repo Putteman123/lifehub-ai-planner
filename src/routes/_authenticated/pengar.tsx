@@ -246,6 +246,20 @@ function SpendCard({ accounts, spends }: { accounts: AccountRow[]; spends: Spend
 
   return (
     <SectionCard title="Spenderat" icon={Receipt} accent="text-cat-viktigt" tint="bg-cat-viktigt/12">
+      <div className="mb-3 flex flex-wrap gap-2">
+        <Button
+          variant="outline"
+          className="h-11 rounded-xl"
+          disabled={save.isPending}
+          onClick={() => quickSpend("Cigaretter", 89, "Cigaretter")}
+        >
+          <Cigarette className="size-4" />
+          Cigaretter 89 kr
+        </Button>
+        <span className="self-center text-xs text-muted-foreground">
+          {sebAccount ? `Dras från ${sebAccount.name}` : "Inget konto ännu"}
+        </span>
+      </div>
       <Input
         inputMode="decimal"
         value={amount}
@@ -254,6 +268,7 @@ function SpendCard({ accounts, spends }: { accounts: AccountRow[]; spends: Spend
         aria-label="Belopp i kronor"
         className="h-[92px] rounded-2xl text-center !text-[44px] font-semibold tabular-nums"
       />
+
       <Input
         value={note}
         onChange={(e) => setNote(e.target.value)}
