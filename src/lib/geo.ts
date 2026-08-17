@@ -76,6 +76,43 @@ export function matchPlace<T extends { lat: number; lng: number; radius_m: numbe
   return best;
 }
 
+/**
+ * Som matchPlace men med marginal för GPS-spridning: ett stopp vars mittpunkt
+ * hamnar strax utanför radien räknas ändå till platsen.
+ */
+export function matchPlaceNear<T extends { lat: number; lng: number; radius_m: number }>(
+  places: T[],
+  lat: number,
+  lng: number,
+  toleranceM = 80,
+): T | null {
+  const exact = matchPlace(places, lat, lng);
+  if (exact) return exact;
+  let best: T | null = null;
+  let bestDistance = Infinity;
+  for (const place of places) {
+    const distance = haversineMeters(lat, lng, place.lat, place.lng);
+    if (distance <= place.radius_m + toleranceM && distance < bestDistance) {
+      best = place;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
+
+/** Gemensam gissning av färdsätt utifrån sträcka och restid. */
+export function guessTravelMode(meters: number, minutesSpent: number): TravelMode {
+  if (minutesSpent <= 0 || meters <= 0) return "okant";
+  const kmh = meters / 1000 / (minutesSpent / 60);
+  // Låga farter och korta sträckor = gång eller cykel.
+  if (kmh < 11 && meters < 8000) return "gang_cykel";
+  // Jämn medelfart över längre sträcka utan riktigt hög topp = kollektivt.
+  if (kmh >= 11 && kmh < 34 && meters >= 2500) return "kollektivt";
+  if (kmh < 11) return "okant";
+  return "bil";
+}
+
+
 /** Besökets längd i minuter (öppet besök räknas fram till nu). */
 export function visitMinutes(visit: Pick<VisitRow, "arrived_at" | "left_at">, now = new Date()) {
   const start = new Date(visit.arrived_at).getTime();
