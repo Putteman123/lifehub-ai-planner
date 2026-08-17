@@ -160,11 +160,28 @@ export function ReceiptScanner({
       {
 
         onSuccess: async () => {
+          for (const row of splits) {
+            await saveSpend.mutateAsync({
+              values: {
+                amount: row.amount,
+                note: `${row.category}${merchant ? ` – ${merchant}` : ""}`,
+                category: row.category,
+                account_id: accountId || null,
+                spent_at: spentAt,
+              },
+            });
+          }
+          if (splits.length) {
+            toast.success(
+              `Tobak bokförd separat: ${splits.map((r) => r.category).join(" och ")}`,
+            );
+          }
           const names = [...picked];
           if (names.length) {
             await addPantry.mutateAsync({ names, purchasedAt: spentAt });
             toast.success(`${names.length} varor sparades i Skafferiet`);
           }
+
           if (markMap && merchant) {
             try {
               const res = await logReceiptVisit({
