@@ -1,4 +1,5 @@
 import { ANDREA_FAST_MODEL } from "@/lib/ai-models";
+import { tobaccoCategory } from "@/lib/spend-categories";
 
 export type ReceiptRead = {
   merchant: string | null;
@@ -9,6 +10,8 @@ export type ReceiptRead = {
   category: string | null;
   kind: "kvitto" | "faktura" | "annat";
   groceries: { name: string; quantity: string | null }[];
+  /** Tobak (cigaretter/snus) hålls skilt från mat och hamnar inte i skafferiet. */
+  tobacco: { name: string; category: "Cigaretter" | "Snus"; amount: number | null }[];
 };
 
 const SCHEMA = {
@@ -34,8 +37,31 @@ const SCHEMA = {
         required: ["name", "quantity"],
       },
     },
+    tobacco: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          name: { type: "string" },
+          category: { type: "string", enum: ["Cigaretter", "Snus"] },
+          amount: { type: "number" },
+        },
+        required: ["name", "category", "amount"],
+      },
+    },
   },
-  required: ["merchant", "address", "total", "date", "time", "category", "kind", "groceries"],
+  required: [
+    "merchant",
+    "address",
+    "total",
+    "date",
+    "time",
+    "category",
+    "kind",
+    "groceries",
+    "tobacco",
+  ],
 } as const;
 
 
@@ -57,7 +83,7 @@ export async function readReceipt(opts: {
       text:
         `Läs av detta kvitto/faktura. Använd i första hand någon av användarens befintliga kategorier: ${
           opts.knownCategories.join(", ") || "inga ännu"
-        }. Skapa bara en ny kategori om ingen passar. Datum i formatet YYYY-MM-DD. time = klockslaget på kvittot i formatet HH:MM, tom sträng om det saknas. address = butikens fullständiga gatuadress med ort precis som den står på kvittot (tom sträng om den saknas). total = totalbeloppet i kronor som ett tal. groceries = endast dagligvaror (mat, dryck, hushåll) med korta svenska varunamn i singular, quantity kan vara tom sträng. Är det en faktura eller ett dokument utan varor ska groceries vara tom.`,
+        }. Skapa bara en ny kategori om ingen passar. Datum i formatet YYYY-MM-DD. time = klockslaget på kvittot i formatet HH:MM, tom sträng om det saknas. address = butikens fullständiga gatuadress med ort precis som den står på kvittot (tom sträng om den saknas). total = totalbeloppet i kronor som ett tal. groceries = endast dagligvaror (mat, dryck, hushåll) med korta svenska varunamn i singular, quantity kan vara tom sträng. Tobak får ALDRIG ligga i groceries: cigaretter, cigarrer, röktobak, snus och nikotinpåsar läggs i stället i tobacco med category "Cigaretter" eller "Snus" och amount = radens pris i kronor (0 om priset saknas). Är det en faktura eller ett dokument utan varor ska groceries vara tom.`,
     },
     isPdf
       ? {
@@ -105,7 +131,10 @@ export async function readReceipt(opts: {
     .replace(/```$/, "")
     .trim();
 
-  let parsed: Partial<ReceiptRead> & { groceries?: { name?: string; quantity?: string }[] };
+  let parsed: Partial<ReceiptRead> & {
+    groceries?: { name?: string; quantity?: string }[];
+    tobacco?: { name?: string; category?: string; amount?: number }[];
+  };
   try {
     parsed = JSON.parse(raw);
   } catch {
@@ -126,7 +155,23 @@ export async function readReceipt(opts: {
         name: String(item.name ?? "").trim(),
         quantity: item.quantity?.trim() ? item.quantity.trim() : null,
       }))
-      .filter((item) => item.name.length > 0)
+      .filter((item) => item.name.length > 0 && !tobaccoCategory(item.name))
       .slice(0, 40),
+    tobacco: (parsed.tobacco ?? [])
+      .map((item) => {
+        const name = String(item.name ?? "").trim();
+        const amount = Number(item.amount);
+        return {
+          name,
+          category: (item.category === "Snus"
+            ? "Snus"
+            : item.category === "Cigaretter"
+              ? "Cigaretter"
+              : (tobaccoCategory(name) ?? "Cigaretter")) as "Cigaretter" | "Snus",
+          amount: Number.isFinite(amount) && amount > 0 ? amount : null,
+        };
+      })
+      .filter((item) => item.name.length > 0)
+      .slice(0, 20),
   };
 }
