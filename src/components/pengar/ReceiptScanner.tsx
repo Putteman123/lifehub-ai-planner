@@ -75,8 +75,25 @@ export function ReceiptScanner({
   const [category, setCategory] = useState("");
   const [accountId, setAccountId] = useState("");
   const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [splitTobacco, setSplitTobacco] = useState(true);
 
   const categories = spendCategories(spends);
+
+  /** Tobaksrader summerade per kategori (Cigaretter/Snus). */
+  const tobaccoSplits: { category: "Cigaretter" | "Snus"; amount: number; names: string[] }[] =
+    Object.values(
+      (read?.tobacco ?? []).reduce<
+        Record<string, { category: "Cigaretter" | "Snus"; amount: number; names: string[] }>
+      >((acc, item) => {
+        const key = item.category;
+        const row = acc[key] ?? { category: item.category, amount: 0, names: [] };
+        row.amount += item.amount ?? 0;
+        row.names.push(item.name);
+        acc[key] = row;
+        return acc;
+      }, {}),
+    ).filter((row) => row.amount > 0);
+
 
   async function handleFile(file: File) {
     setBusy(true);
