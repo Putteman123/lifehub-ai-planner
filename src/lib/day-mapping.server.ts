@@ -1,5 +1,14 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { haversineMeters, matchPlace, type PingRow, type PlaceRow } from "@/lib/geo";
+import {
+  ROUTE_FACTOR,
+  guessTravelMode,
+  haversineMeters,
+  matchPlace,
+  matchPlaceNear,
+  type PingRow,
+  type PlaceRow,
+} from "@/lib/geo";
+
 import { APP_TZ, timeLocal } from "@/lib/tz";
 
 /**
