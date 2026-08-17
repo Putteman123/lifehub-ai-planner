@@ -3,6 +3,8 @@ import type { SpendRow } from "@/lib/finance";
 /** Grundkategorier som alltid finns med i väljaren. */
 export const DEFAULT_SPEND_CATEGORIES = [
   "Dagligvaror",
+  "Cigaretter",
+  "Snus",
   "Restaurang",
   "Transport",
   "Boende",
@@ -13,6 +15,19 @@ export const DEFAULT_SPEND_CATEGORIES = [
   "Prenumerationer",
   "Övrigt",
 ];
+
+/** Kategorin cigaretter, snus eller null – utifrån ett varunamn. */
+export function tobaccoCategory(name: string): "Cigaretter" | "Snus" | null {
+  const key = name.toLowerCase();
+  const snus =
+    /\b(snus|portion|prilla|general|ettan|gr[oö]v|catch|lyft|zyn|velo|siberia|skruf|kaliber|nicotine pouch|nikotinp[aå]s)/;
+  const cigs =
+    /\b(cigarett|cigaretter|marlboro|l&m|lucky strike|camel|prince|blend|chesterfield|winston|pall mall|john silver|r[oö]ktobak|cigarr|tobak)/;
+  if (snus.test(key)) return "Snus";
+  if (cigs.test(key)) return "Cigaretter";
+  return null;
+}
+
 
 /** Kategorier användaren redan använt, mest använda först, plus grundkategorierna. */
 export function spendCategories(spends: SpendRow[]) {

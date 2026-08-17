@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/integrations/supabase/types";
-import { distanceMatches, type PlaceRow, type VisitRow } from "@/lib/geo";
+import { distanceMatches, guessTravelMode, type PlaceRow, type VisitRow } from "@/lib/geo";
 import { endpointKey, weekdayIndex } from "@/lib/route-key";
 
 type Client = SupabaseClient<Database>;
@@ -27,11 +27,7 @@ function visitEnd(visit: VisitRow, places: PlaceRow[]): Point {
 
 /** Gissar färdsätt utifrån snitthastighet och sträcka. */
 function guessMode(meters: number, minutes: number): TravelMode {
-  if (minutes <= 0 || meters <= 0) return "okant";
-  const kmh = meters / 1000 / (minutes / 60);
-  if (kmh < 9) return "gang_cykel";
-  if (kmh < 35 && meters > 3000) return "kollektivt";
-  return "bil";
+  return guessTravelMode(meters, minutes);
 }
 
 async function loadContext(supabase: Client, userId: string, visitId: string) {

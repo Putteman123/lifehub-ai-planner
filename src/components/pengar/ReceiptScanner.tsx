@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { CalendarPlus, Camera, Loader2, MapPin, ScanLine, ShoppingCart, Sparkles, Upload } from "lucide-react";
+import { CalendarPlus, Camera, Cigarette, Loader2, MapPin, ScanLine, ShoppingCart, Sparkles, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { SectionCard } from "@/components/SectionCard";
@@ -75,8 +75,25 @@ export function ReceiptScanner({
   const [category, setCategory] = useState("");
   const [accountId, setAccountId] = useState("");
   const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [splitTobacco, setSplitTobacco] = useState(true);
 
   const categories = spendCategories(spends);
+
+  /** Tobaksrader summerade per kategori (Cigaretter/Snus). */
+  const tobaccoSplits: { category: "Cigaretter" | "Snus"; amount: number; names: string[] }[] =
+    Object.values(
+      (read?.tobacco ?? []).reduce<
+        Record<string, { category: "Cigaretter" | "Snus"; amount: number; names: string[] }>
+      >((acc, item) => {
+        const key = item.category;
+        const row = acc[key] ?? { category: item.category, amount: 0, names: [] };
+        row.amount += item.amount ?? 0;
+        row.names.push(item.name);
+        acc[key] = row;
+        return acc;
+      }, {}),
+    ).filter((row) => row.amount > 0);
+
 
   async function handleFile(file: File) {
     setBusy(true);
@@ -124,10 +141,16 @@ export function ReceiptScanner({
       ? new Date(`${date}T${clock}:00`).toISOString()
       : new Date().toISOString();
     const merchant = note.trim();
+
+    // Tobak bokförs som egna poster (Cigaretter/Snus) skilt från maten.
+    const splits = splitTobacco ? tobaccoSplits : [];
+    const splitSum = splits.reduce((sum, row) => sum + row.amount, 0);
+    const mainAmount = splitSum > 0 && splitSum < value ? value - splitSum : value;
+
     saveSpend.mutate(
       {
         values: {
-          amount: value,
+          amount: mainAmount,
           note: merchant || null,
           category: category.trim() || null,
           account_id: accountId || null,
@@ -135,12 +158,30 @@ export function ReceiptScanner({
         },
       },
       {
+
         onSuccess: async () => {
+          for (const row of splits) {
+            await saveSpend.mutateAsync({
+              values: {
+                amount: row.amount,
+                note: `${row.category}${merchant ? ` – ${merchant}` : ""}`,
+                category: row.category,
+                account_id: accountId || null,
+                spent_at: spentAt,
+              },
+            });
+          }
+          if (splits.length) {
+            toast.success(
+              `Tobak bokförd separat: ${splits.map((r) => r.category).join(" och ")}`,
+            );
+          }
           const names = [...picked];
           if (names.length) {
             await addPantry.mutateAsync({ names, purchasedAt: spentAt });
             toast.success(`${names.length} varor sparades i Skafferiet`);
           }
+
           if (markMap && merchant) {
             try {
               const res = await logReceiptVisit({
@@ -357,7 +398,29 @@ export function ReceiptScanner({
             </div>
           </div>
 
+          {tobaccoSplits.length > 0 ? (
+            <div className="rounded-2xl border border-border/60 bg-muted/40 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  <Cigarette className="size-3.5" /> Tobak hittad – bokförs separat
+                </p>
+                <Switch checked={splitTobacco} onCheckedChange={setSplitTobacco} />
+              </div>
+              <ul className="mt-2 space-y-1 text-sm">
+                {tobaccoSplits.map((row) => (
+                  <li key={row.category} className="flex justify-between tabular-nums">
+                    <span>
+                      {row.category} · {row.names.join(", ")}
+                    </span>
+                    <span>{Math.round(row.amount)} kr</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           {read.groceries.length > 0 ? (
+
             <div>
               <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                 <ShoppingCart className="size-3.5" /> Dagligvaror till Skafferiet – tryck för att välja
