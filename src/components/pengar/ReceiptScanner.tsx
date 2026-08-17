@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { CalendarPlus, Camera, Loader2, MapPin, ScanLine, ShoppingCart, Sparkles, Upload } from "lucide-react";
+import { CalendarPlus, Camera, Cigarette, Loader2, MapPin, ScanLine, ShoppingCart, Sparkles, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { SectionCard } from "@/components/SectionCard";
@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
-  Cigarette,
   Select,
   SelectContent,
   SelectItem,
