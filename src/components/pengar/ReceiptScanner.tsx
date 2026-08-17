@@ -124,10 +124,16 @@ export function ReceiptScanner({
       ? new Date(`${date}T${clock}:00`).toISOString()
       : new Date().toISOString();
     const merchant = note.trim();
+
+    // Tobak bokförs som egna poster (Cigaretter/Snus) skilt från maten.
+    const splits = splitTobacco ? tobaccoSplits : [];
+    const splitSum = splits.reduce((sum, row) => sum + row.amount, 0);
+    const mainAmount = splitSum > 0 && splitSum < value ? value - splitSum : value;
+
     saveSpend.mutate(
       {
         values: {
-          amount: value,
+          amount: mainAmount,
           note: merchant || null,
           category: category.trim() || null,
           account_id: accountId || null,
@@ -135,6 +141,7 @@ export function ReceiptScanner({
         },
       },
       {
+
         onSuccess: async () => {
           const names = [...picked];
           if (names.length) {
