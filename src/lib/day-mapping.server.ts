@@ -48,23 +48,69 @@ export function dayRange(day: string) {
   return { start, end };
 }
 
+/** Kastar orimliga hopp (GPS-spikar) genom att titta på farten mellan pingar. */
+function dropOutliers(pings: PingRow[]): PingRow[] {
+  const out: PingRow[] = [];
+  for (const ping of pings) {
+    const prev = out[out.length - 1];
+    if (!prev) {
+      out.push(ping);
+      continue;
+    }
+    const seconds =
+      (new Date(ping.recorded_at).getTime() - new Date(prev.recorded_at).getTime()) / 1000;
+    if (seconds <= 0) continue;
+    const meters = haversineMeters(prev.lat, prev.lng, ping.lat, ping.lng);
+    // Över 60 m/s (216 km/h) är det brus, inte en förflyttning.
+    if (meters / seconds > 60) continue;
+    out.push(ping);
+  }
+  return out;
+}
+
+function median(values: number[]) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  if (!sorted.length) return 0;
+  return sorted.length % 2 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
+}
+
+/** Faktisk sträcka längs en rutt, med brusgolv så stillastående inte ger km. */
+function pathMeters(path: PingRow[]) {
+  let total = 0;
+  for (let i = 1; i < path.length; i++) {
+    const a = path[i - 1]!;
+    const b = path[i]!;
+    const step = haversineMeters(a.lat, a.lng, b.lat, b.lng);
+    // Hopp under 30 m är oftast GPS-spridning när man står stilla.
+    if (step >= 30) total += step;
+  }
+  return total;
+}
+
 /** Delar upp pingar i stopp och förflyttningar. */
 export function segmentPings(pings: PingRow[], places: PlaceRow[]): RawSegment[] {
-  const clean = pings
-    .filter((p) => p.accuracy_m == null || p.accuracy_m < 500)
-    .sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
+  const sorted = pings.sort((a, b) => a.recorded_at.localeCompare(b.recorded_at));
+  // Använd i första hand bra fixar; finns för få faller vi tillbaka på allt.
+  const accurate = sorted.filter((p) => p.accuracy_m == null || p.accuracy_m <= 120);
+  const clean = dropOutliers(accurate.length >= 5 ? accurate : sorted);
   if (clean.length < 2) return [];
 
   type Cluster = { pings: PingRow[]; lat: number; lng: number };
+
+  /** Mittpunkt som median – tål enstaka snedsteg bättre än ett glidande snitt. */
+  const center = (cluster: Cluster) => {
+    cluster.lat = median(cluster.pings.map((p) => p.lat));
+    cluster.lng = median(cluster.pings.map((p) => p.lng));
+  };
+
   const clusters: Cluster[] = [];
   let current: Cluster | null = null;
 
   for (const ping of clean) {
     if (current && haversineMeters(current.lat, current.lng, ping.lat, ping.lng) <= STOP_RADIUS_M) {
       current.pings.push(ping);
-      const n = current.pings.length;
-      current.lat += (ping.lat - current.lat) / n;
-      current.lng += (ping.lng - current.lng) / n;
+      center(current);
       continue;
     }
     if (current) clusters.push(current);
@@ -72,8 +118,28 @@ export function segmentPings(pings: PingRow[], places: PlaceRow[]): RawSegment[]
   }
   if (current) clusters.push(current);
 
+  // Slå ihop kluster som ligger på samma ställe med bara en kort lucka emellan
+  // (t.ex. när GPS:en tappar in och ut medan man står stilla).
+  const merged: Cluster[] = [];
+  for (const cluster of clusters) {
+    const prev = merged[merged.length - 1];
+    if (prev) {
+      const gapMinutes = minutes(
+        prev.pings[prev.pings.length - 1]!.recorded_at,
+        cluster.pings[0]!.recorded_at,
+      );
+      const apart = haversineMeters(prev.lat, prev.lng, cluster.lat, cluster.lng);
+      if (apart <= STOP_RADIUS_M * 1.6 && gapMinutes <= 25) {
+        prev.pings.push(...cluster.pings);
+        center(prev);
+        continue;
+      }
+    }
+    merged.push(cluster);
+  }
+
   // Behåll bara kluster som varade tillräckligt länge – resten är förflyttning.
-  const stops = clusters.filter((c) => {
+  const stops = merged.filter((c) => {
     const first = c.pings[0]!;
     const last = c.pings[c.pings.length - 1]!;
     return minutes(first.recorded_at, last.recorded_at) >= MIN_STOP_MINUTES;
@@ -91,18 +157,15 @@ export function segmentPings(pings: PingRow[], places: PlaceRow[]): RawSegment[]
       const prevLast = previous.pings[previous.pings.length - 1]!;
       // Summera faktisk sträcka mellan de två stoppen.
       const between = clean.filter(
-        (p) =>
-          p.recorded_at > prevLast.recorded_at && p.recorded_at < first.recorded_at,
+        (p) => p.recorded_at > prevLast.recorded_at && p.recorded_at < first.recorded_at,
       );
       const path = [prevLast, ...between, first];
-      let distance = 0;
-      for (let i = 1; i < path.length; i++) {
-        const a = path[i - 1]!;
-        const b = path[i]!;
-        distance += haversineMeters(a.lat, a.lng, b.lat, b.lng);
-      }
+      const tracked = pathMeters(path);
+      const straight = haversineMeters(prevLast.lat, prevLast.lng, first.lat, first.lng);
+      // Har spårningen luckor blir fågelvägen (med vägfaktor) mer rättvis.
+      const distance = Math.max(tracked, straight * ROUTE_FACTOR);
 
-      if (distance >= MIN_MOVE_METERS) {
+      if (distance >= MIN_MOVE_METERS && straight >= MIN_MOVE_METERS / 2) {
         segments.push({
           entry_kind: "resa",
           starts_at: prevLast.recorded_at,
@@ -117,7 +180,7 @@ export function segmentPings(pings: PingRow[], places: PlaceRow[]): RawSegment[]
       }
     }
 
-    const place = matchPlace(places, stop.lat, stop.lng);
+    const place = matchPlaceNear(places, stop.lat, stop.lng);
     segments.push({
       entry_kind: "besok",
       starts_at: first.recorded_at,
@@ -136,12 +199,9 @@ export function segmentPings(pings: PingRow[], places: PlaceRow[]): RawSegment[]
 }
 
 function travelModeFor(distanceM: number, minutesSpent: number) {
-  if (minutesSpent <= 0) return "okant" as const;
-  const kmh = distanceM / 1000 / (minutesSpent / 60);
-  if (kmh < 9) return "gang_cykel" as const;
-  if (kmh < 32) return "kollektivt" as const;
-  return "bil" as const;
+  return guessTravelMode(distanceM, minutesSpent);
 }
+
 
 type Suggestion = { index: number; label: string; activity: string; reasoning: string };
 
