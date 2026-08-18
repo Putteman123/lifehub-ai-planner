@@ -551,6 +551,26 @@ export async function analyzeDay(userId: string, day: string) {
     .eq("day", day)
     .neq("status", "accepted");
 
+  // Verklig körsträcka och restid för resorna via Google Routes.
+  // Rätt sträcka gör också att färdsättet blir rimligt (bil/kollektivt/gång).
+  const tripIndexes = segments
+    .map((s, index) => ({ s, index }))
+    .filter(({ s }) => s.entry_kind === "resa" && s.end_lat != null && s.end_lng != null)
+    .slice(0, 15);
+
+  const { resolveLeg } = await import("@/lib/maps.server");
+  const routeByIndex = new Map<number, { meters: number; minutes: number }>();
+  for (const { s, index } of tripIndexes) {
+    const spent = minutes(s.starts_at, s.ends_at);
+    const guess = travelModeFor(s.distance_m, spent);
+    const leg = await resolveLeg({
+      origin: { lat: s.lat, lng: s.lng },
+      destination: { lat: s.end_lat as number, lng: s.end_lng as number },
+      mode: guess === "okant" ? "bil" : guess,
+    }).catch(() => null);
+    if (leg?.meters) routeByIndex.set(index, { meters: leg.meters, minutes: leg.minutes });
+  }
+
   const rows = segments.map((s, index) => {
     const place = s.place_id ? places.find((p) => p.id === s.place_id) : null;
     const ai = byIndex.get(index);
@@ -561,6 +581,10 @@ export async function analyzeDay(userId: string, day: string) {
     // Ett köp under stoppet gör namnet nästan säkert.
     const receiptName =
       receipt?.label?.trim() || (extra?.purchases.find((p) => p.note?.trim())?.note?.trim() ?? null);
+    const route = routeByIndex.get(index);
+    const distance = route?.meters ?? s.distance_m;
+    // Kalenderträff höjer tilltron till AI:ns tolkning.
+    const calendarHit = (extra?.calendar.length ?? 0) > 0;
     return {
       user_id: userId,
       day,
@@ -571,9 +595,8 @@ export async function analyzeDay(userId: string, day: string) {
       lng: s.lng,
       end_lat: s.end_lat,
       end_lng: s.end_lng,
-      distance_m: s.distance_m,
-      travel_mode:
-        s.entry_kind === "resa" ? travelModeFor(s.distance_m, spent) : ("okant" as const),
+      distance_m: Math.round(distance),
+      travel_mode: s.entry_kind === "resa" ? travelModeFor(distance, spent) : ("okant" as const),
       place_id: s.place_id,
       address: s.entry_kind === "besok" ? (extra?.address ?? null) : null,
       seen_count: extra?.seen ?? 0,
@@ -584,13 +607,27 @@ export async function analyzeDay(userId: string, day: string) {
           : (place?.name ?? receiptName ?? ai?.label ?? "Okänd plats"),
       suggested_activity:
         s.entry_kind === "resa" ? null : (ai?.activity ?? (receipt ? "Handlade" : null)),
-      reasoning: receipt
-        ? `Kvitto från ${receipt.label ?? "butik"} kopplat till stoppet.`
-        : (ai?.reasoning ?? null),
-      confidence: place ? 1 : receipt ? 0.95 : receiptName ? 0.9 : ai ? 0.6 : 0.3,
+      reasoning:
+        s.entry_kind === "resa"
+          ? route
+            ? `Google Routes: ${(route.meters / 1000).toFixed(1)} km, ca ${route.minutes} min.`
+            : null
+          : receipt
+            ? `Kvitto från ${receipt.label ?? "butik"} kopplat till stoppet.`
+            : (ai?.reasoning ?? null),
+      confidence: place
+        ? 1
+        : receipt
+          ? 0.95
+          : receiptName
+            ? 0.9
+            : ai
+              ? Math.min(0.95, 0.6 + (calendarHit ? 0.2 : 0) + ((extra?.nearby.length ?? 0) ? 0.1 : 0))
+              : 0.3,
       status: "pending",
     };
   });
+
 
 
 
