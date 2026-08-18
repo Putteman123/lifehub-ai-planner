@@ -425,10 +425,22 @@ function PinGate() {
             </>
           ) : (
             <>
-              <Lock className="size-3.5" /> Endast du har tillgång
+              <Lock className="size-3.5" /> {email ?? "Ditt konto"}
             </>
           )}
         </p>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mt-1 text-xs text-muted-foreground"
+          onClick={() => {
+            void supabase.auth.signOut().then(() => window.location.reload());
+          }}
+        >
+          Byt konto
+        </Button>
+
       </div>
     </main>
   );
