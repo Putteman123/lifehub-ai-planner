@@ -9,6 +9,7 @@ import {
   type PlaceRow,
 } from "@/lib/geo";
 
+import { inferTravelMode, type NearbyLite } from "@/lib/travel-mode-infer";
 import { APP_TZ, timeLocal } from "@/lib/tz";
 
 /**
