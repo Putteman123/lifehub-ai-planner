@@ -102,6 +102,9 @@ const ACTION_LABELS: Record<string, string> = {
   delete_visit: "Ta bort en post i platsloggen",
   check_in: "Checka in på en plats",
   end_visit: "Avsluta pågående besök",
+  save_uploaded_file: "Spara den uppladdade filen",
+  add_pantry_items: "Lägga in varorna i skafferiet",
+  log_receipt_place: "Markera butiken på kartan och i kalendern",
 };
 
 type ToolPart = {
