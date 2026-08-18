@@ -90,3 +90,18 @@ export async function resolveAddressPoint(query: string) {
     return null;
   }
 }
+
+/** Verksamheter runt en punkt – ger AI riktiga butiks-/kontorsnamn. */
+export async function resolveNearbyPlaces(
+  lat: number,
+  lng: number,
+  radiusM = 130,
+): Promise<NearbyPlace[]> {
+  if (!hasGoogle("maps")) return [];
+  try {
+    return await placesNearby(lat, lng, radiusM);
+  } catch (error) {
+    console.error("Google Places-sökning misslyckades:", error);
+    return [];
+  }
+}
