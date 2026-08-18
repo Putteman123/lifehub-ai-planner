@@ -56,6 +56,33 @@ function textOf(m: UIMessage) {
     .join("");
 }
 
+/** Bifogad fil som laddats upp men ännu inte skickats till Andrea. */
+type Attachment = {
+  name: string;
+  mediaType: string;
+  dataUrl: string;
+  storagePath: string;
+};
+
+const MAX_FILE_BYTES = 8 * 1024 * 1024;
+
+function readAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Kunde inte läsa filen."));
+    reader.readAsDataURL(file);
+  });
+}
+
+/** Historik utan tunga fildata så localStorage inte spränger kvoten. */
+function slimForStorage(messages: UIMessage[]): UIMessage[] {
+  return messages.map((m) => ({
+    ...m,
+    parts: m.parts.filter((p) => (p as { type: string }).type !== "file"),
+  }));
+}
+
 /** Verktyg som ändrar data i appen och därför måste godkännas. */
 const ACTION_LABELS: Record<string, string> = {
   create_event: "Lägga in en händelse i kalendern",
@@ -268,16 +295,81 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
 
 
   const [input, setInput] = useState("");
+  const [files, setFiles] = useState<Attachment[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const isLoading = status === "submitted" || status === "streaming";
 
+  async function pickFiles(list: FileList | null) {
+    if (!list?.length) return;
+    setFileError(null);
+    setUploading(true);
+    try {
+      const { data } = await supabase.auth.getUser();
+      const userId = data.user?.id;
+      if (!userId) throw new Error("Du är inte inloggad.");
+
+      const added: Attachment[] = [];
+      for (const file of Array.from(list)) {
+        if (file.size > MAX_FILE_BYTES) {
+          setFileError(`${file.name} är för stor (max 8 MB).`);
+          continue;
+        }
+        const safe = file.name.replace(/[^\w.\-åäöÅÄÖ]+/g, "_");
+        const path = `${userId}/${Date.now()}-${safe}`;
+        const up = await supabase.storage
+          .from("andrea")
+          .upload(path, file, { contentType: file.type || "application/octet-stream" });
+        if (up.error) throw new Error(up.error.message);
+        added.push({
+          name: file.name,
+          mediaType: file.type || "application/octet-stream",
+          dataUrl: await readAsDataUrl(file),
+          storagePath: path,
+        });
+      }
+      setFiles((prev) => [...prev, ...added]);
+    } catch (err) {
+      setFileError(err instanceof Error ? err.message : "Uppladdningen misslyckades.");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
   function submit(text: string) {
     const value = text.trim();
-    if (!value || isLoading) return;
+    if (isLoading || uploading) return;
+    if (!value && files.length === 0) return;
+    const attached = files;
     setInput("");
-    sendMessage({ text: value });
+    setFiles([]);
+
+    if (attached.length === 0) {
+      sendMessage({ text: value });
+      return;
+    }
+
+    const note = attached
+      .map((f) => `Bifogad fil: ${f.name} (${f.mediaType}), lagringsväg: ${f.storagePath}`)
+      .join("\n");
+
+    sendMessage({
+      parts: [
+        ...attached.map((f) => ({
+          type: "file" as const,
+          filename: f.name,
+          mediaType: f.mediaType,
+          url: f.dataUrl,
+        })),
+        { type: "text" as const, text: `${note}\n\n${value || "Vad är det här?"}` },
+      ],
+    });
   }
+
 
   const voice = useVoice((text) => submit(text));
   const spokenRef = useRef<string | null>(null);
