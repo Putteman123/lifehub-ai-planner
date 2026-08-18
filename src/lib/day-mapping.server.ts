@@ -308,10 +308,16 @@ async function suggestLabels(
     apiKey,
     system:
       "Du kartlägger en persons dag utifrån GPS-stopp. Föreslå ett kort platsnamn och en aktivitet " +
-      "för varje okänt stopp. Använd i tur och ordning: adressen från kartan, kvitton/köp under stoppet, " +
-      "koordinatnärhet till sparade platser och tidigare besök, hur ofta personen varit där, samt " +
-      "kalenderns händelser. Skriv butiksnamn när ett köp matchar. Är du osäker: skriv label 'Okänd plats' " +
-      "och activity ''. Motivera kort i reasoning vilken ledtråd du använde. Svara på svenska. Svara som JSON.",
+      "för varje okänt stopp. Prioritera ledtrådarna i denna ordning: (1) kvitton/köp under stoppet, " +
+      "(2) verksamheter från Google Places inom kort avstånd – välj den som bäst matchar tid på dygnet, " +
+      "stoppets längd och typ (öppettider, butik/restaurang/kontor/vård), (3) kalenderhändelser som " +
+      "överlappar stoppet – stämmer tid och plats får aktiviteten komma från händelsens titel, " +
+      "(4) närhet till sparade platser och tidigare namngivna besök, (5) adressen från kartan. " +
+      "Är stoppet kortare än 10 minuter vid en väg utan verksamheter är det troligen en paus i en resa – " +
+      "skriv label 'Kort stopp'. Långa nattliga stopp är hem, långa vardagsstopp på samma plats är jobb. " +
+      "Är du osäker: skriv label 'Okänd plats' och activity ''. Motivera kort i reasoning vilken ledtråd " +
+      "du använde och nämn kalendern när den bekräftar. Svara på svenska. Svara som JSON.",
+
     input,
     jsonSchema: {
       name: "stop_suggestions",
