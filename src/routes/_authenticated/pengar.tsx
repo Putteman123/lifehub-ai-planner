@@ -855,10 +855,11 @@ function SpendListCard({ accounts, spends: all }: { accounts: AccountRow[]; spen
                   title={travel ? travel.hint : "Ingen resa hittad kring köpet"}
                   className={
                     travel
-                      ? "hidden w-[92px] shrink-0 items-center justify-end gap-1 text-xs font-medium text-muted-foreground sm:flex"
-                      : "hidden w-[92px] shrink-0 items-center justify-end gap-1 text-xs text-muted-foreground/50 sm:flex"
+                      ? "flex shrink-0 items-center gap-1 text-xs font-medium text-muted-foreground"
+                      : "flex shrink-0 items-center gap-1 text-xs text-muted-foreground/50"
                   }
                 >
+
                   <TravelIcon className="size-3.5" />
                   {travel ? travel.label : "–"}
                 </span>
