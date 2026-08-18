@@ -204,8 +204,14 @@ export async function closeOpenVisit(userId: string, atIso = new Date().toISOStr
   return true;
 }
 
-/** Slår upp ägarens användar-id utifrån APP_OWNER_EMAIL (enanvändarläge). */
+/** Slår upp ägarens användar-id: i första hand kontot som äger appens data. */
 export async function ownerUserId(): Promise<string | null> {
+  const { data: owner } = await supabaseAdmin
+    .from("app_owner")
+    .select("user_id")
+    .maybeSingle();
+  if (owner?.user_id) return owner.user_id;
+
   const email = process.env["APP_OWNER_EMAIL"];
   if (!email) return null;
   const { data } = await supabaseAdmin
