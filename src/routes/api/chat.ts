@@ -20,6 +20,17 @@ const CATEGORY = z
   );
 const PLACE_KIND = z.enum(["jobb", "jurist", "hem", "barn", "annat"]);
 
+/** Så hanterar Andrea bilder och dokument som Patrick laddar upp i chatten. */
+const UPLOAD_RULES = `BIFOGADE FILER:
+Patrick kan bifoga bilder och PDF:er. Varje bifogad fil beskrivs i meddelandet med filnamn, filtyp och lagringsväg (t.ex. "lagringsväg: <uuid>/<fil>").
+Gör alltid så här:
+1. Titta på filen och beskriv kort vad du ser (typ av dokument, belopp, datum, plats, viktiga uppgifter).
+2. Föreslå vart den hör hemma – kvitto/faktura, kassaskåpet, ekonomifilerna, kalender/påminnelse eller "bara analys".
+3. Spara ALDRIG något på eget bevåg. Vänta på att Patrick säger ja, och använd sedan rätt verktyg med exakt den lagringsväg som stod i meddelandet.
+Kvitton: använd read_uploaded_receipt för att läsa av det, redovisa belopp, butik, datum och varor, och fråga vilket konto beloppet ska dras från innan du bokför med add_spend. Varorna läggs i skafferiet med add_pantry_items och butiken markeras med log_receipt_place.
+Dokument, skärmdumpar och lösenordsbilder: save_uploaded_file med target "kassaskap". Ekonomipapper: target "ekonomi".
+Filer som nämnts tidigare i samtalet kan användas igen – lagringsvägen står kvar i historiken.`;
+
 export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
@@ -60,7 +71,7 @@ export const Route = createFileRoute("/api/chat")({
 
         const result = streamText({
           model: openai.responses(ANDREA_MODEL),
-          system: `${ANDREA_SYSTEM}\n\nAKTUELLT UNDERLAG FRÅN KALENDERN:\n${context}`,
+          system: `${ANDREA_SYSTEM}\n\n${UPLOAD_RULES}\n\nAKTUELLT UNDERLAG FRÅN KALENDERN:\n${context}`,
           messages: await convertToModelMessages(body.messages as UIMessage[]),
           stopWhen: stepCountIs(50),
           tools: {
@@ -198,6 +209,89 @@ export const Route = createFileRoute("/api/chat")({
                 const { sheetsExport } = await import("@/lib/google.server");
                 const sheet = await sheetsExport(title, rows);
                 return { ok: true, message: `Kalkylarket är klart: ${sheet.link}` };
+              },
+            }),
+
+            // --- Filer som Patrick laddat upp i chatten ---
+            read_uploaded_receipt: tool({
+              description:
+                "Läs av ett uppladdat kvitto eller en faktura (bild eller PDF) och få ut belopp, butik, datum, adress, kategori, varor och tobak. Sparar ingenting.",
+              inputSchema: z.object({
+                storage_path: z.string().describe("Lagringsvägen som stod i meddelandet."),
+                file_name: z.string(),
+                mime_type: z.string().nullable(),
+              }),
+              execute: async ({ storage_path, file_name, mime_type }) => {
+                const files = await import("@/lib/andrea-files.server");
+                try {
+                  return await files.readAttachmentReceipt(userId, {
+                    storage_path,
+                    file_name,
+                    ...(mime_type ? { mime_type } : {}),
+                  });
+                } catch (error) {
+                  return {
+                    error: error instanceof Error ? error.message : "Kunde inte läsa filen.",
+                  };
+                }
+              },
+            }),
+            save_uploaded_file: tool({
+              description:
+                "Spara en uppladdad fil i kassaskåpet (target kassaskap) eller bland ekonomifilerna (target ekonomi).",
+              inputSchema: z.object({
+                storage_path: z.string(),
+                file_name: z.string(),
+                mime_type: z.string().nullable(),
+                target: z.enum(["kassaskap", "ekonomi"]),
+                caption: z.string().nullable(),
+                kind: z.enum(["kvitto", "faktura", "underlag"]).nullable(),
+              }),
+              needsApproval: true,
+              execute: async (input) => {
+                const files = await import("@/lib/andrea-files.server");
+                return files.saveAttachment(userId, {
+                  storage_path: input.storage_path,
+                  file_name: input.file_name,
+                  target: input.target,
+                  ...(input.mime_type ? { mime_type: input.mime_type } : {}),
+                  ...(input.caption ? { caption: input.caption } : {}),
+                  ...(input.kind ? { kind: input.kind } : {}),
+                });
+              },
+            }),
+            add_pantry_items: tool({
+              description:
+                "Lägg varor från ett kvitto i skafferiet under Handla (utan att röra inköpslistan).",
+              inputSchema: z.object({ items: z.array(z.string()) }),
+              needsApproval: true,
+              execute: async ({ items }) => {
+                const files = await import("@/lib/andrea-files.server");
+                return files.addPantryItems(userId, items);
+              },
+            }),
+            log_receipt_place: tool({
+              description:
+                "Markera butiken från ett kvitto som besök på kartan och lägg in köpet i kalendern.",
+              inputSchema: z.object({
+                merchant: z.string(),
+                address: z.string().nullable(),
+                spent_at: z.string().describe("Datum och tid, t.ex. 2026-08-18T17:30"),
+                amount: z.number().nullable(),
+                category: z.string().nullable(),
+                add_event: z.boolean().nullable(),
+              }),
+              needsApproval: true,
+              execute: async (input) => {
+                const files = await import("@/lib/andrea-files.server");
+                return files.logReceiptContext(userId, {
+                  merchant: input.merchant,
+                  spent_at: input.spent_at,
+                  ...(input.address ? { address: input.address } : {}),
+                  ...(input.amount !== null ? { amount: input.amount } : {}),
+                  ...(input.category ? { category: input.category } : {}),
+                  ...(input.add_event !== null ? { add_event: input.add_event } : {}),
+                });
               },
             }),
 

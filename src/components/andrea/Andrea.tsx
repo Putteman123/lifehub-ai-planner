@@ -13,7 +13,7 @@ import {
   Loader2,
   Mic,
   MicOff,
-
+  Paperclip,
   Send,
   Square,
   Trash2,
@@ -56,6 +56,33 @@ function textOf(m: UIMessage) {
     .join("");
 }
 
+/** Bifogad fil som laddats upp men ännu inte skickats till Andrea. */
+type Attachment = {
+  name: string;
+  mediaType: string;
+  dataUrl: string;
+  storagePath: string;
+};
+
+const MAX_FILE_BYTES = 8 * 1024 * 1024;
+
+function readAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Kunde inte läsa filen."));
+    reader.readAsDataURL(file);
+  });
+}
+
+/** Historik utan tunga fildata så localStorage inte spränger kvoten. */
+function slimForStorage(messages: UIMessage[]): UIMessage[] {
+  return messages.map((m) => ({
+    ...m,
+    parts: m.parts.filter((p) => (p as { type: string }).type !== "file"),
+  }));
+}
+
 /** Verktyg som ändrar data i appen och därför måste godkännas. */
 const ACTION_LABELS: Record<string, string> = {
   create_event: "Lägga in en händelse i kalendern",
@@ -75,6 +102,9 @@ const ACTION_LABELS: Record<string, string> = {
   delete_visit: "Ta bort en post i platsloggen",
   check_in: "Checka in på en plats",
   end_visit: "Avsluta pågående besök",
+  save_uploaded_file: "Spara den uppladdade filen",
+  add_pantry_items: "Lägga in varorna i skafferiet",
+  log_receipt_place: "Markera butiken på kartan och i kalendern",
 };
 
 type ToolPart = {
@@ -268,16 +298,81 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
 
 
   const [input, setInput] = useState("");
+  const [files, setFiles] = useState<Attachment[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const isLoading = status === "submitted" || status === "streaming";
 
+  async function pickFiles(list: FileList | null) {
+    if (!list?.length) return;
+    setFileError(null);
+    setUploading(true);
+    try {
+      const { data } = await supabase.auth.getUser();
+      const userId = data.user?.id;
+      if (!userId) throw new Error("Du är inte inloggad.");
+
+      const added: Attachment[] = [];
+      for (const file of Array.from(list)) {
+        if (file.size > MAX_FILE_BYTES) {
+          setFileError(`${file.name} är för stor (max 8 MB).`);
+          continue;
+        }
+        const safe = file.name.replace(/[^\w.\-åäöÅÄÖ]+/g, "_");
+        const path = `${userId}/${Date.now()}-${safe}`;
+        const up = await supabase.storage
+          .from("andrea")
+          .upload(path, file, { contentType: file.type || "application/octet-stream" });
+        if (up.error) throw new Error(up.error.message);
+        added.push({
+          name: file.name,
+          mediaType: file.type || "application/octet-stream",
+          dataUrl: await readAsDataUrl(file),
+          storagePath: path,
+        });
+      }
+      setFiles((prev) => [...prev, ...added]);
+    } catch (err) {
+      setFileError(err instanceof Error ? err.message : "Uppladdningen misslyckades.");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
   function submit(text: string) {
     const value = text.trim();
-    if (!value || isLoading) return;
+    if (isLoading || uploading) return;
+    if (!value && files.length === 0) return;
+    const attached = files;
     setInput("");
-    sendMessage({ text: value });
+    setFiles([]);
+
+    if (attached.length === 0) {
+      sendMessage({ text: value });
+      return;
+    }
+
+    const note = attached
+      .map((f) => `Bifogad fil: ${f.name} (${f.mediaType}), lagringsväg: ${f.storagePath}`)
+      .join("\n");
+
+    sendMessage({
+      parts: [
+        ...attached.map((f) => ({
+          type: "file" as const,
+          filename: f.name,
+          mediaType: f.mediaType,
+          url: f.dataUrl,
+        })),
+        { type: "text" as const, text: `${note}\n\n${value || "Vad är det här?"}` },
+      ],
+    });
   }
+
 
   const voice = useVoice((text) => submit(text));
   const spokenRef = useRef<string | null>(null);
@@ -293,7 +388,7 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     if (messages.length > 0) {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(slimForStorage(messages)));
       } catch {
         /* ignore */
       }
@@ -443,11 +538,39 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
             ) as unknown as ToolPart[];
 
             if (m.role === "user") {
+              const attached = m.parts.filter(
+                (p) => (p as { type: string }).type === "file",
+              ) as unknown as { filename?: string; mediaType?: string; url?: string }[];
+              const visible = text.replace(/^Bifogad fil:.*\n?/gm, "").trim();
               return (
-                <div key={m.id} className="flex justify-end">
-                  <p className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm text-primary-foreground">
-                    {text}
-                  </p>
+                <div key={m.id} className="flex flex-col items-end gap-1.5">
+                  {attached.length ? (
+                    <div className="flex max-w-[85%] flex-wrap justify-end gap-1.5">
+                      {attached.map((f, k) =>
+                        f.mediaType?.startsWith("image/") && f.url ? (
+                          <img
+                            key={k}
+                            src={f.url}
+                            alt={f.filename ?? "Bifogad bild"}
+                            className="size-24 rounded-xl border border-border object-cover"
+                          />
+                        ) : (
+                          <span
+                            key={k}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-2.5 py-1.5 text-xs"
+                          >
+                            <Paperclip className="size-3.5 text-muted-foreground" />
+                            {f.filename ?? "Fil"}
+                          </span>
+                        ),
+                      )}
+                    </div>
+                  ) : null}
+                  {visible ? (
+                    <p className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm text-primary-foreground">
+                      {visible}
+                    </p>
+                  ) : null}
                 </div>
               );
             }
@@ -536,6 +659,37 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
           <div ref={endRef} />
         </div>
 
+        {files.length || uploading || fileError ? (
+          <div className="flex flex-wrap items-center gap-1.5 border-t border-border px-3 pt-2">
+            {files.map((f, k) => (
+              <span
+                key={f.storagePath}
+                className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border bg-surface px-2 py-1 text-xs"
+              >
+                {f.mediaType.startsWith("image/") ? (
+                  <img src={f.dataUrl} alt="" className="size-5 rounded object-cover" />
+                ) : (
+                  <Paperclip className="size-3.5 text-muted-foreground" />
+                )}
+                <span className="truncate">{f.name}</span>
+                <button
+                  type="button"
+                  aria-label={`Ta bort ${f.name}`}
+                  onClick={() => setFiles((prev) => prev.filter((_, i) => i !== k))}
+                >
+                  <X className="size-3.5 text-muted-foreground hover:text-destructive" />
+                </button>
+              </span>
+            ))}
+            {uploading ? (
+              <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Loader2 className="size-3.5 animate-spin" /> Laddar upp…
+              </span>
+            ) : null}
+            {fileError ? <span className="text-xs text-destructive">{fileError}</span> : null}
+          </div>
+        ) : null}
+
         <form
           className="flex items-end gap-2 border-t border-border p-3"
           style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}
@@ -544,6 +698,29 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
             submit(input);
           }}
         >
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*,application/pdf"
+            multiple
+            className="hidden"
+            onChange={(e) => void pickFiles(e.target.files)}
+          />
+          <button
+            type="button"
+            className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-surface text-foreground transition-colors hover:border-primary/40 disabled:opacity-50"
+            aria-label="Bifoga bild eller PDF"
+            title="Bifoga bild eller PDF"
+            disabled={uploading}
+            onClick={() => fileRef.current?.click()}
+          >
+            {uploading ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Paperclip className="size-4" />
+            )}
+          </button>
+
           {voice.supported ? (
             <button
               type="button"
@@ -594,7 +771,7 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
               type="submit"
               size="icon"
               className="size-10 shrink-0 rounded-xl"
-              disabled={!input.trim()}
+              disabled={(!input.trim() && files.length === 0) || uploading}
             >
               <Send className="size-4" />
             </Button>
