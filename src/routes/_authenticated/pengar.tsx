@@ -15,6 +15,10 @@ import {
   Trash2,
   Wallet,
   AlertTriangle,
+  Bus,
+  Car,
+  Footprints,
+
 } from "lucide-react";
 import { toast } from "sonner";
 
