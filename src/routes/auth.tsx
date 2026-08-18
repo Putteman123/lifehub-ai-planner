@@ -267,7 +267,47 @@ function PinGate() {
     if (next.length === 4) void submit(next);
   }
 
+  if (session === "laddar") {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </main>
+    );
+  }
+
+  if (session === "utloggad") {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-background px-6 py-10">
+        <div className="w-full max-w-xs text-center">
+          <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+            <Sparkles className="size-5" />
+          </span>
+          <h1 className="mt-4 text-xl font-semibold tracking-tight">LifeHub AI</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {message ?? "Logga in med ditt Google-konto – all data blir din egen."}
+          </p>
+          <Button
+            className="mt-7 h-14 w-full text-base"
+            onClick={() => void signInWithGoogle()}
+            disabled={status === "checking"}
+          >
+            {status === "checking" ? (
+              <Loader2 className="size-5 animate-spin" />
+            ) : (
+              <LogIn className="size-5" />
+            )}
+            Fortsätt med Google
+          </Button>
+          <p className="mt-6 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+            <Lock className="size-3.5" /> Efter inloggning räcker pinkod eller Face ID
+          </p>
+        </div>
+      </main>
+    );
+  }
+
   if (offerFaceId) {
+
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-background px-6 py-10">
         <div className="w-full max-w-xs text-center">
