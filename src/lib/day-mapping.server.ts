@@ -449,8 +449,6 @@ export async function analyzeDay(userId: string, day: string) {
     })),
   );
   const infoByIndex = new Map(
-
-  const infoByIndex = new Map(
     looked.map((g) => [
       g.index,
       {
@@ -464,7 +462,7 @@ export async function analyzeDay(userId: string, day: string) {
       },
     ]),
   );
-  addressByIndex.clear();
+
 
   /** Kvittobesök som matchar ett stopp (närhet i tid och rum). */
   const receiptByIndex = new Map<number, (typeof receiptVisits)[number]>();
