@@ -16,7 +16,10 @@ import { unlockWithPin } from "@/lib/pin.functions";
 import { base64urlToBuffer, bufferToBase64url, passkeysSupported } from "@/lib/webauthn";
 
 export const Route = createFileRoute("/auth")({
+  // Låsskärmen beror på localStorage/WebAuthn – rendera bara i klienten.
+  ssr: false,
   head: () => ({
+
     meta: [
       { title: "Lås upp – LifeHub AI" },
       { name: "description", content: "Lås upp LifeHub AI med Face ID eller din pinkod." },
