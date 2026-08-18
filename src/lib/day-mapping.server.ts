@@ -448,9 +448,8 @@ export async function analyzeDay(userId: string, day: string) {
       nearby: await resolveNearbyPlaces(s.lat, s.lng, 140).catch(() => []),
     })),
   );
-  const addressByIndex = new Map(
-    looked.map((g) => [g.index, g.place ? `${g.shortLabel ?? ""}` : null] as const).map(() => [0, null] as const),
-  );
+  const infoByIndex = new Map(
+
   const infoByIndex = new Map(
     looked.map((g) => [
       g.index,
