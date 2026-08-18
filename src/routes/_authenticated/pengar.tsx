@@ -814,6 +814,7 @@ function SpendListCard({ accounts, spends: all }: { accounts: AccountRow[]; spen
             const travel = spendTravelMode(row.spent_at, visits);
             const TravelIcon =
               travel?.mode === "kollektivt" ? Bus : travel?.mode === "gang_cykel" ? Footprints : Car;
+            return (
 
               <li
                 key={row.id}
