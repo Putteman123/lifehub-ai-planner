@@ -48,6 +48,17 @@ async function toDataUrl(file: File): Promise<string> {
   return canvas.toDataURL("image/jpeg", 0.85);
 }
 
+/** Vart en varurad från kvittot ska hamna. */
+type Dest = "skafferi" | "utgift" | "skip";
+
+const DESTS: { value: Dest; label: string }[] = [
+  { value: "skafferi", label: "Skafferiet" },
+  { value: "utgift", label: "Egen utgift" },
+  { value: "skip", label: "Hoppa över" },
+];
+
+
+
 export function ReceiptScanner({
   accounts,
   spends,
