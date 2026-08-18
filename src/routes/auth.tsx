@@ -187,7 +187,6 @@ function PinGate() {
         setStatus("error");
         return;
       }
-      await signInWithTokenHash(res.tokenHash);
       await goIn();
     } catch {
       setMessage("Face ID avbröts – använd pinkoden.");
@@ -195,7 +194,8 @@ function PinGate() {
     } finally {
       busy.current = false;
     }
-  }, [beginLogin, finishLogin, signInWithTokenHash, goIn]);
+  }, [beginLogin, finishLogin, goIn]);
+
 
   const registerFace = useCallback(
     async (code: string) => {
