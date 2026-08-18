@@ -851,9 +851,21 @@ function SpendListCard({ accounts, spends: all }: { accounts: AccountRow[]; spen
                     </div>
                   ) : null}
                 </div>
+                <span
+                  title={travel ? travel.hint : "Ingen resa hittad kring köpet"}
+                  className={
+                    travel
+                      ? "hidden w-[92px] shrink-0 items-center justify-end gap-1 text-xs font-medium text-muted-foreground sm:flex"
+                      : "hidden w-[92px] shrink-0 items-center justify-end gap-1 text-xs text-muted-foreground/50 sm:flex"
+                  }
+                >
+                  <TravelIcon className="size-3.5" />
+                  {travel ? travel.label : "–"}
+                </span>
                 <span className="shrink-0 text-sm font-semibold tabular-nums">
                   {kr(Number(row.amount))}
                 </span>
+
 
                 <button
                   type="button"
