@@ -9,7 +9,7 @@ export type ReceiptRead = {
   time: string | null;
   category: string | null;
   kind: "kvitto" | "faktura" | "annat";
-  groceries: { name: string; quantity: string | null }[];
+  groceries: { name: string; quantity: string | null; amount: number | null }[];
   /** Tobak (cigaretter/snus) hålls skilt från mat och hamnar inte i skafferiet. */
   tobacco: { name: string; category: "Cigaretter" | "Snus"; amount: number | null }[];
 };
