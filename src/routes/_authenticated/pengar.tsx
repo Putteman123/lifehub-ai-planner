@@ -15,6 +15,10 @@ import {
   Trash2,
   Wallet,
   AlertTriangle,
+  Bus,
+  Car,
+  Footprints,
+
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -65,7 +69,9 @@ import {
   type SpendRow,
 } from "@/lib/finance";
 import { financeInsight } from "@/lib/finance.functions";
+import { useVisits } from "@/lib/db";
 import { spendFlags } from "@/lib/spend-flags";
+import { spendTravelMode } from "@/lib/spend-travel";
 import { guessCategory, spendCategories } from "@/lib/spend-categories";
 import { formatBytes } from "@/lib/vault";
 
@@ -757,6 +763,7 @@ function SpendListCard({ accounts, spends: all }: { accounts: AccountRow[]; spen
   const [accountId, setAccountId] = useState("");
   const [date, setDate] = useState("");
 
+  const visits = useVisits().data ?? [];
   const spends = all.slice(0, 20);
   const categories = spendCategories(all);
 
@@ -804,7 +811,11 @@ function SpendListCard({ accounts, spends: all }: { accounts: AccountRow[]; spen
           {spends.map((row) => {
             const account = accounts.find((acc) => acc.id === row.account_id);
             const flags = spendFlags(row, all);
+            const travel = spendTravelMode(row.spent_at, visits);
+            const TravelIcon =
+              travel?.mode === "kollektivt" ? Bus : travel?.mode === "gang_cykel" ? Footprints : Car;
             return (
+
               <li
                 key={row.id}
                 className="flex items-center gap-3 rounded-2xl bg-surface px-3 py-2.5"
@@ -840,9 +851,22 @@ function SpendListCard({ accounts, spends: all }: { accounts: AccountRow[]; spen
                     </div>
                   ) : null}
                 </div>
+                <span
+                  title={travel ? travel.hint : "Ingen resa hittad kring köpet"}
+                  className={
+                    travel
+                      ? "flex shrink-0 items-center gap-1 text-xs font-medium text-muted-foreground"
+                      : "flex shrink-0 items-center gap-1 text-xs text-muted-foreground/50"
+                  }
+                >
+
+                  <TravelIcon className="size-3.5" />
+                  {travel ? travel.label : "–"}
+                </span>
                 <span className="shrink-0 text-sm font-semibold tabular-nums">
                   {kr(Number(row.amount))}
                 </span>
+
 
                 <button
                   type="button"

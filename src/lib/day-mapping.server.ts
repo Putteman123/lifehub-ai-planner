@@ -9,6 +9,7 @@ import {
   type PlaceRow,
 } from "@/lib/geo";
 
+import { inferTravelMode, type NearbyLite } from "@/lib/travel-mode-infer";
 import { APP_TZ, timeLocal } from "@/lib/tz";
 
 /**
@@ -571,6 +572,29 @@ export async function analyzeDay(userId: string, day: string) {
     if (leg?.meters) routeByIndex.set(index, { meters: leg.meters, minutes: leg.minutes });
   }
 
+  // Verksamheter kring resans ändpunkter – stationer och hållplatser avslöjar kollektivtrafik.
+  const tripPlaces = new Map<number, { start: NearbyLite[]; end: NearbyLite[] }>();
+  for (const { s, index } of tripIndexes.slice(0, 8)) {
+    const [start, end] = await Promise.all([
+      resolveNearbyPlaces(s.lat, s.lng, 200).catch(() => []),
+      resolveNearbyPlaces(s.end_lat as number, s.end_lng as number, 200).catch(() => []),
+    ]);
+    tripPlaces.set(index, {
+      start: start.map((n) => ({ name: n.name, meters: n.meters, types: n.types })),
+      end: end.map((n) => ({ name: n.name, meters: n.meters, types: n.types })),
+    });
+  }
+
+  /** Kalendertexter som överlappar en resa. */
+  function calendarTextsFor(startsAt: string, endsAt: string) {
+    const from = new Date(startsAt).getTime() - 15 * 60_000;
+    const to = new Date(endsAt).getTime() + 15 * 60_000;
+    return dayEvents
+      .filter((e) => new Date(e.starts_at).getTime() <= to && new Date(e.ends_at).getTime() >= from)
+      .map((e) => `${e.title}${e.location ? ` (${e.location})` : ""}`);
+  }
+
+
   const rows = segments.map((s, index) => {
     const place = s.place_id ? places.find((p) => p.id === s.place_id) : null;
     const ai = byIndex.get(index);
@@ -585,6 +609,18 @@ export async function analyzeDay(userId: string, day: string) {
     const distance = route?.meters ?? s.distance_m;
     // Kalenderträff höjer tilltron till AI:ns tolkning.
     const calendarHit = (extra?.calendar.length ?? 0) > 0;
+    const nearbyTrip = tripPlaces.get(index);
+    const modeGuess =
+      s.entry_kind === "resa"
+        ? inferTravelMode({
+            distanceM: distance,
+            minutesSpent: spent,
+            route: route ?? null,
+            nearbyStart: nearbyTrip?.start ?? [],
+            nearbyEnd: nearbyTrip?.end ?? [],
+            calendar: calendarTextsFor(s.starts_at, s.ends_at),
+          })
+        : null;
     return {
       user_id: userId,
       day,
@@ -596,7 +632,7 @@ export async function analyzeDay(userId: string, day: string) {
       end_lat: s.end_lat,
       end_lng: s.end_lng,
       distance_m: Math.round(distance),
-      travel_mode: s.entry_kind === "resa" ? travelModeFor(distance, spent) : ("okant" as const),
+      travel_mode: modeGuess ? modeGuess.mode : ("okant" as const),
       place_id: s.place_id,
       address: s.entry_kind === "besok" ? (extra?.address ?? null) : null,
       seen_count: extra?.seen ?? 0,
@@ -609,12 +645,11 @@ export async function analyzeDay(userId: string, day: string) {
         s.entry_kind === "resa" ? null : (ai?.activity ?? (receipt ? "Handlade" : null)),
       reasoning:
         s.entry_kind === "resa"
-          ? route
-            ? `Google Routes: ${(route.meters / 1000).toFixed(1)} km, ca ${route.minutes} min.`
-            : null
+          ? (modeGuess?.reason ?? null)
           : receipt
             ? `Kvitto från ${receipt.label ?? "butik"} kopplat till stoppet.`
             : (ai?.reasoning ?? null),
+
       confidence: place
         ? 1
         : receipt
