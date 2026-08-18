@@ -181,3 +181,98 @@ export async function readReceipt(opts: {
       .slice(0, 20),
   };
 }
+
+export type BetSlipRead = {
+  date: string | null;
+  track: string | null;
+  gameType: string | null;
+  rows: number | null;
+  stake: number | null;
+};
+
+const BET_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    date: { type: "string" },
+    track: { type: "string" },
+    gameType: { type: "string" },
+    rows: { type: "number" },
+    stake: { type: "number" },
+  },
+  required: ["date", "track", "gameType", "rows", "stake"],
+} as const;
+
+/** Läser av en spelkupong (ATG/trav) och plockar ut datum, bana, spelform, rader och insats. */
+export async function readBetSlip(opts: {
+  apiKey: string;
+  dataUrl: string;
+  mimeType: string;
+  fileName: string;
+}): Promise<BetSlipRead> {
+  const isPdf = opts.mimeType === "application/pdf";
+  const content = [
+    {
+      type: "text",
+      text:
+        'Läs av denna spelkupong (ATG, trav eller galopp). date = speldatum i formatet YYYY-MM-DD (tom sträng om det saknas). track = banans namn, t.ex. Solvalla (tom sträng om det saknas). gameType = spelformen, t.ex. V75, V86, V64, V4, Dagens Dubbel, Trio, Vinnare eller Plats. rows = antal rader/kombinationer som ett tal, 1 om det inte framgår. stake = total insats i kronor som ett tal.',
+    },
+    isPdf
+      ? { type: "file", file: { filename: opts.fileName, file_data: opts.dataUrl } }
+      : { type: "image_url", image_url: { url: opts.dataUrl } },
+  ];
+
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Lovable-API-Key": opts.apiKey,
+      "X-Lovable-AIG-SDK": "fetch",
+    },
+    body: JSON.stringify({
+      model: ANDREA_FAST_MODEL,
+      messages: [
+        {
+          role: "system",
+          content:
+            "Du är Andrea, en svensk assistent som tolkar spelkuponger. Svara enbart med JSON enligt schemat.",
+        },
+        { role: "user", content },
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: { name: "betslip", strict: true, schema: BET_SCHEMA },
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    if (res.status === 429) throw new Error("För många AI-förfrågningar, försök snart igen.");
+    if (res.status === 402) throw new Error("AI-krediterna är slut.");
+    throw new Error(`Andrea kunde inte läsa kupongen (${res.status}).`);
+  }
+
+  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+  const raw = (json.choices?.[0]?.message?.content ?? "")
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/, "")
+    .trim();
+
+  let parsed: Partial<Record<keyof BetSlipRead, unknown>>;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("Andrea kunde inte tolka kupongen. Prova en tydligare bild.");
+  }
+
+  const stake = Number(parsed.stake);
+  const rows = Number(parsed.rows);
+  const date = String(parsed.date ?? "").slice(0, 10);
+  return {
+    date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null,
+    track: String(parsed.track ?? "").trim() || null,
+    gameType: String(parsed.gameType ?? "").trim() || null,
+    rows: Number.isFinite(rows) && rows > 0 ? Math.round(rows) : null,
+    stake: Number.isFinite(stake) && stake > 0 ? stake : null,
+  };
+}

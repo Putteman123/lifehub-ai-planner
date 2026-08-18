@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Car, MapPin, Pencil, Search, Trash2 } from "lucide-react";
+import { Car, ChevronDown, MapPin, Pencil, Search, Trash2 } from "lucide-react";
 
 import { EditTripDialog } from "@/components/platser/EditTripDialog";
 import { EditVisitDialog } from "@/components/platser/EditVisitDialog";
@@ -48,6 +48,7 @@ export function VisitLogList({ places }: { places: PlaceRow[] }) {
   const [onlyUnknown, setOnlyUnknown] = useState(false);
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(PAGE);
+  const [openDays, setOpenDays] = useState<Record<string, boolean>>({});
   const [editVisit, setEditVisit] = useState<VisitRow | null>(null);
   const [editTrip, setEditTrip] = useState<VisitRow | null>(null);
 
@@ -151,19 +152,45 @@ export function VisitLogList({ places }: { places: PlaceRow[] }) {
           Inga besök i urvalet. Prova ett längre tidsintervall.
         </p>
       ) : (
-        <div className="mt-3 space-y-4">
-          {groups.map((group) => (
-            <div key={group.key}>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {group.label}
-              </p>
-              <ul className="mt-2 grid gap-2">
+        <div className="mt-3 space-y-3">
+          {groups.map((group, groupIndex) => {
+            const trips = group.items.filter((v) => isTravel(v));
+            const stops = group.items.filter((v) => !isTravel(v));
+            const meters = trips.reduce((sum, v) => sum + (v.distance_m ?? 0), 0);
+            const minutes = group.items.reduce((sum, v) => sum + visitMinutes(v, now), 0);
+            const open = openDays[group.key] ?? groupIndex === 0;
+            return (
+            <div key={group.key} className="rounded-2xl border border-border/70 bg-surface/60">
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 px-3 py-2.5 text-left"
+                onClick={() =>
+                  setOpenDays((prev) => ({ ...prev, [group.key]: !open }))
+                }
+              >
+                <ChevronDown
+                  className={`size-4 shrink-0 text-muted-foreground transition-transform ${
+                    open ? "" : "-rotate-90"
+                  }`}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold capitalize">
+                    {group.label}
+                  </span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {stops.length} platser · {trips.length} resor ·{" "}
+                    {formatDistance(meters)} · {formatDuration(minutes)}
+                  </span>
+                </span>
+              </button>
+              {open ? (
+              <ul className="grid gap-2 px-3 pb-3">
                 {group.items.map((visit) => {
                   const travel = isTravel(visit);
                   return (
                     <li
                       key={visit.id}
-                      className="flex items-center gap-3 rounded-xl border border-border/70 px-3 py-2"
+                      className="flex items-center gap-3 rounded-xl border border-border/70 bg-card px-3 py-2"
                     >
                       <span
                         className="size-2.5 shrink-0 rounded-full"
@@ -216,8 +243,11 @@ export function VisitLogList({ places }: { places: PlaceRow[] }) {
                   );
                 })}
               </ul>
+              ) : null}
             </div>
-          ))}
+            );
+          })}
+
 
           {filtered.length > shown.length ? (
             <Button

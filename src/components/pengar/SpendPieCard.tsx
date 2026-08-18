@@ -4,6 +4,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 import { SectionCard } from "@/components/SectionCard";
 import { kr, type FixedExpenseRow, type SpendRow } from "@/lib/finance";
+import { TOBACCO_CATEGORIES } from "@/lib/spend-categories";
 
 const COLORS = [
   "var(--chart-1)",
@@ -62,6 +63,9 @@ export function SpendPieCard({
   }, [spends, fixed, days, withFixed]);
 
   const total = slices.reduce((sum, s) => sum + s.value, 0);
+  const tobacco = slices
+    .filter((s) => TOBACCO_CATEGORIES.includes(s.name))
+    .reduce((sum, s) => sum + s.value, 0);
 
   return (
     <SectionCard
@@ -129,7 +133,7 @@ export function SpendPieCard({
           </div>
 
           <ul className="space-y-1.5 self-center">
-            {slices.slice(0, 8).map((s, i) => (
+            {slices.map((s, i) => (
               <li key={s.name} className="flex items-center gap-2 text-sm">
                 <span
                   className="size-2.5 shrink-0 rounded-full"
@@ -144,9 +148,21 @@ export function SpendPieCard({
                 </span>
               </li>
             ))}
+            {tobacco > 0 ? (
+              <li className="mt-2 flex items-center gap-2 border-t border-border/70 pt-2 text-sm font-medium">
+                <span className="min-w-0 flex-1 truncate">Tobak totalt</span>
+                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                  {total ? Math.round((tobacco / total) * 100) : 0} %
+                </span>
+                <span className="w-20 shrink-0 text-right text-xs tabular-nums">
+                  {kr(tobacco)}
+                </span>
+              </li>
+            ) : null}
           </ul>
         </div>
       )}
+
 
       <label className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
         <input

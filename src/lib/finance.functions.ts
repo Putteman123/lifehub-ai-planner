@@ -217,3 +217,27 @@ export const financeInsight = createServerFn({ method: "POST" })
 
     return { text };
   });
+
+/** Läser av en spelkupong (ATG) och returnerar spelform, insats och datum. */
+export const analyzeBetSlip = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        dataUrl: z.string().min(32),
+        mimeType: z.string().default("image/jpeg"),
+        fileName: z.string().default("kupong"),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) throw new Error("AI är inte konfigurerat.");
+    const { readBetSlip } = await import("@/lib/finance-ai.server");
+    return readBetSlip({
+      apiKey,
+      dataUrl: data.dataUrl,
+      mimeType: data.mimeType,
+      fileName: data.fileName,
+    });
+  });
