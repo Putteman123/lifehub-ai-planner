@@ -133,7 +133,7 @@ export async function readReceipt(opts: {
     .trim();
 
   let parsed: Partial<ReceiptRead> & {
-    groceries?: { name?: string; quantity?: string }[];
+    groceries?: { name?: string; quantity?: string; amount?: number }[];
     tobacco?: { name?: string; category?: string; amount?: number }[];
   };
   try {
@@ -152,12 +152,17 @@ export async function readReceipt(opts: {
     category: parsed.category?.trim() || null,
     kind: parsed.kind === "faktura" || parsed.kind === "annat" ? parsed.kind : "kvitto",
     groceries: (parsed.groceries ?? [])
-      .map((item) => ({
-        name: String(item.name ?? "").trim(),
-        quantity: item.quantity?.trim() ? item.quantity.trim() : null,
-      }))
+      .map((item) => {
+        const amount = Number(item.amount);
+        return {
+          name: String(item.name ?? "").trim(),
+          quantity: item.quantity?.trim() ? item.quantity.trim() : null,
+          amount: Number.isFinite(amount) && amount > 0 ? amount : null,
+        };
+      })
       .filter((item) => item.name.length > 0 && !tobaccoCategory(item.name))
       .slice(0, 40),
+
     tobacco: (parsed.tobacco ?? [])
       .map((item) => {
         const name = String(item.name ?? "").trim();
