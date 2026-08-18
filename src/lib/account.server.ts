@@ -57,9 +57,22 @@ export async function migrateUserData(fromUserId: string, toUserId: string): Pro
   let moved = 0;
 
   for (const table of USER_TABLES) {
-    const { data, error } = await supabaseAdmin
-      // Tabellnamnen är en fast lista ovan – castas för att slippa union-typen.
-      .from(table as string)
+    const client = supabaseAdmin as unknown as {
+      from: (t: string) => {
+        update: (v: Record<string, unknown>) => {
+          eq: (
+            c: string,
+            v: string,
+          ) => {
+            select: (
+              c: string,
+            ) => Promise<{ data: Array<{ id: string }> | null; error: { message: string } | null }>;
+          };
+        };
+      };
+    };
+    const { data, error } = await client
+      .from(table)
       .update({ user_id: toUserId })
       .eq("user_id", fromUserId)
       .select("id");
@@ -69,6 +82,7 @@ export async function migrateUserData(fromUserId: string, toUserId: string): Pro
     }
     moved += data?.length ?? 0;
   }
+
 
   // Profiles har användarens id som primärnyckel – ingen flytt, bara städning.
   for (const bucket of BUCKETS) {
