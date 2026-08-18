@@ -85,38 +85,61 @@ export function usePantry() {
   });
 }
 
+type PantryLite = { id: string; name_key: string; times_added: number };
+
+/** Hämtar skafferiet en gång så vi kan matcha varor mot befintliga rader. */
+async function loadPantryIndex(): Promise<PantryLite[]> {
+  const { data } = await supabase.from("pantry_items").select("id, name_key, times_added");
+  return (data ?? []) as PantryLite[];
+}
+
+/** Hittar befintlig vara på exakt nyckel eller kanonisk nyckel (Iste = Iste citron). */
+function matchPantry(index: PantryLite[], name: string) {
+  const key = nameKey(name);
+  const canon = canonicalKey(name);
+  return (
+    index.find((row) => row.name_key === key) ??
+    index.find((row) => canonicalKey(row.name_key) === canon) ??
+    null
+  );
+}
+
 /** Sparar varan i varuregistret så den kommer med som förslag nästa gång. */
 async function rememberItems(
   userId: string,
   items: { name: string; source: "manuell" | "ai" }[],
 ) {
+  const index = await loadPantryIndex();
   for (const item of items) {
     const key = nameKey(item.name);
-    if (!key) continue;
-    const { data: existing } = await supabase
-      .from("pantry_items")
-      .select("id, times_added")
-      .eq("name_key", key)
-      .maybeSingle();
+    if (!key || isNonGrocery(item.name)) continue;
+    const existing = matchPantry(index, item.name);
 
     if (existing) {
+      existing.times_added += 1;
       await supabase
         .from("pantry_items")
         .update({
-          times_added: existing.times_added + 1,
+          times_added: existing.times_added,
           last_added_at: new Date().toISOString(),
         })
         .eq("id", existing.id);
     } else {
-      await supabase.from("pantry_items").insert({
-        user_id: userId,
-        name: prettyName(item.name),
-        name_key: key,
-        source: item.source,
-      });
+      const { data: created } = await supabase
+        .from("pantry_items")
+        .insert({
+          user_id: userId,
+          name: prettyName(item.name),
+          name_key: key,
+          source: item.source,
+        })
+        .select("id, name_key, times_added")
+        .maybeSingle();
+      if (created) index.push(created as PantryLite);
     }
   }
 }
+
 
 export function useAddItems(listId: string | undefined) {
   const qc = useQueryClient();
