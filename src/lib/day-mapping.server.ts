@@ -609,6 +609,18 @@ export async function analyzeDay(userId: string, day: string) {
     const distance = route?.meters ?? s.distance_m;
     // Kalenderträff höjer tilltron till AI:ns tolkning.
     const calendarHit = (extra?.calendar.length ?? 0) > 0;
+    const nearbyTrip = tripPlaces.get(index);
+    const modeGuess =
+      s.entry_kind === "resa"
+        ? inferTravelMode({
+            distanceM: distance,
+            minutesSpent: spent,
+            route: route ?? null,
+            nearbyStart: nearbyTrip?.start ?? [],
+            nearbyEnd: nearbyTrip?.end ?? [],
+            calendar: calendarTextsFor(s.starts_at, s.ends_at),
+          })
+        : null;
     return {
       user_id: userId,
       day,
@@ -620,7 +632,7 @@ export async function analyzeDay(userId: string, day: string) {
       end_lat: s.end_lat,
       end_lng: s.end_lng,
       distance_m: Math.round(distance),
-      travel_mode: s.entry_kind === "resa" ? travelModeFor(distance, spent) : ("okant" as const),
+      travel_mode: modeGuess ? modeGuess.mode : ("okant" as const),
       place_id: s.place_id,
       address: s.entry_kind === "besok" ? (extra?.address ?? null) : null,
       seen_count: extra?.seen ?? 0,
@@ -633,12 +645,11 @@ export async function analyzeDay(userId: string, day: string) {
         s.entry_kind === "resa" ? null : (ai?.activity ?? (receipt ? "Handlade" : null)),
       reasoning:
         s.entry_kind === "resa"
-          ? route
-            ? `Google Routes: ${(route.meters / 1000).toFixed(1)} km, ca ${route.minutes} min.`
-            : null
+          ? (modeGuess?.reason ?? null)
           : receipt
             ? `Kvitto från ${receipt.label ?? "butik"} kopplat till stoppet.`
             : (ai?.reasoning ?? null),
+
       confidence: place
         ? 1
         : receipt
