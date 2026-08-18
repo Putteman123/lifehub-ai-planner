@@ -9,7 +9,7 @@ export type ReceiptRead = {
   time: string | null;
   category: string | null;
   kind: "kvitto" | "faktura" | "annat";
-  groceries: { name: string; quantity: string | null }[];
+  groceries: { name: string; quantity: string | null; amount: number | null }[];
   /** Tobak (cigaretter/snus) hålls skilt från mat och hamnar inte i skafferiet. */
   tobacco: { name: string; category: "Cigaretter" | "Snus"; amount: number | null }[];
 };
@@ -33,8 +33,9 @@ const SCHEMA = {
         properties: {
           name: { type: "string" },
           quantity: { type: "string" },
+          amount: { type: "number" },
         },
-        required: ["name", "quantity"],
+        required: ["name", "quantity", "amount"],
       },
     },
     tobacco: {
@@ -83,7 +84,7 @@ export async function readReceipt(opts: {
       text:
         `Läs av detta kvitto/faktura. Använd i första hand någon av användarens befintliga kategorier: ${
           opts.knownCategories.join(", ") || "inga ännu"
-        }. Skapa bara en ny kategori om ingen passar. Datum i formatet YYYY-MM-DD. time = klockslaget på kvittot i formatet HH:MM, tom sträng om det saknas. address = butikens fullständiga gatuadress med ort precis som den står på kvittot (tom sträng om den saknas). total = totalbeloppet i kronor som ett tal. groceries = endast dagligvaror (mat, dryck, hushåll) med korta svenska varunamn i singular, quantity kan vara tom sträng. Tobak får ALDRIG ligga i groceries: cigaretter, cigarrer, röktobak, snus och nikotinpåsar läggs i stället i tobacco med category "Cigaretter" eller "Snus" och amount = radens pris i kronor (0 om priset saknas). Är det en faktura eller ett dokument utan varor ska groceries vara tom.`,
+        }. Skapa bara en ny kategori om ingen passar. Datum i formatet YYYY-MM-DD. time = klockslaget på kvittot i formatet HH:MM, tom sträng om det saknas. address = butikens fullständiga gatuadress med ort precis som den står på kvittot (tom sträng om den saknas). total = totalbeloppet i kronor som ett tal. groceries = alla varurader utom tobak, med korta svenska varunamn i singular utan smaksättning i namnet ("Iste" inte "Iste citron/lime"), quantity kan vara tom sträng och amount = radens pris i kronor (0 om priset saknas). Tobak får ALDRIG ligga i groceries: cigaretter, cigarrer, röktobak, snus och nikotinpåsar läggs i stället i tobacco med category "Cigaretter" eller "Snus" och amount = radens pris i kronor (0 om priset saknas). Är det en faktura eller ett dokument utan varor ska groceries vara tom.`,
     },
     isPdf
       ? {
@@ -132,7 +133,7 @@ export async function readReceipt(opts: {
     .trim();
 
   let parsed: Partial<ReceiptRead> & {
-    groceries?: { name?: string; quantity?: string }[];
+    groceries?: { name?: string; quantity?: string; amount?: number }[];
     tobacco?: { name?: string; category?: string; amount?: number }[];
   };
   try {
@@ -151,12 +152,17 @@ export async function readReceipt(opts: {
     category: parsed.category?.trim() || null,
     kind: parsed.kind === "faktura" || parsed.kind === "annat" ? parsed.kind : "kvitto",
     groceries: (parsed.groceries ?? [])
-      .map((item) => ({
-        name: String(item.name ?? "").trim(),
-        quantity: item.quantity?.trim() ? item.quantity.trim() : null,
-      }))
+      .map((item) => {
+        const amount = Number(item.amount);
+        return {
+          name: String(item.name ?? "").trim(),
+          quantity: item.quantity?.trim() ? item.quantity.trim() : null,
+          amount: Number.isFinite(amount) && amount > 0 ? amount : null,
+        };
+      })
       .filter((item) => item.name.length > 0 && !tobaccoCategory(item.name))
       .slice(0, 40),
+
     tobacco: (parsed.tobacco ?? [])
       .map((item) => {
         const name = String(item.name ?? "").trim();

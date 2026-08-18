@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 
 import { SectionCard } from "@/components/SectionCard";
 import type { Tables } from "@/integrations/supabase/types";
+import { canonicalKey, isNonGrocery } from "@/lib/pantry-name";
 
 type PantryRow = Tables<"pantry_items">;
 
@@ -42,14 +43,38 @@ export function PantryTopCard({
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const top = useMemo(
-    () =>
-      [...pantry]
-        .filter((row) => row.times_added > 0)
-        .sort((a, b) => b.times_added - a.times_added)
-        .slice(0, 10),
-    [pantry],
-  );
+  // Varianter av samma vara ("Iste", "Iste citron/lime") slås ihop till en rad.
+  const top = useMemo(() => {
+    const groups = new Map<string, PantryRow>();
+    for (const row of pantry) {
+      if (row.times_added <= 0 || isNonGrocery(row.name)) continue;
+      const key = canonicalKey(row.name);
+      const current = groups.get(key);
+      if (!current) {
+        groups.set(key, { ...row });
+        continue;
+      }
+      const winner = row.times_added > current.times_added ? row : current;
+      groups.set(key, {
+        ...winner,
+        times_added: current.times_added + row.times_added,
+        created_at:
+          new Date(row.created_at) < new Date(current.created_at)
+            ? row.created_at
+            : current.created_at,
+        last_added_at:
+          new Date(row.last_added_at) > new Date(current.last_added_at)
+            ? row.last_added_at
+            : current.last_added_at,
+        last_purchased_at:
+          new Date(row.last_purchased_at ?? 0) > new Date(current.last_purchased_at ?? 0)
+            ? row.last_purchased_at
+            : current.last_purchased_at,
+      });
+    }
+    return [...groups.values()].sort((a, b) => b.times_added - a.times_added).slice(0, 10);
+  }, [pantry]);
+
 
   const max = top[0]?.times_added ?? 1;
 

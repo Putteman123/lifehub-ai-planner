@@ -4,6 +4,9 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { canonicalKey, isNonGrocery } from "@/lib/pantry-name";
+
+export { canonicalKey, isNonGrocery };
 
 export type ShoppingList = Tables<"shopping_lists">;
 export type ShoppingItem = Tables<"shopping_items">;
@@ -291,38 +294,42 @@ export function useAddPantryItems() {
     mutationFn: async (input: { names: string[]; purchasedAt?: string }) => {
       const user_id = await currentUserId();
       const purchased = input.purchasedAt ?? new Date().toISOString();
+      const index = await loadPantryIndex();
       let saved = 0;
       for (const raw of input.names) {
         const key = nameKey(raw);
-        if (!key) continue;
-        const { data: existing } = await supabase
-          .from("pantry_items")
-          .select("id, times_added")
-          .eq("name_key", key)
-          .maybeSingle();
+        if (!key || isNonGrocery(raw)) continue;
+        const existing = matchPantry(index, raw);
         if (existing) {
+          existing.times_added += 1;
           await supabase
             .from("pantry_items")
             .update({
-              times_added: existing.times_added + 1,
+              times_added: existing.times_added,
               last_added_at: purchased,
               last_purchased_at: purchased,
             })
             .eq("id", existing.id);
         } else {
-          await supabase.from("pantry_items").insert({
-            user_id,
-            name: prettyName(raw),
-            name_key: key,
-            source: "ai",
-            last_added_at: purchased,
-            last_purchased_at: purchased,
-          });
+          const { data: created } = await supabase
+            .from("pantry_items")
+            .insert({
+              user_id,
+              name: prettyName(raw),
+              name_key: key,
+              source: "ai",
+              last_added_at: purchased,
+              last_purchased_at: purchased,
+            })
+            .select("id, name_key, times_added")
+            .maybeSingle();
+          if (created) index.push(created as PantryLite);
         }
         saved += 1;
       }
       return saved;
     },
+
     onSuccess: () => qc.invalidateQueries({ queryKey: ["pantry_items"] }),
     onError: (error: Error) => toast.error(error.message),
   });
