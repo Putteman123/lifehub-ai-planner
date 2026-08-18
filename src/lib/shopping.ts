@@ -4,6 +4,9 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import { canonicalKey, isNonGrocery } from "@/lib/pantry-name";
+
+export { canonicalKey, isNonGrocery };
 
 export type ShoppingList = Tables<"shopping_lists">;
 export type ShoppingItem = Tables<"shopping_items">;
