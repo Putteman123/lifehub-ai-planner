@@ -48,6 +48,7 @@ export function VisitLogList({ places }: { places: PlaceRow[] }) {
   const [onlyUnknown, setOnlyUnknown] = useState(false);
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(PAGE);
+  const [openDays, setOpenDays] = useState<Record<string, boolean>>({});
   const [editVisit, setEditVisit] = useState<VisitRow | null>(null);
   const [editTrip, setEditTrip] = useState<VisitRow | null>(null);
 
