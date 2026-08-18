@@ -74,6 +74,24 @@ export type Database = {
         }
         Relationships: []
       }
+      app_owner: {
+        Row: {
+          claimed_at: string
+          id: boolean
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          id?: boolean
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string
+          id?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_passkeys: {
         Row: {
           counter: number
