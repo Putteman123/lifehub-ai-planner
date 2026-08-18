@@ -228,7 +228,7 @@ async function suggestLabels(
   places: PlaceRow[],
   events: { title: string; starts_at: string; ends_at: string; location: string | null }[],
   history: { label: string | null; lat: number | null; lng: number | null }[],
-  extras: Map<number, { address: string | null; seen: number; purchases: Purchase[] }>,
+  extras: Map<number, StopExtra>,
 ): Promise<Suggestion[]> {
   const unknown = segments
     .map((s, index) => ({ s, index }))
@@ -245,6 +245,19 @@ async function suggestLabels(
       )} min) vid ${s.lat.toFixed(5)},${s.lng.toFixed(5)}`,
     ];
     if (extra?.address) parts.push(`adress: ${extra.address}`);
+    if (extra?.nearby.length)
+      parts.push(
+        `verksamheter inom ${Math.max(...extra.nearby.map((n) => n.meters), 0)} m: ${extra.nearby
+          .map(
+            (n) =>
+              `${n.name} (${n.meters} m${n.types[0] ? `, ${n.types[0]}` : ""}${
+                n.ratingCount ? `, ${n.ratingCount} omdömen` : ""
+              })`,
+          )
+          .join("; ")}`,
+      );
+    if (extra?.calendar.length)
+      parts.push(`kalendern samtidigt: ${extra.calendar.join("; ")}`);
     if (extra?.seen) parts.push(`du har varit här ${extra.seen} gånger tidigare`);
     if (extra?.purchases.length)
       parts.push(
@@ -254,6 +267,7 @@ async function suggestLabels(
       );
     return parts.join(" | ");
   });
+
 
   const input = [
     "OKÄNDA STOPP:",
