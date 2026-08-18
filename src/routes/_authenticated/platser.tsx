@@ -2,16 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import {
-  Car,
-  Loader2,
-  LogOut,
-  MapPin,
-  Pencil,
-  Plus,
-  Radio,
-  Trash2,
-} from "lucide-react";
+import { Car, Loader2, LogOut, MapPin, Pencil, Plus, Radio, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
@@ -26,18 +17,13 @@ import { WeeklyTravelPlan } from "@/components/platser/WeeklyTravelPlan";
 import { TravelTrendChart } from "@/components/platser/TravelTrendChart";
 
 import { TravelTimeline } from "@/components/platser/TravelTimeline";
+import { DayLogCard } from "@/components/platser/DayLogCard";
 import { DayMap } from "@/components/platser/DayMap";
 import { PositionHistory } from "@/components/platser/PositionHistory";
 
 import { VisitLogList } from "@/components/platser/VisitLogList";
 
-
-
-import {
-  NameVisitDialog,
-  type NameVisitTarget,
-} from "@/components/platser/NameVisitDialog";
-
+import { NameVisitDialog, type NameVisitTarget } from "@/components/platser/NameVisitDialog";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -136,7 +122,6 @@ function PlacesPage() {
 
   const upsertPlace = useUpsertRow("places", "Plats sparad");
   const deletePlace = useDeleteRow("places", "Plats borttagen");
-  const deleteVisit = useDeleteRow("visits", "Besök borttaget");
 
   const [mapTarget, setMapTarget] = useState<MapTarget | null>(null);
   const [nameTarget, setNameTarget] = useState<NameVisitTarget | null>(null);
@@ -145,11 +130,7 @@ function PlacesPage() {
 
   const saveVisitName = useServerFn(nameVisit);
   const noteSuggestions = Array.from(
-    new Set(
-      visits
-        .map((v) => v.note?.trim())
-        .filter((n): n is string => Boolean(n)),
-    ),
+    new Set(visits.map((v) => v.note?.trim()).filter((n): n is string => Boolean(n))),
   );
 
   async function handleNameVisit(values: {
@@ -174,43 +155,6 @@ function PlacesPage() {
       setNamingBusy(false);
     }
   }
-
-  const markTravel = useServerFn(markVisitTravel);
-  const undoTravelFn = useServerFn(undoVisitTravel);
-  const mergeTravels = useServerFn(mergeVisitTravels);
-  const [travelBusy, setTravelBusy] = useState<string | null>(null);
-
-  async function handleMarkTravel(visitId: string) {
-    setTravelBusy(visitId);
-    try {
-      const res = await markTravel({ data: { visitId } });
-      await qc.invalidateQueries({ queryKey: ["visits"] });
-      toast.success(`Resa: ${res.label}`, {
-        description: `${formatDistance(res.distance_m)} · ${formatDuration(res.minutes)} · ${travelModeLabel(
-          res.travel_mode,
-        )}${res.distance_verified ? " · avstånd verifierat" : ""}`,
-        action: {
-          label: "Ångra",
-          onClick: async () => {
-            try {
-              await undoTravelFn({ data: { visitId, previous: res.previous } });
-              await qc.invalidateQueries({ queryKey: ["visits"] });
-              toast.success("Resemarkeringen är ångrad.");
-            } catch (err) {
-              toast.error(err instanceof Error ? err.message : "Kunde inte ångra.");
-            }
-          },
-        },
-      });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Kunde inte markera som resa.");
-    } finally {
-      setTravelBusy(null);
-    }
-  }
-
-
-
 
   const [live, setLive] = useState(false);
   const [ingestUrl, setIngestUrl] = useState<string | null>(null);
@@ -388,7 +332,6 @@ function PlacesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-
   async function wipe() {
     if (!confirm("Radera all platshistorik? Detta går inte att ångra.")) return;
     await clearHistory({});
@@ -398,40 +341,6 @@ function PlacesPage() {
 
   const now = new Date();
   const todayStart = startOfDay(now);
-  const todayVisits = visits
-    .filter((v) => new Date(v.left_at ?? now).getTime() >= todayStart.getTime())
-    .sort((a, b) => a.arrived_at.localeCompare(b.arrived_at));
-  const openVisit = visits.find((v) => !v.left_at) ?? null;
-
-  // Längsta serie av resor i följd i dag – kan slås ihop till en resa.
-  const mergeGroup = (() => {
-    let best: typeof todayVisits = [];
-    let run: typeof todayVisits = [];
-    for (const visit of todayVisits) {
-      if (isTravel(visit)) {
-        run = [...run, visit];
-        if (run.length > best.length) best = run;
-      } else {
-        run = [];
-      }
-    }
-    return best.length >= 2 ? best : null;
-  })();
-
-  async function handleMergeTravels(ids: string[]) {
-    setTravelBusy("merge");
-    try {
-      const res = await mergeTravels({ data: { visitIds: ids } });
-      await qc.invalidateQueries({ queryKey: ["visits"] });
-      toast.success(
-        `Sammanslagen resa: ${formatDistance(res.distance_m)} · ${formatDuration(res.minutes)}`,
-      );
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Kunde inte slå ihop resorna.");
-    } finally {
-      setTravelBusy(null);
-    }
-  }
 
   const lastPingMs = visits.reduce((acc, v) => {
     const t = new Date(v.left_at ?? v.arrived_at).getTime();
@@ -439,16 +348,10 @@ function PlacesPage() {
   }, 0);
   const lastPingAt = lastPingMs > 0 ? new Date(lastPingMs) : null;
 
-
   const today = minutesByKind(visits, places, todayStart, now, now);
   const week = minutesByKind(visits, places, weekStart, now, now);
   const todayTravel = travelStats(visits, todayStart, now, now);
   const weekTravel = travelStats(visits, weekStart, now, now);
-
-  const todayEvents = events.filter((e) => {
-    const start = new Date(e.starts_at);
-    return start >= todayStart && start < new Date(todayStart.getTime() + 86400000);
-  });
 
   return (
     <AppShell
@@ -477,190 +380,7 @@ function PlacesPage() {
     >
       <DataGate queries={[placesQ, visitsQ, eventsQ]}>
         <div className="grid gap-4 lg:grid-cols-3">
-          <section className="rounded-2xl border border-border bg-card p-4 lg:col-span-2">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold">Dagens reselogg</h2>
-              {openVisit ? (
-                <span className="rounded-full bg-cat-ledig/12 px-2.5 py-1 text-xs font-medium text-cat-ledig">
-                  Nu: {visitLabel(openVisit, places)} ·{" "}
-                  {formatDuration(visitMinutes(openVisit, now))}
-                </span>
-              ) : null}
-            </div>
-
-            {mergeGroup ? (
-              <button
-                type="button"
-                disabled={travelBusy === "merge"}
-                onClick={() => handleMergeTravels(mergeGroup.map((v) => v.id))}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary disabled:opacity-60"
-              >
-                {travelBusy === "merge" ? (
-                  <Loader2 className="size-3.5 animate-spin" />
-                ) : (
-                  <Car className="size-3.5" />
-                )}
-                Slå ihop {mergeGroup.length} resor till en
-              </button>
-            ) : null}
-
-
-
-            {todayVisits.length === 0 ? (
-              <p className="mt-4 text-sm text-muted-foreground">
-                Inga besök registrerade i dag. Tryck på ”Jag är här” eller slå på live-läget.
-              </p>
-            ) : (
-              <ol className="mt-4 space-y-2">
-                {todayVisits.map((visit) => {
-                  const place = visit.place_id
-                    ? places.find((p) => p.id === visit.place_id)
-                    : undefined;
-                  const travel = isTravel(visit);
-                  const span = `${timeLabel(visit.arrived_at)}${
-                    visit.left_at ? `–${timeLabel(visit.left_at)}` : "–nu"
-                  }`;
-                  return (
-                  <li
-                    key={visit.id}
-                    className={`group flex items-center gap-3 rounded-xl border px-3 py-2 ${
-                      travel ? "border-dashed border-border/60 bg-muted/30" : "border-border/70"
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
-                      aria-label={
-                        travel
-                          ? "Visa resans slutpunkt på karta"
-                          : `Visa ${visitLabel(visit, places)} på karta`
-                      }
-                      onClick={() => {
-                        if (travel) {
-                          const endLat = visit.end_lat ?? visit.lat;
-                          const endLng = visit.end_lng ?? visit.lng;
-                          if (endLat != null && endLng != null) {
-                            setMapTarget({
-                              title: "Resa",
-                              subtitle: `${span} · ${formatDistance(visit.distance_m ?? 0)}`,
-                              lat: endLat,
-                              lng: endLng,
-                            });
-                          }
-                          return;
-                        }
-                        if (place) {
-                          setMapTarget({
-                            title: visitLabel(visit, places),
-                            subtitle: `${span} · ${formatDuration(visitMinutes(visit, now))}`,
-                            lat: visit.lat ?? place.lat,
-                            lng: visit.lng ?? place.lng,
-                          });
-                          return;
-                        }
-                        setNameTarget({
-                          visitId: visit.id,
-                          subtitle: `${span} · ${formatDuration(visitMinutes(visit, now))}`,
-                          lat: visit.lat,
-                          lng: visit.lng,
-                          label: visit.label,
-                          note: visit.note,
-                        });
-                      }}
-                    >
-                      <span className="w-24 shrink-0 text-xs tabular-nums text-muted-foreground">
-                        {span}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-sm font-medium">
-                        {travel ? (
-                          <span className="inline-flex items-center gap-1.5">
-                            <Car className="size-3.5 text-muted-foreground" />
-                            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                              Resa
-                            </span>
-                            <span className="text-xs font-normal text-muted-foreground">
-                              {formatDistance(visit.distance_m ?? 0)}
-                            </span>
-                          </span>
-                        ) : (
-                          <>
-                            {visitLabel(visit, places)}
-                            {visit.note ? (
-                              <span className="ml-2 text-xs font-normal text-muted-foreground">
-                                {visit.note}
-                              </span>
-                            ) : null}
-                            {!place && !visit.note ? (
-                              <span className="ml-2 text-xs font-normal text-primary">
-                                Namnge
-                              </span>
-                            ) : null}
-                          </>
-                        )}
-                      </span>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {formatDuration(visitMinutes(visit, now))}
-                      </span>
-                    </button>
-                    {!travel ? (
-                      <button
-                        type="button"
-                        aria-label="Markera som resa"
-                        disabled={travelBusy === visit.id}
-                        className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border/70 px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:opacity-60"
-                        onClick={() => handleMarkTravel(visit.id)}
-                      >
-                        {travelBusy === visit.id ? (
-                          <Loader2 className="size-3 animate-spin" />
-                        ) : (
-                          <Car className="size-3" />
-                        )}
-                        Resa
-                      </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      aria-label="Ta bort besök"
-                      className="text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
-                      onClick={() => deleteVisit.mutate(visit.id)}
-                    >
-                      <Trash2 className="size-3.5" />
-                    </button>
-
-                  </li>
-                  );
-                })}
-
-
-              </ol>
-            )}
-
-            {todayEvents.length > 0 && todayVisits.length > 0 ? (
-              <div className="mt-5 border-t border-border/70 pt-4">
-                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Mot kalendern
-                </h3>
-                <ul className="mt-2 space-y-1.5">
-                  {todayEvents.map((event) => {
-                    const start = new Date(event.starts_at);
-                    const at = todayVisits.find(
-                      (v) =>
-                        new Date(v.arrived_at) <= start &&
-                        new Date(v.left_at ?? now) >= start,
-                    );
-                    return (
-                      <li key={event.id} className="text-xs text-muted-foreground">
-                        <span className="font-medium text-foreground">
-                          {timeLabel(event.starts_at)} {event.title}
-                        </span>{" "}
-                        – {at ? `du var på ${visitLabel(at, places)}` : "ingen plats registrerad"}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ) : null}
-          </section>
+          <DayLogCard places={places} />
 
           <section className="space-y-4">
             <div className="rounded-2xl border border-border bg-card p-4">
@@ -669,10 +389,7 @@ function PlacesPage() {
                 {PLACE_KINDS.map((k) => (
                   <li key={k.value} className="flex items-center justify-between text-sm">
                     <span className="flex items-center gap-2">
-                      <span
-                        className="size-2 rounded-full"
-                        style={{ backgroundColor: k.color }}
-                      />
+                      <span className="size-2 rounded-full" style={{ backgroundColor: k.color }} />
                       {k.label}
                     </span>
                     <span className="tabular-nums text-muted-foreground">
@@ -718,7 +435,6 @@ function PlacesPage() {
                   </li>
                 ) : null}
               </ul>
-
             </div>
 
             <div className="rounded-2xl border border-border bg-card p-4">
@@ -745,11 +461,9 @@ function PlacesPage() {
           <PositionHistory />
         </div>
 
-
         <div className="mt-4">
           <TravelTimeline places={places} />
         </div>
-
 
         <div className="mt-4">
           <WeeklyTravelPlan />
@@ -763,7 +477,6 @@ function PlacesPage() {
           <TravelTrendChart />
         </div>
 
-
         <div className="mt-4">
           <FrequentRoutes places={places} />
         </div>
@@ -771,11 +484,6 @@ function PlacesPage() {
         <div className="mt-4">
           <PreferredModes places={places} />
         </div>
-
-
-
-
-
 
         <section className="mt-4 rounded-2xl border border-border bg-card p-4">
           <div className="flex items-center justify-between">
@@ -845,20 +553,14 @@ function PlacesPage() {
 
         <VisitLogList places={places} />
 
-
         <section className="mt-4 rounded-2xl border border-border bg-card p-4">
           <h2 className="text-sm font-semibold">Automatisk loggning från telefonen</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            En webbapp kan inte spåra i bakgrunden. Låt telefonen skicka positionen till din
-            privata adress i stället – gratis, och den fungerar med låst skärm.
+            En webbapp kan inte spåra i bakgrunden. Låt telefonen skicka positionen till din privata
+            adress i stället – gratis, och den fungerar med låst skärm.
           </p>
 
-          <OwnTracksGuide
-            ingestUrl={ingestUrl}
-            error={ingestError}
-            lastPingAt={lastPingAt}
-          />
-
+          <OwnTracksGuide ingestUrl={ingestUrl} error={ingestError} lastPingAt={lastPingAt} />
 
           <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/70 pt-3">
             <p className="text-xs text-muted-foreground">
@@ -954,5 +656,4 @@ function PlacesPage() {
       />
     </AppShell>
   );
-
 }

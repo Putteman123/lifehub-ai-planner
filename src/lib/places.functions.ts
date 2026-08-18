@@ -212,3 +212,46 @@ export const undoVisitTravelMerge = createServerFn({ method: "POST" })
     return undoMergeTravelVisits(context.supabase, context.userId, data.snapshot);
   });
 
+const mergeVisitsSchema = z.object({ visitIds: z.array(z.string().uuid()).min(2).max(30) });
+
+/** Slår ihop flera besök till ett sammanhängande – behåller det tidigaste. */
+export const mergeVisits = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => mergeVisitsSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase;
+    const { data: rows, error } = await supabase
+      .from("visits")
+      .select("*")
+      .in("id", data.visitIds)
+      .eq("user_id", context.userId)
+      .order("arrived_at");
+    if (error) throw new Error(error.message);
+    if (!rows || rows.length < 2) throw new Error("Hittade inte besöken att slå ihop.");
+
+    const first = rows[0]!;
+    const last = rows[rows.length - 1]!;
+    const meters = rows.reduce((sum, r) => sum + (r.distance_m ?? 0), 0);
+    const note = rows.map((r) => r.note?.trim()).filter(Boolean).join(" · ") || null;
+
+    const { error: updateError } = await supabase
+      .from("visits")
+      .update({
+        left_at: last.left_at,
+        end_lat: last.end_lat ?? last.lat,
+        end_lng: last.end_lng ?? last.lng,
+        distance_m: meters,
+        note,
+        label: first.label ?? last.label,
+      })
+      .eq("id", first.id);
+    if (updateError) throw new Error(updateError.message);
+
+    const removeIds = rows.slice(1).map((r) => r.id);
+    const { error: deleteError } = await supabase.from("visits").delete().in("id", removeIds);
+    if (deleteError) throw new Error(deleteError.message);
+
+    return { id: first.id, removed: removeIds.length };
+  });
+
+
