@@ -17,6 +17,8 @@ import { base64urlToBuffer, bufferToBase64url, passkeysSupported } from "@/lib/w
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
+
+
     meta: [
       { title: "Lås upp – LifeHub AI" },
       { name: "description", content: "Lås upp LifeHub AI med Face ID eller din pinkod." },
