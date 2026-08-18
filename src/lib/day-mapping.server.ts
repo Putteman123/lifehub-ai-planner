@@ -432,29 +432,40 @@ export async function analyzeDay(userId: string, day: string) {
   const allVisits = historyRes.data ?? [];
 
 
-  /** Extra sammanhang per stopp: adress, hur ofta du varit där och köp. */
-  const extras = new Map<
-    number,
-    { address: string | null; seen: number; purchases: Purchase[] }
-  >();
+  /** Extra sammanhang per stopp: adress, verksamheter, kalender, historik och köp. */
+  const extras = new Map<number, StopExtra>();
 
   const stopIndexes = segments
     .map((s, index) => ({ s, index }))
     .filter(({ s }) => s.entry_kind === "besok");
 
-  // Adressuppslag för stoppen (begränsat antal för att hålla analysen snabb).
-  const { resolvePlaceName } = await import("@/lib/maps.server");
-  const geocoded = await Promise.all(
-    stopIndexes
-      .slice(0, 12)
-      .map(async ({ s, index }) => ({
-        index,
-        place: await resolvePlaceName(s.lat, s.lng).catch(() => null),
-      })),
+  // Adress och verksamheter för stoppen (begränsat antal för att hålla analysen snabb).
+  const { resolvePlaceName, resolveNearbyPlaces } = await import("@/lib/maps.server");
+  const looked = await Promise.all(
+    stopIndexes.slice(0, 12).map(async ({ s, index }) => ({
+      index,
+      place: await resolvePlaceName(s.lat, s.lng).catch(() => null),
+      nearby: await resolveNearbyPlaces(s.lat, s.lng, 140).catch(() => []),
+    })),
   );
   const addressByIndex = new Map(
-    geocoded.map((g) => [g.index, g.place ? `${g.place.shortName} – ${g.place.address}` : null]),
+    looked.map((g) => [g.index, g.place ? `${g.shortLabel ?? ""}` : null] as const).map(() => [0, null] as const),
   );
+  const infoByIndex = new Map(
+    looked.map((g) => [
+      g.index,
+      {
+        address: g.place ? `${g.place.shortName} – ${g.place.address}` : null,
+        nearby: g.nearby.map((n) => ({
+          name: n.name,
+          meters: n.meters,
+          types: n.types,
+          ratingCount: n.ratingCount,
+        })),
+      },
+    ]),
+  );
+  addressByIndex.clear();
 
   /** Kvittobesök som matchar ett stopp (närhet i tid och rum). */
   const receiptByIndex = new Map<number, (typeof receiptVisits)[number]>();
@@ -468,6 +479,8 @@ export async function analyzeDay(userId: string, day: string) {
     });
     if (hit) receiptByIndex.set(index, hit);
   }
+
+  const dayEvents = eventsRes.data ?? [];
 
   for (const { s, index } of stopIndexes) {
     const seen = allVisits.filter(
@@ -483,12 +496,30 @@ export async function analyzeDay(userId: string, day: string) {
       const t = new Date(p.spent_at).getTime();
       return t >= from && t <= to;
     });
+    // Kalenderhändelser som överlappar stoppet (med 20 min marginal).
+    const overlapping = dayEvents
+      .filter((e) => {
+        const eStart = new Date(e.starts_at).getTime();
+        const eEnd = new Date(e.ends_at).getTime();
+        return eStart <= to && eEnd >= from;
+      })
+      .map(
+        (e) =>
+          `${timeLocal(e.starts_at)}–${timeLocal(e.ends_at)} ${e.title}${
+            e.location ? ` (${e.location})` : ""
+          }`,
+      );
+
+    const info = infoByIndex.get(index);
     extras.set(index, {
-      address: receiptByIndex.get(index)?.address ?? addressByIndex.get(index) ?? null,
+      address: receiptByIndex.get(index)?.address ?? info?.address ?? null,
       seen,
       purchases: bought,
+      nearby: info?.nearby ?? [],
+      calendar: overlapping,
     });
   }
+
 
 
   const apiKey = process.env["LOVABLE_API_KEY"];
