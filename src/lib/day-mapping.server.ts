@@ -221,6 +221,19 @@ type Purchase = {
   spent_at: string;
 };
 
+/** Allt extra sammanhang vi samlar per stopp innan AI tolkar det. */
+type StopExtra = {
+  address: string | null;
+  seen: number;
+  purchases: Purchase[];
+  /** Verksamheter från Google Places inom gångavstånd. */
+  nearby: { name: string; meters: number; types: string[]; ratingCount: number | null }[];
+  /** Kalenderhändelser som överlappar stoppet i tid. */
+  calendar: string[];
+};
+
+
+
 /** Frågar AI om namn och aktivitet för stopp som inte matchar en sparad plats. */
 async function suggestLabels(
   apiKey: string,
