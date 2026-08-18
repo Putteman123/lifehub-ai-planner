@@ -768,7 +768,7 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
               type="submit"
               size="icon"
               className="size-10 shrink-0 rounded-xl"
-              disabled={!input.trim()}
+              disabled={(!input.trim() && files.length === 0) || uploading}
             >
               <Send className="size-4" />
             </Button>
