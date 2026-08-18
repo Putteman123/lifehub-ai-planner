@@ -2,7 +2,15 @@
  * Kartlogik som bara får köras på servern (anropar Google via gatewayen).
  */
 import { estimateRouteMeters } from "./geo";
-import { geocodeAddress, geocodeLatLng, hasGoogle, mapsRoute } from "./google.server";
+import {
+  geocodeAddress,
+  geocodeLatLng,
+  hasGoogle,
+  mapsRoute,
+  placesNearby,
+  type NearbyPlace,
+} from "./google.server";
+
 
 
 export type Point = { lat: number; lng: number };
