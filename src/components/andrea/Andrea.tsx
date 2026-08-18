@@ -385,7 +385,7 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     if (messages.length > 0) {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(slimForStorage(messages)));
       } catch {
         /* ignore */
       }
