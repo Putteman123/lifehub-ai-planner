@@ -1,10 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Delete, Fingerprint, Loader2, Lock, Sparkles } from "lucide-react";
+import { Delete, Fingerprint, Loader2, Lock, LogIn, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { lovable } from "@/integrations/lovable";
 import { supabase } from "@/integrations/supabase/client";
+import { claimMyData } from "@/lib/account.functions";
+import { markUnlocked } from "@/lib/app-lock";
 import {
   beginLoginPasskey,
   beginLoginPasskeyRegistration,
@@ -12,7 +15,7 @@ import {
   finishLoginPasskeyRegistration,
   hasLoginPasskey,
 } from "@/lib/login-passkey.functions";
-import { unlockWithPin } from "@/lib/pin.functions";
+import { checkPin } from "@/lib/pin.functions";
 import { base64urlToBuffer, bufferToBase64url, passkeysSupported } from "@/lib/webauthn";
 
 export const Route = createFileRoute("/auth")({
@@ -20,13 +23,13 @@ export const Route = createFileRoute("/auth")({
 
 
     meta: [
-      { title: "Lås upp – LifeHub AI" },
-      { name: "description", content: "Lås upp LifeHub AI med Face ID eller din pinkod." },
-      { property: "og:title", content: "Lås upp LifeHub AI" },
-      { property: "og:description", content: "Personlig planering skyddad med Face ID och pinkod." },
+      { title: "Logga in – LifeHub AI" },
+      { name: "description", content: "Logga in med Google och lås upp LifeHub AI med Face ID eller pinkod." },
+      { property: "og:title", content: "Logga in på LifeHub AI" },
+      { property: "og:description", content: "Ditt personliga konto – planering skyddad med Face ID och pinkod." },
     ],
   }),
-  // Ren klientvy (Face ID/pinkod) – ingen SSR, undviker hydreringsfel.
+  // Ren klientvy (inloggning/Face ID/pinkod) – ingen SSR, undviker hydreringsfel.
   ssr: false,
   // `next` används av OAuth-samtycket så man kommer tillbaka dit efter upplåsning.
   validateSearch: (s: Record<string, unknown>): { next?: string } => {
@@ -40,7 +43,8 @@ const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "face", "0", "del"] a
 
 function PinGate() {
   const navigate = useNavigate();
-  const unlock = useServerFn(unlockWithPin);
+  const verifyPin = useServerFn(checkPin);
+  const claim = useServerFn(claimMyData);
   const checkPasskey = useServerFn(hasLoginPasskey);
   const beginRegister = useServerFn(beginLoginPasskeyRegistration);
   const finishRegister = useServerFn(finishLoginPasskeyRegistration);
@@ -52,16 +56,45 @@ function PinGate() {
   const [message, setMessage] = useState<string | null>(null);
   const [faceAvailable, setFaceAvailable] = useState(false);
   const [offerFaceId, setOfferFaceId] = useState<string | null>(null);
+  const [session, setSession] = useState<"laddar" | "utloggad" | "inloggad">("laddar");
+  const [email, setEmail] = useState<string | null>(null);
   const busy = useRef(false);
 
+  // Steg 1: har du ett konto i den här webbläsaren?
   useEffect(() => {
-    if (!passkeysSupported()) return;
+    let active = true;
+    void supabase.auth.getUser().then(async ({ data }) => {
+      if (!active) return;
+      if (!data.user) {
+        setSession("utloggad");
+        return;
+      }
+      setEmail(data.user.email ?? null);
+      setSession("inloggad");
+      // Första inloggningen flyttar över den befintliga datan till ditt konto.
+      try {
+        const res = await claim({});
+        if (!res.ok) {
+          setMessage("Appens data ägs redan av ett annat konto.");
+        }
+      } catch {
+        // Överföringen kan köras om vid nästa inloggning.
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [claim]);
+
+  useEffect(() => {
+    if (session !== "inloggad" || !passkeysSupported()) return;
     void checkPasskey({}).then((res) => setFaceAvailable(res.registered));
-  }, [checkPasskey]);
+  }, [checkPasskey, session]);
 
   const { next } = Route.useSearch();
 
   const goIn = useCallback(async () => {
+    markUnlocked();
     if (next) {
       window.location.href = next;
       return;
@@ -69,9 +102,19 @@ function PinGate() {
     await navigate({ to: "/dashboard", replace: true });
   }, [navigate, next]);
 
-  const signInWithTokenHash = useCallback(async (tokenHash: string) => {
-    const { error } = await supabase.auth.verifyOtp({ type: "email", token_hash: tokenHash });
-    if (error) throw error;
+  const signInWithGoogle = useCallback(async () => {
+    setStatus("checking");
+    setMessage(null);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) {
+      setMessage("Inloggningen misslyckades – försök igen.");
+      setStatus("idle");
+      return;
+    }
+    if (result.redirected) return;
+    window.location.reload();
   }, []);
 
   const submit = useCallback(
@@ -80,13 +123,12 @@ function PinGate() {
       busy.current = true;
       setStatus("checking");
       try {
-        const res = await unlock({ data: { pin: code } });
+        const res = await verifyPin({ data: { pin: code } });
         if (!res.ok) {
           setStatus("error");
           setPin("");
           return;
         }
-        await signInWithTokenHash(res.tokenHash);
         if (passkeysSupported() && !faceAvailable) {
           setStatus("idle");
           setOfferFaceId(code);
@@ -100,8 +142,9 @@ function PinGate() {
         busy.current = false;
       }
     },
-    [unlock, signInWithTokenHash, faceAvailable, goIn],
+    [verifyPin, faceAvailable, goIn],
   );
+
 
   const unlockWithFace = useCallback(async () => {
     if (busy.current) return;
