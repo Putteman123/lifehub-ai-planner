@@ -444,6 +444,77 @@ export async function geocodeAddress(query: string): Promise<GeocodedPoint | nul
   };
 }
 
+export type NearbyPlace = {
+  name: string;
+  address: string | null;
+  types: string[];
+  meters: number;
+  /** Ungefärlig popularitet – hjälper AI att välja rätt kandidat. */
+  ratingCount: number | null;
+};
+
+/**
+ * Platser i närheten av en koordinat via Places API (New).
+ * Används för att sätta riktiga verksamhetsnamn på GPS-stopp.
+ */
+export async function placesNearby(
+  lat: number,
+  lng: number,
+  radiusM = 130,
+  max = 6,
+): Promise<NearbyPlace[]> {
+  const data = (await call("maps", "/places/v1/places:searchNearby", {
+    method: "POST",
+    headers: {
+      "X-Goog-FieldMask":
+        "places.displayName,places.formattedAddress,places.types,places.location,places.userRatingCount",
+    },
+    body: {
+      maxResultCount: Math.min(Math.max(max, 1), 20),
+      languageCode: "sv",
+      rankPreference: "DISTANCE",
+      locationRestriction: {
+        circle: {
+          center: { latitude: lat, longitude: lng },
+          radius: Math.min(Math.max(radiusM, 20), 1000),
+        },
+      },
+    },
+  })) as {
+    places?: Array<{
+      displayName?: { text?: string };
+      formattedAddress?: string;
+      types?: string[];
+      userRatingCount?: number;
+      location?: { latitude?: number; longitude?: number };
+    }>;
+  };
+
+  const toMeters = (aLat: number, aLng: number) => {
+    const R = 6371000;
+    const dLat = ((aLat - lat) * Math.PI) / 180;
+    const dLng = ((aLng - lng) * Math.PI) / 180;
+    const midLat = ((aLat + lat) / 2) * (Math.PI / 180);
+    const x = dLng * Math.cos(midLat);
+    return Math.round(Math.sqrt(dLat * dLat + x * x) * R);
+  };
+
+  return (data.places ?? [])
+    .map((p) => ({
+      name: p.displayName?.text ?? "",
+      address: p.formattedAddress ?? null,
+      types: p.types ?? [],
+      ratingCount: p.userRatingCount ?? null,
+      meters:
+        typeof p.location?.latitude === "number" && typeof p.location?.longitude === "number"
+          ? toMeters(p.location.latitude, p.location.longitude)
+          : 0,
+    }))
+    .filter((p) => p.name)
+    .slice(0, max);
+}
+
+
 
 
 

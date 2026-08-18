@@ -221,6 +221,19 @@ type Purchase = {
   spent_at: string;
 };
 
+/** Allt extra sammanhang vi samlar per stopp innan AI tolkar det. */
+type StopExtra = {
+  address: string | null;
+  seen: number;
+  purchases: Purchase[];
+  /** Verksamheter från Google Places inom gångavstånd. */
+  nearby: { name: string; meters: number; types: string[]; ratingCount: number | null }[];
+  /** Kalenderhändelser som överlappar stoppet i tid. */
+  calendar: string[];
+};
+
+
+
 /** Frågar AI om namn och aktivitet för stopp som inte matchar en sparad plats. */
 async function suggestLabels(
   apiKey: string,
@@ -228,7 +241,7 @@ async function suggestLabels(
   places: PlaceRow[],
   events: { title: string; starts_at: string; ends_at: string; location: string | null }[],
   history: { label: string | null; lat: number | null; lng: number | null }[],
-  extras: Map<number, { address: string | null; seen: number; purchases: Purchase[] }>,
+  extras: Map<number, StopExtra>,
 ): Promise<Suggestion[]> {
   const unknown = segments
     .map((s, index) => ({ s, index }))
@@ -245,6 +258,19 @@ async function suggestLabels(
       )} min) vid ${s.lat.toFixed(5)},${s.lng.toFixed(5)}`,
     ];
     if (extra?.address) parts.push(`adress: ${extra.address}`);
+    if (extra?.nearby.length)
+      parts.push(
+        `verksamheter inom ${Math.max(...extra.nearby.map((n) => n.meters), 0)} m: ${extra.nearby
+          .map(
+            (n) =>
+              `${n.name} (${n.meters} m${n.types[0] ? `, ${n.types[0]}` : ""}${
+                n.ratingCount ? `, ${n.ratingCount} omdömen` : ""
+              })`,
+          )
+          .join("; ")}`,
+      );
+    if (extra?.calendar.length)
+      parts.push(`kalendern samtidigt: ${extra.calendar.join("; ")}`);
     if (extra?.seen) parts.push(`du har varit här ${extra.seen} gånger tidigare`);
     if (extra?.purchases.length)
       parts.push(
@@ -254,6 +280,7 @@ async function suggestLabels(
       );
     return parts.join(" | ");
   });
+
 
   const input = [
     "OKÄNDA STOPP:",
@@ -281,10 +308,16 @@ async function suggestLabels(
     apiKey,
     system:
       "Du kartlägger en persons dag utifrån GPS-stopp. Föreslå ett kort platsnamn och en aktivitet " +
-      "för varje okänt stopp. Använd i tur och ordning: adressen från kartan, kvitton/köp under stoppet, " +
-      "koordinatnärhet till sparade platser och tidigare besök, hur ofta personen varit där, samt " +
-      "kalenderns händelser. Skriv butiksnamn när ett köp matchar. Är du osäker: skriv label 'Okänd plats' " +
-      "och activity ''. Motivera kort i reasoning vilken ledtråd du använde. Svara på svenska. Svara som JSON.",
+      "för varje okänt stopp. Prioritera ledtrådarna i denna ordning: (1) kvitton/köp under stoppet, " +
+      "(2) verksamheter från Google Places inom kort avstånd – välj den som bäst matchar tid på dygnet, " +
+      "stoppets längd och typ (öppettider, butik/restaurang/kontor/vård), (3) kalenderhändelser som " +
+      "överlappar stoppet – stämmer tid och plats får aktiviteten komma från händelsens titel, " +
+      "(4) närhet till sparade platser och tidigare namngivna besök, (5) adressen från kartan. " +
+      "Är stoppet kortare än 10 minuter vid en väg utan verksamheter är det troligen en paus i en resa – " +
+      "skriv label 'Kort stopp'. Långa nattliga stopp är hem, långa vardagsstopp på samma plats är jobb. " +
+      "Är du osäker: skriv label 'Okänd plats' och activity ''. Motivera kort i reasoning vilken ledtråd " +
+      "du använde och nämn kalendern när den bekräftar. Svara på svenska. Svara som JSON.",
+
     input,
     jsonSchema: {
       name: "stop_suggestions",
@@ -405,29 +438,37 @@ export async function analyzeDay(userId: string, day: string) {
   const allVisits = historyRes.data ?? [];
 
 
-  /** Extra sammanhang per stopp: adress, hur ofta du varit där och köp. */
-  const extras = new Map<
-    number,
-    { address: string | null; seen: number; purchases: Purchase[] }
-  >();
+  /** Extra sammanhang per stopp: adress, verksamheter, kalender, historik och köp. */
+  const extras = new Map<number, StopExtra>();
 
   const stopIndexes = segments
     .map((s, index) => ({ s, index }))
     .filter(({ s }) => s.entry_kind === "besok");
 
-  // Adressuppslag för stoppen (begränsat antal för att hålla analysen snabb).
-  const { resolvePlaceName } = await import("@/lib/maps.server");
-  const geocoded = await Promise.all(
-    stopIndexes
-      .slice(0, 12)
-      .map(async ({ s, index }) => ({
-        index,
-        place: await resolvePlaceName(s.lat, s.lng).catch(() => null),
-      })),
+  // Adress och verksamheter för stoppen (begränsat antal för att hålla analysen snabb).
+  const { resolvePlaceName, resolveNearbyPlaces } = await import("@/lib/maps.server");
+  const looked = await Promise.all(
+    stopIndexes.slice(0, 12).map(async ({ s, index }) => ({
+      index,
+      place: await resolvePlaceName(s.lat, s.lng).catch(() => null),
+      nearby: await resolveNearbyPlaces(s.lat, s.lng, 140).catch(() => []),
+    })),
   );
-  const addressByIndex = new Map(
-    geocoded.map((g) => [g.index, g.place ? `${g.place.shortName} – ${g.place.address}` : null]),
+  const infoByIndex = new Map(
+    looked.map((g) => [
+      g.index,
+      {
+        address: g.place ? `${g.place.shortName} – ${g.place.address}` : null,
+        nearby: g.nearby.map((n) => ({
+          name: n.name,
+          meters: n.meters,
+          types: n.types,
+          ratingCount: n.ratingCount,
+        })),
+      },
+    ]),
   );
+
 
   /** Kvittobesök som matchar ett stopp (närhet i tid och rum). */
   const receiptByIndex = new Map<number, (typeof receiptVisits)[number]>();
@@ -441,6 +482,8 @@ export async function analyzeDay(userId: string, day: string) {
     });
     if (hit) receiptByIndex.set(index, hit);
   }
+
+  const dayEvents = eventsRes.data ?? [];
 
   for (const { s, index } of stopIndexes) {
     const seen = allVisits.filter(
@@ -456,12 +499,30 @@ export async function analyzeDay(userId: string, day: string) {
       const t = new Date(p.spent_at).getTime();
       return t >= from && t <= to;
     });
+    // Kalenderhändelser som överlappar stoppet (med 20 min marginal).
+    const overlapping = dayEvents
+      .filter((e) => {
+        const eStart = new Date(e.starts_at).getTime();
+        const eEnd = new Date(e.ends_at).getTime();
+        return eStart <= to && eEnd >= from;
+      })
+      .map(
+        (e) =>
+          `${timeLocal(e.starts_at)}–${timeLocal(e.ends_at)} ${e.title}${
+            e.location ? ` (${e.location})` : ""
+          }`,
+      );
+
+    const info = infoByIndex.get(index);
     extras.set(index, {
-      address: receiptByIndex.get(index)?.address ?? addressByIndex.get(index) ?? null,
+      address: receiptByIndex.get(index)?.address ?? info?.address ?? null,
       seen,
       purchases: bought,
+      nearby: info?.nearby ?? [],
+      calendar: overlapping,
     });
   }
+
 
 
   const apiKey = process.env["LOVABLE_API_KEY"];
@@ -490,6 +551,26 @@ export async function analyzeDay(userId: string, day: string) {
     .eq("day", day)
     .neq("status", "accepted");
 
+  // Verklig körsträcka och restid för resorna via Google Routes.
+  // Rätt sträcka gör också att färdsättet blir rimligt (bil/kollektivt/gång).
+  const tripIndexes = segments
+    .map((s, index) => ({ s, index }))
+    .filter(({ s }) => s.entry_kind === "resa" && s.end_lat != null && s.end_lng != null)
+    .slice(0, 15);
+
+  const { resolveLeg } = await import("@/lib/maps.server");
+  const routeByIndex = new Map<number, { meters: number; minutes: number }>();
+  for (const { s, index } of tripIndexes) {
+    const spent = minutes(s.starts_at, s.ends_at);
+    const guess = travelModeFor(s.distance_m, spent);
+    const leg = await resolveLeg({
+      origin: { lat: s.lat, lng: s.lng },
+      destination: { lat: s.end_lat as number, lng: s.end_lng as number },
+      mode: guess === "okant" ? "bil" : guess,
+    }).catch(() => null);
+    if (leg?.meters) routeByIndex.set(index, { meters: leg.meters, minutes: leg.minutes });
+  }
+
   const rows = segments.map((s, index) => {
     const place = s.place_id ? places.find((p) => p.id === s.place_id) : null;
     const ai = byIndex.get(index);
@@ -500,6 +581,10 @@ export async function analyzeDay(userId: string, day: string) {
     // Ett köp under stoppet gör namnet nästan säkert.
     const receiptName =
       receipt?.label?.trim() || (extra?.purchases.find((p) => p.note?.trim())?.note?.trim() ?? null);
+    const route = routeByIndex.get(index);
+    const distance = route?.meters ?? s.distance_m;
+    // Kalenderträff höjer tilltron till AI:ns tolkning.
+    const calendarHit = (extra?.calendar.length ?? 0) > 0;
     return {
       user_id: userId,
       day,
@@ -510,9 +595,8 @@ export async function analyzeDay(userId: string, day: string) {
       lng: s.lng,
       end_lat: s.end_lat,
       end_lng: s.end_lng,
-      distance_m: s.distance_m,
-      travel_mode:
-        s.entry_kind === "resa" ? travelModeFor(s.distance_m, spent) : ("okant" as const),
+      distance_m: Math.round(distance),
+      travel_mode: s.entry_kind === "resa" ? travelModeFor(distance, spent) : ("okant" as const),
       place_id: s.place_id,
       address: s.entry_kind === "besok" ? (extra?.address ?? null) : null,
       seen_count: extra?.seen ?? 0,
@@ -523,13 +607,27 @@ export async function analyzeDay(userId: string, day: string) {
           : (place?.name ?? receiptName ?? ai?.label ?? "Okänd plats"),
       suggested_activity:
         s.entry_kind === "resa" ? null : (ai?.activity ?? (receipt ? "Handlade" : null)),
-      reasoning: receipt
-        ? `Kvitto från ${receipt.label ?? "butik"} kopplat till stoppet.`
-        : (ai?.reasoning ?? null),
-      confidence: place ? 1 : receipt ? 0.95 : receiptName ? 0.9 : ai ? 0.6 : 0.3,
+      reasoning:
+        s.entry_kind === "resa"
+          ? route
+            ? `Google Routes: ${(route.meters / 1000).toFixed(1)} km, ca ${route.minutes} min.`
+            : null
+          : receipt
+            ? `Kvitto från ${receipt.label ?? "butik"} kopplat till stoppet.`
+            : (ai?.reasoning ?? null),
+      confidence: place
+        ? 1
+        : receipt
+          ? 0.95
+          : receiptName
+            ? 0.9
+            : ai
+              ? Math.min(0.95, 0.6 + (calendarHit ? 0.2 : 0) + ((extra?.nearby.length ?? 0) ? 0.1 : 0))
+              : 0.3,
       status: "pending",
     };
   });
+
 
 
 

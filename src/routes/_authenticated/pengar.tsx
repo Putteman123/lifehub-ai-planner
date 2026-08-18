@@ -14,6 +14,7 @@ import {
 
   Trash2,
   Wallet,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -64,6 +65,7 @@ import {
   type SpendRow,
 } from "@/lib/finance";
 import { financeInsight } from "@/lib/finance.functions";
+import { spendFlags } from "@/lib/spend-flags";
 import { guessCategory, spendCategories } from "@/lib/spend-categories";
 import { formatBytes } from "@/lib/vault";
 
@@ -801,6 +803,7 @@ function SpendListCard({ accounts, spends: all }: { accounts: AccountRow[]; spen
         <ul className="space-y-2">
           {spends.map((row) => {
             const account = accounts.find((acc) => acc.id === row.account_id);
+            const flags = spendFlags(row, all);
             return (
               <li
                 key={row.id}
@@ -818,10 +821,29 @@ function SpendListCard({ accounts, spends: all }: { accounts: AccountRow[]; spen
                     {row.category ? ` · ${row.category}` : ""}
                     {account ? ` · ${account.name}` : ""}
                   </p>
+                  {flags.length > 0 ? (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {flags.map((flag) => (
+                        <span
+                          key={flag.id}
+                          title={flag.hint}
+                          className={
+                            flag.level === "hog"
+                              ? "inline-flex items-center gap-1 rounded-full bg-destructive/12 px-2 py-0.5 text-[11px] font-medium text-destructive"
+                              : "inline-flex items-center gap-1 rounded-full bg-cat-viktigt/12 px-2 py-0.5 text-[11px] font-medium text-cat-viktigt"
+                          }
+                        >
+                          <AlertTriangle className="size-3" />
+                          {flag.label}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
                 <span className="shrink-0 text-sm font-semibold tabular-nums">
                   {kr(Number(row.amount))}
                 </span>
+
                 <button
                   type="button"
                   onClick={() => open(row)}
