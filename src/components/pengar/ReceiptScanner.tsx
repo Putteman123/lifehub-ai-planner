@@ -467,41 +467,110 @@ export function ReceiptScanner({
             </div>
           ) : null}
 
-          {read.groceries.length > 0 ? (
+          <div className="rounded-2xl border border-border/60 bg-background/60 p-3">
+            <Label className="text-xs text-muted-foreground">Standardmål för varorna</Label>
+            <div className="mt-2 grid grid-cols-3 gap-1.5">
+              {DESTS.map((dest) => (
+                <button
+                  key={dest.value}
+                  type="button"
+                  onClick={() => {
+                    setDefaultDest(dest.value);
+                    setItemDest({});
+                  }}
+                  className={`rounded-xl px-2 py-2 text-xs font-medium ${
+                    defaultDest === dest.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {dest.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
+          {read.groceries.length > 0 ? (
             <div>
               <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                <ShoppingCart className="size-3.5" /> Dagligvaror till Skafferiet – tryck för att välja
+                <ShoppingCart className="size-3.5" /> Varor på kvittot – välj vart varje rad ska
               </p>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <ul className="mt-2 space-y-2">
                 {read.groceries.map((item) => {
-                  const on = picked.has(item.name);
+                  const dest = destOf(item.name);
                   return (
-                    <button
+                    <li
                       key={item.name}
-                      type="button"
-                      onClick={() =>
-                        setPicked((prev) => {
-                          const next = new Set(prev);
-                          if (on) next.delete(item.name);
-                          else next.add(item.name);
-                          return next;
-                        })
-                      }
-                      className={`rounded-full px-3 py-1.5 text-sm ${
-                        on
-                          ? "bg-nav-handla text-white"
-                          : "bg-muted text-muted-foreground"
-                      }`}
+                      className="rounded-2xl border border-border/60 bg-background/60 p-2.5"
                     >
-                      {item.name}
-                      {item.quantity ? ` · ${item.quantity}` : ""}
-                    </button>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                          {item.name}
+                          {item.quantity ? (
+                            <span className="text-muted-foreground"> · {item.quantity}</span>
+                          ) : null}
+                        </span>
+                        {item.amount ? (
+                          <span className="text-xs tabular-nums text-muted-foreground">
+                            {Math.round(item.amount)} kr
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="mt-2 grid grid-cols-3 gap-1.5">
+                        {DESTS.map((option) => (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() =>
+                              setItemDest((prev) => ({ ...prev, [item.name]: option.value }))
+                            }
+                            className={`rounded-lg px-2 py-1.5 text-xs font-medium ${
+                              dest === option.value
+                                ? "bg-nav-handla text-white"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                      {dest === "utgift" ? (
+                        <div className="mt-2 grid grid-cols-[1fr_92px] gap-2">
+                          <Select
+                            value={itemCat[item.name] ?? "Övrigt"}
+                            onValueChange={(value) =>
+                              setItemCat((prev) => ({ ...prev, [item.name]: value }))
+                            }
+                          >
+                            <SelectTrigger className="h-9">
+                              <SelectValue placeholder="Kategori" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[...new Set(categories)].map((name) => (
+                                <SelectItem key={name} value={name}>
+                                  {name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            className="h-9"
+                            inputMode="decimal"
+                            placeholder="kr"
+                            value={itemAmount[item.name] ?? ""}
+                            onChange={(e) =>
+                              setItemAmount((prev) => ({ ...prev, [item.name]: e.target.value }))
+                            }
+                          />
+                        </div>
+                      ) : null}
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
             </div>
           ) : null}
+
 
           <div className="flex gap-2">
             <Button className="h-11 flex-1" onClick={save} disabled={saveSpend.isPending}>
