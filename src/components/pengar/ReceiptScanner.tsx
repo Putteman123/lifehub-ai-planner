@@ -74,10 +74,29 @@ export function ReceiptScanner({
   const queryClient = useQueryClient();
   const [category, setCategory] = useState("");
   const [accountId, setAccountId] = useState("");
-  const [picked, setPicked] = useState<Set<string>>(new Set());
   const [splitTobacco, setSplitTobacco] = useState(true);
+  const [defaultDest, setDefaultDest] = useState<Dest>("skafferi");
+  const [itemDest, setItemDest] = useState<Record<string, Dest>>({});
+  const [itemCat, setItemCat] = useState<Record<string, string>>({});
+  const [itemAmount, setItemAmount] = useState<Record<string, string>>({});
+  const [dupAck, setDupAck] = useState(false);
 
   const categories = spendCategories(spends);
+
+  const destOf = (name: string): Dest => itemDest[name] ?? defaultDest;
+  const picked = (read?.groceries ?? [])
+    .filter((item) => destOf(item.name) === "skafferi")
+    .map((item) => item.name);
+
+  /** Varor som användaren styrt till en egen utgiftspost. */
+  const itemSplits = (read?.groceries ?? [])
+    .filter((item) => destOf(item.name) === "utgift")
+    .map((item) => ({
+      name: item.name,
+      category: itemCat[item.name] ?? "Övrigt",
+      amount: Number((itemAmount[item.name] ?? "").replace(",", ".")) || 0,
+    }))
+    .filter((row) => row.amount > 0);
 
   /** Tobaksrader summerade per kategori (Cigaretter/Snus). */
   const tobaccoSplits: { category: "Cigaretter" | "Snus"; amount: number; names: string[] }[] =
@@ -93,6 +112,8 @@ export function ReceiptScanner({
         return acc;
       }, {}),
     ).filter((row) => row.amount > 0);
+
+
 
 
   async function handleFile(file: File) {
