@@ -131,7 +131,16 @@ export function ReceiptScanner({
       setAddress(result.address ?? "");
       setMarkMap(result.kind !== "faktura");
       setCategory(result.category ?? "");
-      setPicked(new Set(result.groceries.map((item) => item.name)));
+      setItemDest({});
+      setItemCat(
+        Object.fromEntries(result.groceries.map((item) => [item.name, "Övrigt"])),
+      );
+      setItemAmount(
+        Object.fromEntries(
+          result.groceries.map((item) => [item.name, item.amount ? String(item.amount) : ""]),
+        ),
+      );
+      setDupAck(false);
       upload.mutate({ files: [file], kind: result.kind === "faktura" ? "faktura" : "kvitto" });
       toast.success("Andrea läste av kvittot");
     } catch (error) {
@@ -148,7 +157,10 @@ export function ReceiptScanner({
     setTime("");
     setAddress("");
     setCategory("");
-    setPicked(new Set());
+    setItemDest({});
+    setItemCat({});
+    setItemAmount({});
+    setDupAck(false);
   }
 
   async function save() {
@@ -163,8 +175,24 @@ export function ReceiptScanner({
       : new Date().toISOString();
     const merchant = note.trim();
 
-    // Tobak bokförs som egna poster (Cigaretter/Snus) skilt från maten.
-    const splits = splitTobacco ? tobaccoSplits : [];
+    // Skydd mot att samma kvitto sparas två gånger.
+    const duplicate = spends.some(
+      (row) =>
+        Math.abs(Number(row.amount) - value) < 0.5 &&
+        (row.note ?? "").trim().toLowerCase() === merchant.toLowerCase() &&
+        row.spent_at.slice(0, 10) === spentAt.slice(0, 10),
+    );
+    if (duplicate && !dupAck) {
+      setDupAck(true);
+      toast.error("Kvittot verkar redan vara registrerat. Tryck igen för att spara ändå.");
+      return;
+    }
+
+    // Tobak och varor du styrt till egna utgiftsposter bokförs separat.
+    const splits = [
+      ...(splitTobacco ? tobaccoSplits.map((row) => ({ ...row, label: row.category })) : []),
+      ...itemSplits.map((row) => ({ category: row.category, amount: row.amount, label: row.name })),
+    ];
     const splitSum = splits.reduce((sum, row) => sum + row.amount, 0);
     const mainAmount = splitSum > 0 && splitSum < value ? value - splitSum : value;
 
@@ -185,7 +213,7 @@ export function ReceiptScanner({
             await saveSpend.mutateAsync({
               values: {
                 amount: row.amount,
-                note: `${row.category}${merchant ? ` – ${merchant}` : ""}`,
+                note: `${row.label}${merchant ? ` – ${merchant}` : ""}`,
                 category: row.category,
                 account_id: accountId || null,
                 spent_at: spentAt,
@@ -193,11 +221,10 @@ export function ReceiptScanner({
             });
           }
           if (splits.length) {
-            toast.success(
-              `Tobak bokförd separat: ${splits.map((r) => r.category).join(" och ")}`,
-            );
+            toast.success(`Bokfört separat: ${splits.map((r) => r.label).join(", ")}`);
           }
           const names = [...picked];
+
           if (names.length) {
             await addPantry.mutateAsync({ names, purchasedAt: spentAt });
             toast.success(`${names.length} varor sparades i Skafferiet`);
