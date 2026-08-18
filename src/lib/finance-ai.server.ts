@@ -33,8 +33,9 @@ const SCHEMA = {
         properties: {
           name: { type: "string" },
           quantity: { type: "string" },
+          amount: { type: "number" },
         },
-        required: ["name", "quantity"],
+        required: ["name", "quantity", "amount"],
       },
     },
     tobacco: {
