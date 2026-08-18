@@ -656,6 +656,37 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
           <div ref={endRef} />
         </div>
 
+        {files.length || uploading || fileError ? (
+          <div className="flex flex-wrap items-center gap-1.5 border-t border-border px-3 pt-2">
+            {files.map((f, k) => (
+              <span
+                key={f.storagePath}
+                className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-border bg-surface px-2 py-1 text-xs"
+              >
+                {f.mediaType.startsWith("image/") ? (
+                  <img src={f.dataUrl} alt="" className="size-5 rounded object-cover" />
+                ) : (
+                  <Paperclip className="size-3.5 text-muted-foreground" />
+                )}
+                <span className="truncate">{f.name}</span>
+                <button
+                  type="button"
+                  aria-label={`Ta bort ${f.name}`}
+                  onClick={() => setFiles((prev) => prev.filter((_, i) => i !== k))}
+                >
+                  <X className="size-3.5 text-muted-foreground hover:text-destructive" />
+                </button>
+              </span>
+            ))}
+            {uploading ? (
+              <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Loader2 className="size-3.5 animate-spin" /> Laddar upp…
+              </span>
+            ) : null}
+            {fileError ? <span className="text-xs text-destructive">{fileError}</span> : null}
+          </div>
+        ) : null}
+
         <form
           className="flex items-end gap-2 border-t border-border p-3"
           style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}
@@ -664,6 +695,29 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
             submit(input);
           }}
         >
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*,application/pdf"
+            multiple
+            className="hidden"
+            onChange={(e) => void pickFiles(e.target.files)}
+          />
+          <button
+            type="button"
+            className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-surface text-foreground transition-colors hover:border-primary/40 disabled:opacity-50"
+            aria-label="Bifoga bild eller PDF"
+            title="Bifoga bild eller PDF"
+            disabled={uploading}
+            onClick={() => fileRef.current?.click()}
+          >
+            {uploading ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Paperclip className="size-4" />
+            )}
+          </button>
+
           {voice.supported ? (
             <button
               type="button"
