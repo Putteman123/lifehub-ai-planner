@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Car, MapPin, Pencil, Search, Trash2 } from "lucide-react";
+import { Car, ChevronDown, MapPin, Pencil, Search, Trash2 } from "lucide-react";
 
 import { EditTripDialog } from "@/components/platser/EditTripDialog";
 import { EditVisitDialog } from "@/components/platser/EditVisitDialog";
