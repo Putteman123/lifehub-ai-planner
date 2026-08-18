@@ -690,6 +690,23 @@ export async function acceptSegment(userId: string, segmentId: string) {
     return { ok: true as const, message: "Redan tillagt i platsloggen." };
   }
 
+  // Hoppa över segment som krockar med ett redan registrerat besök – annars
+  // får loggen dubbla rader för samma stund.
+  const { data: clash } = await supabaseAdmin
+    .from("visits")
+    .select("id")
+    .eq("user_id", userId)
+    .lt("arrived_at", seg.ends_at)
+    .or(`left_at.is.null,left_at.gt.${seg.starts_at}`)
+    .limit(1);
+  if (clash && clash.length > 0) {
+    await supabaseAdmin
+      .from("day_segments")
+      .update({ status: "accepted", visit_id: clash[0]!.id })
+      .eq("id", segmentId);
+    return { ok: true as const, message: "Fanns redan i platsloggen." };
+  }
+
   const label = [seg.suggested_label, seg.suggested_activity].filter(Boolean).join(" – ");
   const { data: visit, error: insertError } = await supabaseAdmin
     .from("visits")

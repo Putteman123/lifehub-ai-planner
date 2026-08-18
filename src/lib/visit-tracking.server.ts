@@ -73,7 +73,18 @@ export async function recordPosition(userId: string, input: PositionInput) {
     .limit(1)
     .maybeSingle();
 
-  const open = latest && !latest.left_at ? latest : null;
+  let open = latest && !latest.left_at ? latest : null;
+
+  // Ett besök som aldrig stängts (t.ex. telefonen slutade skicka) ska inte
+  // ligga kvar som "pågår" i loggen – stäng det med två timmars marginal.
+  if (open && recordedAt.getTime() - new Date(open.arrived_at).getTime() > STALE_GAP_MS * 12) {
+    await closeVisit(
+      open.id,
+      new Date(new Date(open.arrived_at).getTime() + 2 * 60 * 60 * 1000).toISOString(),
+    );
+    open = null;
+  }
+
 
   if (open && open.entry_kind === "resa") {
     if (moving) {
