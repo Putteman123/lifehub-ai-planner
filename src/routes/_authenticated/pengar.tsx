@@ -811,7 +811,10 @@ function SpendListCard({ accounts, spends: all }: { accounts: AccountRow[]; spen
           {spends.map((row) => {
             const account = accounts.find((acc) => acc.id === row.account_id);
             const flags = spendFlags(row, all);
-            return (
+            const travel = spendTravelMode(row.spent_at, visits);
+            const TravelIcon =
+              travel?.mode === "kollektivt" ? Bus : travel?.mode === "gang_cykel" ? Footprints : Car;
+
               <li
                 key={row.id}
                 className="flex items-center gap-3 rounded-2xl bg-surface px-3 py-2.5"
