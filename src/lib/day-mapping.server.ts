@@ -571,6 +571,29 @@ export async function analyzeDay(userId: string, day: string) {
     if (leg?.meters) routeByIndex.set(index, { meters: leg.meters, minutes: leg.minutes });
   }
 
+  // Verksamheter kring resans ändpunkter – stationer och hållplatser avslöjar kollektivtrafik.
+  const tripPlaces = new Map<number, { start: NearbyLite[]; end: NearbyLite[] }>();
+  for (const { s, index } of tripIndexes.slice(0, 8)) {
+    const [start, end] = await Promise.all([
+      resolveNearbyPlaces(s.lat, s.lng, 200).catch(() => []),
+      resolveNearbyPlaces(s.end_lat as number, s.end_lng as number, 200).catch(() => []),
+    ]);
+    tripPlaces.set(index, {
+      start: start.map((n) => ({ name: n.name, meters: n.meters, types: n.types })),
+      end: end.map((n) => ({ name: n.name, meters: n.meters, types: n.types })),
+    });
+  }
+
+  /** Kalendertexter som överlappar en resa. */
+  function calendarTextsFor(startsAt: string, endsAt: string) {
+    const from = new Date(startsAt).getTime() - 15 * 60_000;
+    const to = new Date(endsAt).getTime() + 15 * 60_000;
+    return dayEvents
+      .filter((e) => new Date(e.starts_at).getTime() <= to && new Date(e.ends_at).getTime() >= from)
+      .map((e) => `${e.title}${e.location ? ` (${e.location})` : ""}`);
+  }
+
+
   const rows = segments.map((s, index) => {
     const place = s.place_id ? places.find((p) => p.id === s.place_id) : null;
     const ai = byIndex.get(index);
