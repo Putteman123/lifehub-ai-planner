@@ -759,6 +759,7 @@ function SpendListCard({ accounts, spends: all }: { accounts: AccountRow[]; spen
   const [accountId, setAccountId] = useState("");
   const [date, setDate] = useState("");
 
+  const visits = useVisits().data ?? [];
   const spends = all.slice(0, 20);
   const categories = spendCategories(all);
 
