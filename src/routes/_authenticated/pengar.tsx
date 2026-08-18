@@ -65,7 +65,9 @@ import {
   type SpendRow,
 } from "@/lib/finance";
 import { financeInsight } from "@/lib/finance.functions";
+import { useVisits } from "@/lib/db";
 import { spendFlags } from "@/lib/spend-flags";
+import { spendTravelMode } from "@/lib/spend-travel";
 import { guessCategory, spendCategories } from "@/lib/spend-categories";
 import { formatBytes } from "@/lib/vault";
 
