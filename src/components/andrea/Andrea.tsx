@@ -13,7 +13,7 @@ import {
   Loader2,
   Mic,
   MicOff,
-
+  Paperclip,
   Send,
   Square,
   Trash2,
