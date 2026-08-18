@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_transfers: {
+        Row: {
+          amount: number
+          created_at: string
+          from_account_id: string | null
+          id: string
+          note: string | null
+          to_account_id: string | null
+          transferred_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          from_account_id?: string | null
+          id?: string
+          note?: string | null
+          to_account_id?: string | null
+          transferred_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          from_account_id?: string | null
+          id?: string
+          note?: string | null
+          to_account_id?: string | null
+          transferred_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_transfers_from_account_id_fkey"
+            columns: ["from_account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_transfers_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       andrea_profile: {
         Row: {
           call_name: string | null
@@ -124,6 +175,78 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      bets: {
+        Row: {
+          account_id: string | null
+          bet_date: string
+          created_at: string
+          game_type: string
+          id: string
+          note: string | null
+          payout: number
+          raw_ai: Json | null
+          receipt_path: string | null
+          rows_count: number
+          spend_id: string | null
+          stake: number
+          status: string
+          track: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          bet_date?: string
+          created_at?: string
+          game_type?: string
+          id?: string
+          note?: string | null
+          payout?: number
+          raw_ai?: Json | null
+          receipt_path?: string | null
+          rows_count?: number
+          spend_id?: string | null
+          stake?: number
+          status?: string
+          track?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          bet_date?: string
+          created_at?: string
+          game_type?: string
+          id?: string
+          note?: string | null
+          payout?: number
+          raw_ai?: Json | null
+          receipt_path?: string | null
+          rows_count?: number
+          spend_id?: string | null
+          stake?: number
+          status?: string
+          track?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bets_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bets_spend_id_fkey"
+            columns: ["spend_id"]
+            isOneToOne: false
+            referencedRelation: "spend_entries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       calendars: {
         Row: {

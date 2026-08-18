@@ -5,6 +5,8 @@ export const DEFAULT_SPEND_CATEGORIES = [
   "Dagligvaror",
   "Cigaretter",
   "Snus",
+  "Spel",
+  "Utlägg juridik",
   "Restaurang",
   "Transport",
   "Boende",
@@ -15,6 +17,9 @@ export const DEFAULT_SPEND_CATEGORIES = [
   "Prenumerationer",
   "Övrigt",
 ];
+
+/** Kategorier som tillsammans utgör tobak. */
+export const TOBACCO_CATEGORIES = ["Cigaretter", "Snus"];
 
 /** Kategorin cigaretter, snus eller null – utifrån ett varunamn. */
 export function tobaccoCategory(name: string): "Cigaretter" | "Snus" | null {
