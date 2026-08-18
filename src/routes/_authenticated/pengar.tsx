@@ -14,6 +14,7 @@ import {
 
   Trash2,
   Wallet,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -64,6 +65,7 @@ import {
   type SpendRow,
 } from "@/lib/finance";
 import { financeInsight } from "@/lib/finance.functions";
+import { spendFlags } from "@/lib/spend-flags";
 import { guessCategory, spendCategories } from "@/lib/spend-categories";
 import { formatBytes } from "@/lib/vault";
 
