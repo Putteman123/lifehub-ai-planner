@@ -535,11 +535,39 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
             ) as unknown as ToolPart[];
 
             if (m.role === "user") {
+              const attached = m.parts.filter(
+                (p) => (p as { type: string }).type === "file",
+              ) as unknown as { filename?: string; mediaType?: string; url?: string }[];
+              const visible = text.replace(/^Bifogad fil:.*\n?/gm, "").trim();
               return (
-                <div key={m.id} className="flex justify-end">
-                  <p className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm text-primary-foreground">
-                    {text}
-                  </p>
+                <div key={m.id} className="flex flex-col items-end gap-1.5">
+                  {attached.length ? (
+                    <div className="flex max-w-[85%] flex-wrap justify-end gap-1.5">
+                      {attached.map((f, k) =>
+                        f.mediaType?.startsWith("image/") && f.url ? (
+                          <img
+                            key={k}
+                            src={f.url}
+                            alt={f.filename ?? "Bifogad bild"}
+                            className="size-24 rounded-xl border border-border object-cover"
+                          />
+                        ) : (
+                          <span
+                            key={k}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-2.5 py-1.5 text-xs"
+                          >
+                            <Paperclip className="size-3.5 text-muted-foreground" />
+                            {f.filename ?? "Fil"}
+                          </span>
+                        ),
+                      )}
+                    </div>
+                  ) : null}
+                  {visible ? (
+                    <p className="max-w-[85%] rounded-2xl rounded-br-md bg-primary px-4 py-2.5 text-sm text-primary-foreground">
+                      {visible}
+                    </p>
+                  ) : null}
                 </div>
               );
             }
