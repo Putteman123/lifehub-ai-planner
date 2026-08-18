@@ -38,3 +38,27 @@ export const unlockWithPin = createServerFn({ method: "POST" })
 
     return { ok: true as const, tokenHash: link.properties.hashed_token, email };
   });
+
+/**
+ * Snabblås: kontrollerar bara pinkoden mot serverhemligheten. Används när du
+ * redan är inloggad med ditt konto och bara ska låsa upp appen.
+ */
+export const checkPin = createServerFn({ method: "POST" })
+  .inputValidator((input: { pin: string }) => {
+    const pin = String(input?.pin ?? "").trim();
+    if (!/^\d{4,8}$/.test(pin)) throw new Error("Ogiltig pinkod.");
+    return { pin };
+  })
+  .handler(async ({ data }) => {
+    const expected = process.env["APP_PIN"];
+    if (!expected) throw new Error("Appen är inte konfigurerad för pinkod.");
+    let diff = data.pin.length ^ expected.length;
+    for (let i = 0; i < Math.max(data.pin.length, expected.length); i++) {
+      diff |= (data.pin.charCodeAt(i) || 0) ^ (expected.charCodeAt(i) || 0);
+    }
+    if (diff !== 0) {
+      await new Promise((r) => setTimeout(r, 400));
+      return { ok: false as const };
+    }
+    return { ok: true as const };
+  });
