@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 
 import { SectionCard } from "@/components/SectionCard";
 import type { Tables } from "@/integrations/supabase/types";
+import { canonicalKey, isNonGrocery } from "@/lib/pantry-name";
 
 type PantryRow = Tables<"pantry_items">;
 
