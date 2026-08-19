@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { dayKey } from "@/lib/tz";
+import { fixedViews, type FixedPaymentRow } from "@/lib/fixed-expenses";
 
 
 export type AccountRow = Tables<"finance_accounts">;
@@ -87,13 +88,15 @@ export function spendByDay(spends: SpendRow[]): Record<string, number> {
 /**
  * Dagsbudget = totalt saldo minus kvarvarande fasta utgifter före nästa
  * inbetalning, delat på antal dagar dit. Nollställs varje dygn eftersom
- * "spenderat idag" räknas från dagens början.
+ * "spenderat idag" räknas från dagens början. Redan betalda fasta utgifter
+ * räknas inte med, medan obetalda restskulder från tidigare månader gör det.
  */
 export function buildBudget(
   accounts: AccountRow[],
   incomes: IncomeRow[],
   fixed: FixedExpenseRow[],
   spends: SpendRow[],
+  payments: FixedPaymentRow[] = [],
 ): Budget {
   const balance = accounts.reduce((sum, a) => sum + Number(a.balance), 0);
   const income = nextIncome(incomes);
@@ -101,15 +104,23 @@ export function buildBudget(
 
   const today = new Date();
   const limit = income ? new Date(`${income.expected_on}T00:00:00`) : null;
-  const fixedLeft = fixed
-    .filter((e) => e.is_active)
-    .filter((e) => {
-      if (!limit) return false;
-      const due = new Date(today.getFullYear(), today.getMonth(), e.due_day);
-      if (due < today) due.setMonth(due.getMonth() + 1);
-      return due <= limit;
-    })
-    .reduce((sum, e) => sum + Number(e.amount), 0);
+  const views = fixedViews(fixed, payments, today);
+  const viewOf = new Map(views.map((v) => [v.row.id, v]));
+
+  const fixedLeft =
+    fixed
+      .filter((e) => e.is_active)
+      .filter((e) => viewOf.get(e.id)?.status !== "betald")
+      .filter((e) => {
+        if (!limit) return false;
+        const due = new Date(today.getFullYear(), today.getMonth(), e.due_day);
+        if (due < today) due.setMonth(due.getMonth() + 1);
+        return due <= limit;
+      })
+      .reduce((sum, e) => sum + Number(e.amount), 0) +
+    views
+      .filter((v) => v.row.is_active)
+      .reduce((sum, v) => sum + v.carryOver.length * Number(v.row.amount), 0);
 
   const periodStart = new Date(today.getFullYear(), today.getMonth(), 1).getTime();
   const spentThisPeriod = spends
@@ -192,6 +203,13 @@ export const useIncomes = () =>
 
 export const useFixedExpenses = () =>
   useRows<FixedExpenseRow>("fixed_expenses", "fixed_expenses", { column: "due_day", asc: true });
+
+/** Registrerade betalningar av fasta utgifter, per månad. */
+export const useFixedPayments = () =>
+  useRows<FixedPaymentRow>("fixed_expense_payments", "fixed_expense_payments", {
+    column: "period",
+    asc: false,
+  });
 
 export const useSpends = () =>
   useRows<SpendRow>("spend_entries", "spend_entries", { column: "spent_at", asc: false });
@@ -389,16 +407,18 @@ export function useDailyResult() {
   const incomesQ = useIncomes();
   const fixedQ = useFixedExpenses();
   const spendsQ = useSpends();
+  const paymentsQ = useFixedPayments();
   const today = useDayTick();
 
   const accounts = accountsQ.data;
   const incomes = incomesQ.data;
   const fixed = fixedQ.data;
   const spends = spendsQ.data;
+  const payments = paymentsQ.data;
 
   return useMemo(() => {
     if (!accounts?.length) return null;
-    const budget = buildBudget(accounts, incomes ?? [], fixed ?? [], spends ?? []);
+    const budget = buildBudget(accounts, incomes ?? [], fixed ?? [], spends ?? [], payments ?? []);
     const perDayMap = spendByDay(spends ?? []);
     return (date: Date | string) => {
       const key = dayKey(date);
@@ -407,5 +427,5 @@ export function useDailyResult() {
       if (spent === undefined && key !== today) return null;
       return budget.perDay - (spent ?? 0);
     };
-  }, [accounts, incomes, fixed, spends, today]);
+  }, [accounts, incomes, fixed, spends, payments, today]);
 }

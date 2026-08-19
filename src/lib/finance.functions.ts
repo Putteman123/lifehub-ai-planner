@@ -241,3 +241,162 @@ export const analyzeBetSlip = createServerFn({ method: "POST" })
       fileName: data.fileName,
     });
   });
+
+/** Markerar (eller ångrar) en fast utgift som betald för en viss månad. */
+export const setFixedPaid = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        expenseId: z.string().uuid(),
+        period: z.string().regex(/^\d{4}-\d{2}$/),
+        paid: z.boolean(),
+        amount: z.number().optional(),
+        paidOn: z.string().optional(),
+        source: z.string().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    if (!data.paid) {
+      const { error } = await supabase
+        .from("fixed_expense_payments")
+        .delete()
+        .eq("expense_id", data.expenseId)
+        .eq("period", data.period);
+      if (error) throw new Error(error.message);
+      return { ok: true as const, paid: false };
+    }
+
+    const { data: expense } = await supabase
+      .from("fixed_expenses")
+      .select("amount")
+      .eq("id", data.expenseId)
+      .maybeSingle();
+
+    const { error } = await supabase.from("fixed_expense_payments").upsert(
+      {
+        user_id: userId,
+        expense_id: data.expenseId,
+        period: data.period,
+        amount: data.amount ?? Number(expense?.amount ?? 0),
+        paid_on: (data.paidOn ?? new Date().toISOString()).slice(0, 10),
+        source: data.source ?? "manuell",
+      },
+      { onConflict: "expense_id,period" },
+    );
+    if (error) throw new Error(error.message);
+
+    // Städa bort ev. restskuldsuppgift för samma månad.
+    await supabase
+      .from("todos")
+      .delete()
+      .eq("user_id", userId)
+      .like("notes", `%fixed:${data.expenseId}:${data.period}%`);
+
+    return { ok: true as const, paid: true };
+  });
+
+/**
+ * Matchar en uppladdad faktura mot de fasta utgifterna med Andrea och
+ * returnerar bästa förslaget att markera som betalt.
+ */
+export const matchInvoiceToFixed = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        merchant: z.string().trim().default(""),
+        amount: z.number().nullable().default(null),
+        paidOn: z.string().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: rows } = await context.supabase
+      .from("fixed_expenses")
+      .select("id, name, amount, due_day, category, is_active, created_at, updated_at, user_id")
+      .eq("is_active", true);
+
+    const expenses = rows ?? [];
+    if (!expenses.length) return { match: null as null | { id: string; name: string; score: number; why: string } };
+
+    const { matchScore } = await import("@/lib/fixed-expenses");
+    const scored = expenses
+      .map((row) => ({
+        row,
+        score: matchScore(row, { text: data.merchant, amount: data.amount }),
+      }))
+      .sort((a, b) => b.score - a.score);
+
+    const best = scored[0];
+    if (!best || best.score < 0.3) return { match: null };
+
+    return {
+      match: {
+        id: best.row.id,
+        name: best.row.name,
+        score: best.score,
+        why:
+          best.score >= 0.9
+            ? "Både mottagare och belopp stämmer."
+            : best.score >= 0.6
+              ? "Mottagaren stämmer med din fasta utgift."
+              : "Beloppet ligger nära din fasta utgift.",
+      },
+    };
+  });
+
+/**
+ * Skapar rödmarkerade uppgifter för fasta utgifter som inte betalades
+ * föregående månader, och tar bort uppgifter som betalats.
+ */
+export const syncFixedCarryOver = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const [{ data: expenses }, { data: payments }, { data: todos }] = await Promise.all([
+      supabase.from("fixed_expenses").select("*").eq("is_active", true),
+      supabase.from("fixed_expense_payments").select("*"),
+      supabase.from("todos").select("id, notes, is_done").like("notes", "%fixed:%"),
+    ]);
+
+    const { fixedViews, fixedTodoMarker, periodLabel } = await import("@/lib/fixed-expenses");
+    const views = fixedViews(expenses ?? [], payments ?? []);
+
+    const wanted = new Map<string, { title: string; notes: string }>();
+    for (const view of views) {
+      for (const period of view.carryOver) {
+        const marker = fixedTodoMarker(view.row.id, period);
+        wanted.set(marker, {
+          title: `Obetald: ${view.row.name} (${periodLabel(period)})`,
+          notes: `${Math.round(Number(view.row.amount))} kr från ${period}. ${marker}`,
+        });
+      }
+    }
+
+    const existing = new Map<string, string>();
+    for (const todo of todos ?? []) {
+      const marker = /fixed:[0-9a-f-]{36}:\d{4}-\d{2}/i.exec(todo.notes ?? "")?.[0];
+      if (marker) existing.set(marker, todo.id);
+    }
+
+    const inserts = [...wanted.entries()]
+      .filter(([marker]) => !existing.has(marker))
+      .map(([, value]) => ({
+        user_id: userId,
+        title: value.title,
+        notes: value.notes,
+        is_done: false,
+      }));
+    if (inserts.length) await supabase.from("todos").insert(inserts);
+
+    const stale = [...existing.entries()]
+      .filter(([marker]) => !wanted.has(marker))
+      .map(([, id]) => id);
+    if (stale.length) await supabase.from("todos").delete().in("id", stale);
+
+    return { created: inserts.length, removed: stale.length };
+  });

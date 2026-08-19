@@ -677,6 +677,70 @@ export type Database = {
         }
         Relationships: []
       }
+      fixed_expense_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          expense_id: string
+          file_id: string | null
+          id: string
+          paid_on: string
+          period: string
+          source: string
+          todo_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          expense_id: string
+          file_id?: string | null
+          id?: string
+          paid_on?: string
+          period: string
+          source?: string
+          todo_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          expense_id?: string
+          file_id?: string | null
+          id?: string
+          paid_on?: string
+          period?: string
+          source?: string
+          todo_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fixed_expense_payments_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "fixed_expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixed_expense_payments_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "finance_files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixed_expense_payments_todo_id_fkey"
+            columns: ["todo_id"]
+            isOneToOne: false
+            referencedRelation: "todos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fixed_expenses: {
         Row: {
           amount: number
