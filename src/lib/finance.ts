@@ -87,13 +87,15 @@ export function spendByDay(spends: SpendRow[]): Record<string, number> {
 /**
  * Dagsbudget = totalt saldo minus kvarvarande fasta utgifter före nästa
  * inbetalning, delat på antal dagar dit. Nollställs varje dygn eftersom
- * "spenderat idag" räknas från dagens början.
+ * "spenderat idag" räknas från dagens början. Redan betalda fasta utgifter
+ * räknas inte med, medan obetalda restskulder från tidigare månader gör det.
  */
 export function buildBudget(
   accounts: AccountRow[],
   incomes: IncomeRow[],
   fixed: FixedExpenseRow[],
   spends: SpendRow[],
+  payments: FixedPaymentRow[] = [],
 ): Budget {
   const balance = accounts.reduce((sum, a) => sum + Number(a.balance), 0);
   const income = nextIncome(incomes);
@@ -101,15 +103,23 @@ export function buildBudget(
 
   const today = new Date();
   const limit = income ? new Date(`${income.expected_on}T00:00:00`) : null;
-  const fixedLeft = fixed
-    .filter((e) => e.is_active)
-    .filter((e) => {
-      if (!limit) return false;
-      const due = new Date(today.getFullYear(), today.getMonth(), e.due_day);
-      if (due < today) due.setMonth(due.getMonth() + 1);
-      return due <= limit;
-    })
-    .reduce((sum, e) => sum + Number(e.amount), 0);
+  const views = fixedViews(fixed, payments, today);
+  const viewOf = new Map(views.map((v) => [v.row.id, v]));
+
+  const fixedLeft =
+    fixed
+      .filter((e) => e.is_active)
+      .filter((e) => viewOf.get(e.id)?.status !== "betald")
+      .filter((e) => {
+        if (!limit) return false;
+        const due = new Date(today.getFullYear(), today.getMonth(), e.due_day);
+        if (due < today) due.setMonth(due.getMonth() + 1);
+        return due <= limit;
+      })
+      .reduce((sum, e) => sum + Number(e.amount), 0) +
+    views
+      .filter((v) => v.row.is_active)
+      .reduce((sum, v) => sum + v.carryOver.length * Number(v.row.amount), 0);
 
   const periodStart = new Date(today.getFullYear(), today.getMonth(), 1).getTime();
   const spentThisPeriod = spends
