@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { dayKey } from "@/lib/tz";
+import { fixedViews, type FixedPaymentRow } from "@/lib/fixed-expenses";
 
 
 export type AccountRow = Tables<"finance_accounts">;
@@ -406,16 +407,18 @@ export function useDailyResult() {
   const incomesQ = useIncomes();
   const fixedQ = useFixedExpenses();
   const spendsQ = useSpends();
+  const paymentsQ = useFixedPayments();
   const today = useDayTick();
 
   const accounts = accountsQ.data;
   const incomes = incomesQ.data;
   const fixed = fixedQ.data;
   const spends = spendsQ.data;
+  const payments = paymentsQ.data;
 
   return useMemo(() => {
     if (!accounts?.length) return null;
-    const budget = buildBudget(accounts, incomes ?? [], fixed ?? [], spends ?? []);
+    const budget = buildBudget(accounts, incomes ?? [], fixed ?? [], spends ?? [], payments ?? []);
     const perDayMap = spendByDay(spends ?? []);
     return (date: Date | string) => {
       const key = dayKey(date);
@@ -424,5 +427,5 @@ export function useDailyResult() {
       if (spent === undefined && key !== today) return null;
       return budget.perDay - (spent ?? 0);
     };
-  }, [accounts, incomes, fixed, spends, today]);
+  }, [accounts, incomes, fixed, spends, payments, today]);
 }
