@@ -203,6 +203,13 @@ export const useIncomes = () =>
 export const useFixedExpenses = () =>
   useRows<FixedExpenseRow>("fixed_expenses", "fixed_expenses", { column: "due_day", asc: true });
 
+/** Registrerade betalningar av fasta utgifter, per månad. */
+export const useFixedPayments = () =>
+  useRows<FixedPaymentRow>("fixed_expense_payments", "fixed_expense_payments", {
+    column: "period",
+    asc: false,
+  });
+
 export const useSpends = () =>
   useRows<SpendRow>("spend_entries", "spend_entries", { column: "spent_at", asc: false });
 
