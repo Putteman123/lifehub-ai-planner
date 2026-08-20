@@ -924,3 +924,153 @@ export async function applesDeadlines(days = 30) {
   const { upcomingDeadlines } = await import("@/lib/apples.server");
   return upcomingDeadlines(days);
 }
+
+/**
+ * Fritextsökning över de saker Andrea kan agera på, så att hon kan hitta rätt
+ * post utifrån namn ("inlagan till tingsrätten") i stället för att kräva id.
+ */
+export async function findItem(
+  userId: string,
+  query: string,
+  types?: string[] | undefined,
+) {
+  const q = query.trim();
+  if (!q) throw new Error("Ange vad du söker efter.");
+  const pattern = `%${q}%`;
+  const want = (t: string) => !types?.length || types.includes(t);
+
+  const results: {
+    type: string;
+    id: string;
+    title: string;
+    detail?: string;
+    is_done?: boolean;
+  }[] = [];
+
+  if (want("case_task")) {
+    const { data } = await supabaseAdmin
+      .from("case_tasks")
+      .select("id, title, due_date, is_done")
+      .eq("user_id", userId)
+      .ilike("title", pattern)
+      .limit(8);
+    for (const t of data ?? [])
+      results.push({
+        type: "case_task",
+        id: t.id,
+        title: t.title,
+        ...(t.due_date ? { detail: `senast ${t.due_date}` } : {}),
+        is_done: t.is_done,
+      });
+  }
+
+  if (want("todo")) {
+    const { data } = await supabaseAdmin
+      .from("todos")
+      .select("id, title, due_date, is_done")
+      .eq("user_id", userId)
+      .ilike("title", pattern)
+      .limit(8);
+    for (const t of data ?? [])
+      results.push({
+        type: "todo",
+        id: t.id,
+        title: t.title,
+        ...(t.due_date ? { detail: `senast ${t.due_date}` } : {}),
+        is_done: t.is_done,
+      });
+  }
+
+  if (want("event")) {
+    const { data } = await supabaseAdmin
+      .from("events")
+      .select("id, title, starts_at, category")
+      .eq("user_id", userId)
+      .ilike("title", pattern)
+      .order("starts_at", { ascending: false })
+      .limit(8);
+    for (const e of data ?? [])
+      results.push({
+        type: "event",
+        id: e.id,
+        title: e.title,
+        detail: `${e.category} ${e.starts_at}`,
+      });
+  }
+
+  if (want("reminder")) {
+    const { data } = await supabaseAdmin
+      .from("reminders")
+      .select("id, title, remind_at, is_done")
+      .eq("user_id", userId)
+      .ilike("title", pattern)
+      .limit(8);
+    for (const r of data ?? [])
+      results.push({
+        type: "reminder",
+        id: r.id,
+        title: r.title,
+        detail: r.remind_at,
+        is_done: r.is_done,
+      });
+  }
+
+  if (want("fixed_expense")) {
+    const { data } = await supabaseAdmin
+      .from("fixed_expenses")
+      .select("id, name, amount")
+      .eq("user_id", userId)
+      .ilike("name", pattern)
+      .limit(8);
+    for (const f of data ?? [])
+      results.push({
+        type: "fixed_expense",
+        id: f.id,
+        title: f.name,
+        detail: `${f.amount} kr`,
+      });
+  }
+
+  if (want("place")) {
+    const { data } = await supabaseAdmin
+      .from("places")
+      .select("id, name, kind")
+      .eq("user_id", userId)
+      .ilike("name", pattern)
+      .limit(8);
+    for (const p of data ?? [])
+      results.push({ type: "place", id: p.id, title: p.name, detail: p.kind });
+  }
+
+  if (want("legal_case")) {
+    const { data } = await supabaseAdmin
+      .from("legal_cases")
+      .select("id, title, client_name, status")
+      .eq("user_id", userId)
+      .ilike("title", pattern)
+      .limit(8);
+    for (const c of data ?? [])
+      results.push({
+        type: "legal_case",
+        id: c.id,
+        title: c.title,
+        detail: `${c.client_name ?? "–"} (${c.status})`,
+      });
+  }
+
+  // Öppna poster först, sedan kortaste titel (närmast träff).
+  results.sort((a, b) => {
+    const doneDiff = Number(a.is_done ?? false) - Number(b.is_done ?? false);
+    if (doneDiff) return doneDiff;
+    return a.title.length - b.title.length;
+  });
+
+  return {
+    query: q,
+    count: results.length,
+    results: results.slice(0, 12),
+    hint: results.length
+      ? "Använd rätt id i nästa verktygsanrop. Fråga Patrick om flera träffar är rimliga."
+      : "Ingen träff – föreslå närliggande alternativ eller fråga vad han menar.",
+  };
+}
