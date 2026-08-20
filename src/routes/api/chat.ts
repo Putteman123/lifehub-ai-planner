@@ -56,9 +56,27 @@ export const Route = createFileRoute("/api/chat")({
 
         const { ANDREA_SYSTEM, buildAndreaContext } = await import("@/lib/andrea.server");
         const { createOpenAI } = await import("@ai-sdk/openai");
+        const { createOpenAICompatible } = await import("@ai-sdk/openai-compatible");
         const agent = await import("@/lib/agent.server");
+        const { routeAndreaTurn } = await import("@/lib/andrea-router.server");
+        const { QUICK_TOOLS, SAFE_TOOLS } = await import("@/lib/agent-tools");
 
-        const context = await buildAndreaContext(userId);
+        // Vilken fil ska turen gå? Snabbfilen (Gemini) eller djupfilen (ChatGPT).
+        const uiMessages = body.messages as UIMessage[];
+        const lastUser = [...uiMessages].reverse().find((m) => m.role === "user");
+        const lastUserText = (lastUser?.parts ?? [])
+          .map((p) => (p.type === "text" ? p.text : ""))
+          .join(" ");
+        const hasAttachments = (lastUser?.parts ?? []).some((p) => p.type === "file");
+        const lane =
+          uiMessages.length > 24
+            ? "deep"
+            : await routeAndreaTurn({ apiKey: key, lastUserText, hasAttachments });
+
+        const context =
+          lane === "quick"
+            ? await buildAndreaQuickContext(userId)
+            : await buildAndreaContext(userId);
         // ChatGPT-modellerna körs via Lovable AI Gateways Responses API.
         const openai = createOpenAI({
           baseURL: "https://ai.gateway.lovable.dev/v1",
@@ -68,14 +86,19 @@ export const Route = createFileRoute("/api/chat")({
             "X-Lovable-AIG-SDK": "vercel-ai-sdk",
           },
         });
+        // Gemini-modellerna körs via chat completions på samma gateway.
+        const gemini = createOpenAICompatible({
+          name: "lovable",
+          baseURL: "https://ai.gateway.lovable.dev/v1",
+          headers: {
+            "Lovable-API-Key": key,
+            "X-Lovable-AIG-SDK": "vercel-ai-sdk",
+          },
+        });
 
-        const result = streamText({
-          model: openai.responses(ANDREA_MODEL),
-          system: `${ANDREA_SYSTEM}\n\n${UPLOAD_RULES}\n\nAKTUELLT UNDERLAG FRÅN KALENDERN:\n${context}`,
-          messages: await convertToModelMessages(body.messages as UIMessage[]),
-          stopWhen: stepCountIs(50),
-          tools: {
+        const allTools = {
             goto: tool({
+
               description:
                 "Föreslå en vy i appen som användaren ska öppna. UI:t hanterar navigeringen.",
               inputSchema: z.object({
