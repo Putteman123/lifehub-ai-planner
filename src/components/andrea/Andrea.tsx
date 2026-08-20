@@ -620,11 +620,20 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
                     <ActionCard
                       key={k}
                       part={part}
-                      onRespond={(approved) =>
-                        addToolApprovalResponse({ id: part.approval!.id, approved })
-                      }
+                      onRespond={(approved) => {
+                        if (part.approval?.id)
+                          addToolApprovalResponse({ id: part.approval.id, approved });
+                      }}
                     />
                   ))}
+
+                  {/* Svar utan text och utan åtgärd får aldrig se ut som en frysning. */}
+                  {!thinking && !text && !actions.length && !gotos.length && reasoning ? (
+                    <p className="rounded-2xl rounded-bl-md bg-muted/60 px-4 py-2.5 text-sm text-muted-foreground">
+                      Jag kom inte hela vägen fram där. Säg till så tar jag om det.
+                    </p>
+                  ) : null}
+
 
                   {gotos.map((g, k) =>
                     g.output?.route ? (
