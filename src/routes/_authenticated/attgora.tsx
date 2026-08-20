@@ -18,6 +18,10 @@ import {
 import { TodoPlanCard } from "@/components/TodoPlanCard";
 import { useDeleteRow, useTodos, useUpsertRow } from "@/lib/db";
 import { dueLabel, dueTone, sortTodos, toLocalInput, type TodoRow } from "@/lib/todos";
+import { parseFixedTodoMarker } from "@/lib/fixed-expenses";
+import { setFixedPaid } from "@/lib/finance.functions";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/attgora")({
   head: () => ({
@@ -49,6 +53,7 @@ function TodoPage() {
   const todosQ = useTodos();
   const todos = todosQ.data ?? [];
   const upsert = useUpsertRow("todos", "Uppgift sparad");
+  const qc = useQueryClient();
   const remove = useDeleteRow("todos", "Uppgift borttagen");
 
   const [open, setOpen] = useState(false);
@@ -101,6 +106,20 @@ function TodoPage() {
   }
 
   function toggle(todo: TodoRow) {
+    // Restskulder från fasta utgifter bokförs som betalda i stället för klarmarkerade.
+    const fixedRef = parseFixedTodoMarker(todo.notes);
+    if (fixedRef && !todo.is_done) {
+      void setFixedPaid({
+        data: { expenseId: fixedRef.expenseId, period: fixedRef.period, paid: true },
+      })
+        .then(() => {
+          void qc.invalidateQueries({ queryKey: ["todos"] });
+          void qc.invalidateQueries({ queryKey: ["fixed_expense_payments"] });
+          toast.success("Markerad som betald");
+        })
+        .catch((e: Error) => toast.error(e.message));
+      return;
+    }
     upsert.mutate({
       id: todo.id,
       title: todo.title,
@@ -140,10 +159,15 @@ function TodoPage() {
                 {active.map((todo) => {
                   const label = dueLabel(todo.due_date);
                   const tone = dueTone(todo.due_date);
+                  const overdueFixed = Boolean(parseFixedTodoMarker(todo.notes));
                   return (
                     <li
                       key={todo.id}
-                      className="group flex items-start gap-3 rounded-xl border border-border/70 px-3 py-2.5"
+                      className={`group flex items-start gap-3 rounded-xl border px-3 py-2.5 ${
+                        overdueFixed
+                          ? "border-destructive/50 bg-destructive/5"
+                          : "border-border/70"
+                      }`}
                     >
                       <button
                         type="button"
@@ -156,7 +180,13 @@ function TodoPage() {
                         <Check className="size-4" />
                       </button>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">{todo.title}</p>
+                        <p
+                          className={`truncate text-sm font-medium ${
+                            overdueFixed ? "text-destructive" : ""
+                          }`}
+                        >
+                          {todo.title}
+                        </p>
                         {todo.notes ? (
                           <p className="mt-0.5 whitespace-pre-wrap text-xs text-muted-foreground">
                             {todo.notes}
