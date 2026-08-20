@@ -7,6 +7,8 @@ export const DEFAULT_SPEND_CATEGORIES = [
   "Snus",
   "Spel",
   "Utlägg juridik",
+  "Lån",
+  "Ränta",
   "Restaurang",
   "Transport",
   "Boende",

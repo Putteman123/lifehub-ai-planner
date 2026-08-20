@@ -20,6 +20,7 @@ export const INCOME_KINDS: { value: string; label: string }[] = [
   { value: "lon", label: "Lön" },
   { value: "ersattning", label: "Ersättning" },
   { value: "bidrag", label: "Bidrag" },
+  { value: "lan", label: "Lån" },
   { value: "annat", label: "Annat" },
 ];
 

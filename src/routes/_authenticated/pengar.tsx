@@ -50,6 +50,7 @@ import { ReceiptScanner } from "@/components/pengar/ReceiptScanner";
 import { SpendPieCard } from "@/components/pengar/SpendPieCard";
 import { BetsCard } from "@/components/pengar/BetsCard";
 import { TransferCard } from "@/components/pengar/TransferCard";
+import { LoansCard } from "@/components/pengar/LoansCard";
 import {
   buildBudget,
   financeSignedUrl,
@@ -168,6 +169,7 @@ function MoneyPage() {
           <AccountsCard accounts={accounts} />
           <IncomesCard incomes={incomes} />
           <FixedCard expenses={fixed} payments={payments} />
+          <LoansCard accounts={accounts} fixed={fixed} payments={payments} />
           <SpendListCard accounts={accounts} spends={spends} />
           <FilesCard files={files} className="lg:col-span-2" />
 
