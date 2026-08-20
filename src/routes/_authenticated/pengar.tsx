@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarClock,
+  Check,
   Cigarette,
 
   FileUp,
@@ -71,7 +73,13 @@ import {
   type IncomeRow,
   type SpendRow,
 } from "@/lib/finance";
-import { financeInsight } from "@/lib/finance.functions";
+import { financeInsight, setFixedPaid, syncFixedCarryOver } from "@/lib/finance.functions";
+import {
+  fixedViews,
+  periodKey,
+  periodLabel,
+  type FixedPaymentRow,
+} from "@/lib/fixed-expenses";
 import { useVisits } from "@/lib/db";
 import { spendFlags } from "@/lib/spend-flags";
 import { spendTravelMode } from "@/lib/spend-travel";
