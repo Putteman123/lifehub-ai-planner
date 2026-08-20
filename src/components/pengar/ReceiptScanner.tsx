@@ -15,7 +15,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useQueryClient } from "@tanstack/react-query";
-import { analyzeReceipt, logReceiptEvent, logReceiptVisit } from "@/lib/finance.functions";
+import {
+  analyzeReceipt,
+  logReceiptEvent,
+  logReceiptVisit,
+  matchInvoiceToFixed,
+  setFixedPaid,
+} from "@/lib/finance.functions";
+import { periodKey } from "@/lib/fixed-expenses";
 import { analyzeDaySegments } from "@/lib/day-mapping.functions";
 
 import { kr, useSaveSpend, useUploadFinanceFiles, type AccountRow, type SpendRow } from "@/lib/finance";
@@ -91,6 +98,10 @@ export function ReceiptScanner({
   const [itemCat, setItemCat] = useState<Record<string, string>>({});
   const [itemAmount, setItemAmount] = useState<Record<string, string>>({});
   const [dupAck, setDupAck] = useState(false);
+  const [fixedMatch, setFixedMatch] = useState<
+    { id: string; name: string; score: number; why: string } | null
+  >(null);
+  const [fixedPaidDone, setFixedPaidDone] = useState(false);
 
   const categories = spendCategories(spends);
 
@@ -152,6 +163,21 @@ export function ReceiptScanner({
         ),
       );
       setDupAck(false);
+      setFixedMatch(null);
+      setFixedPaidDone(false);
+      if (result.kind === "faktura") {
+        try {
+          const { match } = await matchInvoiceToFixed({
+            data: {
+              merchant: `${result.merchant ?? ""} ${result.category ?? ""}`.trim(),
+              amount: result.total ?? null,
+            },
+          });
+          setFixedMatch(match);
+        } catch {
+          // matchning är en bonus – kvittot sparas ändå
+        }
+      }
       upload.mutate({ files: [file], kind: result.kind === "faktura" ? "faktura" : "kvitto" });
       toast.success("Andrea läste av kvittot");
     } catch (error) {
@@ -172,6 +198,30 @@ export function ReceiptScanner({
     setItemCat({});
     setItemAmount({});
     setDupAck(false);
+    setFixedMatch(null);
+    setFixedPaidDone(false);
+  }
+
+  /** Markerar den matchade fasta utgiften som betald för fakturans månad. */
+  async function markFixedPaid() {
+    if (!fixedMatch) return;
+    try {
+      await setFixedPaid({
+        data: {
+          expenseId: fixedMatch.id,
+          period: periodKey(date ? new Date(`${date}T12:00:00`) : new Date()),
+          paid: true,
+          paidOn: date || undefined,
+          source: "faktura",
+        },
+      });
+      setFixedPaidDone(true);
+      void queryClient.invalidateQueries({ queryKey: ["fixed_expense_payments"] });
+      void queryClient.invalidateQueries({ queryKey: ["todos"] });
+      toast.success(`${fixedMatch.name} är markerad som betald.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Kunde inte markera som betald.");
+    }
   }
 
   async function save() {
@@ -404,6 +454,24 @@ export function ReceiptScanner({
               />
             </div>
           </div>
+
+          {fixedMatch ? (
+            <div className="rounded-xl border border-primary/40 bg-primary/5 px-3 py-2.5">
+              <p className="text-sm font-medium">
+                Ser ut som din fasta utgift ”{fixedMatch.name}”
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">{fixedMatch.why}</p>
+              {fixedPaidDone ? (
+                <p className="mt-2 text-xs font-medium text-primary">
+                  Markerad som betald – borta från Fasta utgifter denna månad.
+                </p>
+              ) : (
+                <Button size="sm" className="mt-2" onClick={() => void markFixedPaid()}>
+                  Markera som betald
+                </Button>
+              )}
+            </div>
+          ) : null}
 
           <label className="flex items-center justify-between gap-3 rounded-xl border bg-background/60 px-3 py-2">
             <span className="flex items-center gap-2 text-sm">
