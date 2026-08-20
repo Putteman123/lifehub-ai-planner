@@ -9,6 +9,7 @@ import {
   useAccounts,
   useDayTick,
   useFixedExpenses,
+  useFixedPayments,
   useIncomes,
   useSpends,
 } from "@/lib/finance";
@@ -19,12 +20,19 @@ export function MoneyWidget() {
   const incomesQ = useIncomes();
   const fixedQ = useFixedExpenses();
   const spendsQ = useSpends();
+  const paymentsQ = useFixedPayments();
   useDayTick();
 
   const accounts = accountsQ.data ?? [];
   if (accountsQ.isLoading || accounts.length === 0) return null;
 
-  const budget = buildBudget(accounts, incomesQ.data ?? [], fixedQ.data ?? [], spendsQ.data ?? []);
+  const budget = buildBudget(
+    accounts,
+    incomesQ.data ?? [],
+    fixedQ.data ?? [],
+    spendsQ.data ?? [],
+    paymentsQ.data ?? [],
+  );
   const negative = budget.todayLeft <= 0;
 
   return (

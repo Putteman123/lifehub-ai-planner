@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarClock,
+  Check,
   Cigarette,
 
   FileUp,
@@ -59,6 +61,7 @@ import {
   useDeleteFinanceFile,
   useFinanceFiles,
   useFixedExpenses,
+  useFixedPayments,
   useIncomes,
   useSaveFinance,
   useSaveSpend,
@@ -70,7 +73,13 @@ import {
   type IncomeRow,
   type SpendRow,
 } from "@/lib/finance";
-import { financeInsight } from "@/lib/finance.functions";
+import { financeInsight, setFixedPaid, syncFixedCarryOver } from "@/lib/finance.functions";
+import {
+  fixedViews,
+  periodKey,
+  periodLabel,
+  type FixedPaymentRow,
+} from "@/lib/fixed-expenses";
 import { useVisits } from "@/lib/db";
 import { spendFlags } from "@/lib/spend-flags";
 import { spendTravelMode } from "@/lib/spend-travel";
@@ -110,17 +119,32 @@ function MoneyPage() {
   const fixedQ = useFixedExpenses();
   const spendsQ = useSpends();
   const filesQ = useFinanceFiles();
+  const paymentsQ = useFixedPayments();
+  const qc = useQueryClient();
 
   const accounts = accountsQ.data ?? [];
   const incomes = incomesQ.data ?? [];
   const fixed = fixedQ.data ?? [];
   const spends = spendsQ.data ?? [];
   const files = filesQ.data ?? [];
+  const payments = useMemo(() => paymentsQ.data ?? [], [paymentsQ.data]);
 
   const budget = useMemo(
-    () => buildBudget(accounts, incomes, fixed, spends),
-    [accounts, incomes, fixed, spends],
+    () => buildBudget(accounts, incomes, fixed, spends, payments),
+    [accounts, incomes, fixed, spends, payments],
   );
+
+  // Obetalda fasta utgifter från tidigare månader följer med som uppgifter.
+  const syncedRef = useRef(false);
+  useEffect(() => {
+    if (syncedRef.current || !fixed.length) return;
+    syncedRef.current = true;
+    void syncFixedCarryOver()
+      .then((res) => {
+        if (res.created || res.removed) void qc.invalidateQueries({ queryKey: ["todos"] });
+      })
+      .catch(() => undefined);
+  }, [fixed.length, qc]);
 
   return (
     <AppShell title="Pengar" subtitle="Saldo, inbetalningar, fasta utgifter och kvitton">
@@ -143,7 +167,7 @@ function MoneyPage() {
 
           <AccountsCard accounts={accounts} />
           <IncomesCard incomes={incomes} />
-          <FixedCard expenses={fixed} />
+          <FixedCard expenses={fixed} payments={payments} />
           <SpendListCard accounts={accounts} spends={spends} />
           <FilesCard files={files} className="lg:col-span-2" />
 
@@ -639,7 +663,29 @@ function IncomesCard({ incomes }: { incomes: IncomeRow[] }) {
   );
 }
 
-function FixedCard({ expenses }: { expenses: FixedExpenseRow[] }) {
+function FixedCard({
+  expenses,
+  payments,
+}: {
+  expenses: FixedExpenseRow[];
+  payments: FixedPaymentRow[];
+}) {
+  const qc = useQueryClient();
+  const setPaid = useMutation({
+    mutationFn: (vars: { expenseId: string; period: string; paid: boolean }) =>
+      setFixedPaid({ data: vars }),
+    onSuccess: (_res, vars) => {
+      void qc.invalidateQueries({ queryKey: ["fixed_expense_payments"] });
+      void qc.invalidateQueries({ queryKey: ["todos"] });
+      toast.success(vars.paid ? "Markerad som betald" : "Betalning ångrad");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const period = periodKey();
+  const views = useMemo(() => fixedViews(expenses, payments), [expenses, payments]);
+  const paidCount = views.filter((v) => v.row.is_active && v.status === "betald").length;
+  const activeCount = views.filter((v) => v.row.is_active).length;
+
   const save = useSaveFinance("fixed_expenses", "Fast utgift sparad");
   const remove = useDeleteFinance("fixed_expenses", "Fast utgift borttagen");
   const [open, setOpen] = useState(false);
@@ -697,21 +743,89 @@ function FixedCard({ expenses }: { expenses: FixedExpenseRow[] }) {
       }
     >
       <p className="mb-3 text-sm text-muted-foreground">
-        Ligger kvar varje månad · totalt {kr(total)} per månad
+        {paidCount} av {activeCount} betalda denna månad · totalt {kr(total)} per månad
       </p>
       {expenses.length === 0 ? (
         <p className="text-sm text-muted-foreground">Lägg in hyra, el, bredband och liknande.</p>
       ) : (
         <ul className="space-y-2">
-          {expenses.map((row) => (
-            <Row
+          {views.map(({ row, status, carryOver }) => (
+            <li
               key={row.id}
-              title={row.name}
-              subtitle={`Dras den ${row.due_day}:e`}
-              value={kr(Number(row.amount))}
-              onEdit={() => openEdit(row)}
-              onDelete={() => remove.mutate(row.id)}
-            />
+              className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 ${
+                status === "forsenad" || carryOver.length
+                  ? "border-destructive/40 bg-destructive/5"
+                  : "border-border/70"
+              }`}
+            >
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={status === "betald"}
+                aria-label={`Markera ${row.name} som betald`}
+                disabled={setPaid.isPending}
+                onClick={() =>
+                  setPaid.mutate({
+                    expenseId: row.id,
+                    period,
+                    paid: status !== "betald",
+                  })
+                }
+                className={`flex size-6 shrink-0 items-center justify-center rounded-md border-2 transition-colors ${
+                  status === "betald"
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-background text-transparent hover:border-primary"
+                }`}
+              >
+                <Check className="size-4" />
+              </button>
+
+              <div className="min-w-0 flex-1">
+                <p
+                  className={`truncate text-sm font-medium ${
+                    status === "betald" ? "text-muted-foreground line-through" : ""
+                  }`}
+                >
+                  {row.name}
+                </p>
+                <p
+                  className={`text-xs ${
+                    status === "forsenad" ? "font-medium text-destructive" : "text-muted-foreground"
+                  }`}
+                >
+                  {status === "betald"
+                    ? "Betald denna månad"
+                    : status === "forsenad"
+                      ? `Förfallen den ${row.due_day}:e`
+                      : `Dras den ${row.due_day}:e`}
+                  {carryOver.length
+                    ? ` · ${carryOver.length} obetald${carryOver.length > 1 ? "a" : ""} månad${
+                        carryOver.length > 1 ? "er" : ""
+                      } (${carryOver.map(periodLabel).join(", ")})`
+                    : ""}
+                </p>
+              </div>
+
+              <span className="shrink-0 text-sm font-semibold tabular-nums">
+                {kr(Number(row.amount))}
+              </span>
+              <button
+                type="button"
+                aria-label="Redigera"
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() => openEdit(row)}
+              >
+                <Pencil className="size-3.5" />
+              </button>
+              <button
+                type="button"
+                aria-label="Ta bort"
+                className="text-muted-foreground hover:text-destructive"
+                onClick={() => remove.mutate(row.id)}
+              >
+                <Trash2 className="size-3.5" />
+              </button>
+            </li>
           ))}
         </ul>
       )}
