@@ -61,6 +61,7 @@
   --color-cat-natt: var(--cat-natt);
   --color-cat-kvall: var(--cat-kvall);
   --color-cat-iptv: var(--cat-iptv);
+  --color-cat-ekonomi: var(--cat-ekonomi);
 
   /* Ikonfärger per läge */
   --color-nav-oversikt: var(--nav-oversikt);
@@ -124,6 +125,7 @@
   --cat-natt: oklch(0.4 0.09 275);
   --cat-kvall: oklch(0.66 0.15 55);
   --cat-iptv: oklch(0.58 0.12 205);
+  --cat-ekonomi: oklch(0.55 0.14 160);
 
   --shadow-soft: 0 1px 0 oklch(0.19 0.004 265 / 6%), 0 8px 24px oklch(0.19 0.004 265 / 6%);
 
@@ -176,6 +178,7 @@
   --cat-natt: oklch(0.68 0.12 275);
   --cat-kvall: oklch(0.78 0.14 55);
   --cat-iptv: oklch(0.74 0.14 205);
+  --cat-ekonomi: oklch(0.74 0.15 160);
 
   --nav-oversikt: oklch(0.95 0.002 265);
   --nav-kalender: oklch(0.74 0.13 258);

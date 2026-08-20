@@ -111,7 +111,11 @@ export function buildBudget(
   const fixedLeft =
     fixed
       .filter((e) => e.is_active)
-      .filter((e) => viewOf.get(e.id)?.status !== "betald")
+      .filter((e) => {
+        const status = viewOf.get(e.id)?.status;
+        return status !== "betald" && status !== "vilande";
+      })
+
       .filter((e) => {
         if (!limit) return false;
         const due = new Date(today.getFullYear(), today.getMonth(), e.due_day);
