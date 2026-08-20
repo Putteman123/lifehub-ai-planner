@@ -650,6 +650,7 @@ export type Database = {
           is_received: boolean
           kind: string
           label: string
+          loan_id: string | null
           updated_at: string
           user_id: string
         }
@@ -661,6 +662,7 @@ export type Database = {
           is_received?: boolean
           kind?: string
           label: string
+          loan_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -672,10 +674,19 @@ export type Database = {
           is_received?: boolean
           kind?: string
           label?: string
+          loan_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "finance_incomes_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fixed_expense_payments: {
         Row: {
@@ -749,7 +760,9 @@ export type Database = {
           due_day: number
           id: string
           is_active: boolean
+          loan_id: string | null
           name: string
+          part: string | null
           updated_at: string
           user_id: string
         }
@@ -760,7 +773,9 @@ export type Database = {
           due_day?: number
           id?: string
           is_active?: boolean
+          loan_id?: string | null
           name: string
+          part?: string | null
           updated_at?: string
           user_id: string
         }
@@ -771,11 +786,21 @@ export type Database = {
           due_day?: number
           id?: string
           is_active?: boolean
+          loan_id?: string | null
           name?: string
+          part?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fixed_expenses_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       iptv_lines: {
         Row: {
@@ -881,6 +906,62 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      loans: {
+        Row: {
+          account_id: string | null
+          created_at: string
+          disbursed_on: string
+          due_day: number
+          id: string
+          is_active: boolean
+          monthly_interest: number
+          monthly_payment: number
+          name: string
+          note: string | null
+          principal: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          created_at?: string
+          disbursed_on?: string
+          due_day?: number
+          id?: string
+          is_active?: boolean
+          monthly_interest?: number
+          monthly_payment?: number
+          name: string
+          note?: string | null
+          principal?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          created_at?: string
+          disbursed_on?: string
+          due_day?: number
+          id?: string
+          is_active?: boolean
+          monthly_interest?: number
+          monthly_payment?: number
+          name?: string
+          note?: string | null
+          principal?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loans_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       location_pings: {
         Row: {
