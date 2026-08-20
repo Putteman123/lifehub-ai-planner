@@ -317,7 +317,9 @@ export const matchInvoiceToFixed = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: rows } = await context.supabase
       .from("fixed_expenses")
-      .select("id, name, amount, due_day, category, is_active, created_at, updated_at, user_id")
+      .select(
+        "id, name, amount, due_day, category, is_active, created_at, updated_at, user_id, loan_id, part",
+      )
       .eq("is_active", true);
 
     const expenses = rows ?? [];
