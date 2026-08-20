@@ -116,16 +116,26 @@ type ToolPart = {
   approval?: { id: string };
 };
 
+function toolName(part: ToolPart) {
+  return part.type.startsWith("tool-") ? part.type.slice(5) : part.type;
+}
+
 function actionName(part: ToolPart) {
-  const name = part.type.startsWith("tool-") ? part.type.slice(5) : part.type;
+  const name = toolName(part);
   return name in ACTION_LABELS ? name : null;
 }
 
+/** Läsverktyg som aldrig ska synas som åtgärdskort i chatten. */
+const SILENT_TOOLS = new Set(["goto", "find_item", "find_free_time", "suggest_category"]);
+
 function isActionPart(part: ToolPart) {
-  const name = actionName(part);
-  if (!name) return false;
+  if (!part.type.startsWith("tool-")) return false;
+  const name = toolName(part);
+  // Godkännande måste ALLTID visas – annars låser sig chatten i väntan på svar.
+  if (part.state === "approval-requested") return true;
+  if (SILENT_TOOLS.has(name)) return false;
+  if (!actionName(part) && part.state === "output-available") return false;
   return (
-    part.state === "approval-requested" ||
     part.state === "output-available" ||
     part.state === "output-error" ||
     part.state === "output-denied"
@@ -140,7 +150,10 @@ function ActionCard({
   onRespond: (approved: boolean) => void;
 }) {
   const name = actionName(part);
-  const label = name ? ACTION_LABELS[name] : "Åtgärd";
+  const label = name
+    ? ACTION_LABELS[name]
+    : toolName(part).replace(/_/g, " ").replace(/^./, (c) => c.toUpperCase());
+
 
   if (part.state === "approval-requested") {
     return (
