@@ -225,3 +225,73 @@ export async function buildAndreaContext(userId: string) {
     ...profileLines,
   ].join("\n");
 }
+
+/**
+ * Komprimerat underlag för snabbfilen: idag och imorgon, plus öppna uppgifter.
+ * Håller anropet litet så att Gemini kan svara direkt.
+ */
+export async function buildAndreaQuickContext(userId: string) {
+  const now = new Date();
+  const until = new Date(now.getTime() + 2 * 86400000);
+
+  const [eventsRes, tasksRes, todosRes, remindersRes] = await Promise.all([
+    supabaseAdmin
+      .from("events")
+      .select("id, title, starts_at, ends_at, category, location, all_day")
+      .eq("user_id", userId)
+      .gte("ends_at", now.toISOString())
+      .lte("starts_at", until.toISOString())
+      .order("starts_at"),
+    supabaseAdmin
+      .from("case_tasks")
+      .select("id, title, due_date, is_done")
+      .eq("user_id", userId)
+      .eq("is_done", false)
+      .limit(25),
+    supabaseAdmin
+      .from("todos")
+      .select("id, title, due_date, is_done")
+      .eq("user_id", userId)
+      .eq("is_done", false)
+      .limit(25),
+    supabaseAdmin
+      .from("reminders")
+      .select("id, title, remind_at, is_done")
+      .eq("user_id", userId)
+      .eq("is_done", false)
+      .limit(15),
+  ]);
+
+  return [
+    `Nu: ${weekdayLocal(now)} ${timeLocal(now)} (${fmtLocal(now)}, tidszon Europe/Stockholm)`,
+    "",
+    "Händelser idag och imorgon:",
+    ...((eventsRes.data ?? []).length
+      ? (eventsRes.data ?? []).map(
+          (e) =>
+            `- ${fmtDate(e.starts_at, e.all_day)}–${fmtDate(e.ends_at, e.all_day)} | ${e.category} | ${e.title}${e.location ? ` (${e.location})` : ""} [id=${e.id}]`,
+        )
+      : ["- inga händelser"]),
+    "",
+    "Öppna juristuppgifter:",
+    ...((tasksRes.data ?? []).length
+      ? (tasksRes.data ?? []).map(
+          (t) => `- ${t.title}${t.due_date ? ` (senast ${fmtDate(t.due_date, false)})` : ""} [id=${t.id}]`,
+        )
+      : ["- inga"]),
+    "",
+    "Öppna att göra:",
+    ...((todosRes.data ?? []).length
+      ? (todosRes.data ?? []).map(
+          (t) => `- ${t.title}${t.due_date ? ` (senast ${fmtDate(t.due_date, false)})` : ""} [id=${t.id}]`,
+        )
+      : ["- inga"]),
+    "",
+    "Öppna påminnelser:",
+    ...((remindersRes.data ?? []).length
+      ? (remindersRes.data ?? []).map((r) => `- ${r.title} ${fmtDate(r.remind_at, false)} [id=${r.id}]`)
+      : ["- inga"]),
+    "",
+    "Saknas något i underlaget: använd find_item för att slå upp id innan du ändrar.",
+  ].join("\n");
+}
