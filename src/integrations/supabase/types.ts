@@ -755,40 +755,52 @@ export type Database = {
       fixed_expenses: {
         Row: {
           amount: number
+          anchor_month: number | null
           category: string | null
           created_at: string
           due_day: number
           id: string
+          interval_months: number
           is_active: boolean
+          is_subscription: boolean
           loan_id: string | null
           name: string
           part: string | null
+          sync_calendar: boolean
           updated_at: string
           user_id: string
         }
         Insert: {
           amount?: number
+          anchor_month?: number | null
           category?: string | null
           created_at?: string
           due_day?: number
           id?: string
+          interval_months?: number
           is_active?: boolean
+          is_subscription?: boolean
           loan_id?: string | null
           name: string
           part?: string | null
+          sync_calendar?: boolean
           updated_at?: string
           user_id: string
         }
         Update: {
           amount?: number
+          anchor_month?: number | null
           category?: string | null
           created_at?: string
           due_day?: number
           id?: string
+          interval_months?: number
           is_active?: boolean
+          is_subscription?: boolean
           loan_id?: string | null
           name?: string
           part?: string | null
+          sync_calendar?: boolean
           updated_at?: string
           user_id?: string
         }

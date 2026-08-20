@@ -75,6 +75,12 @@ export const CATEGORY_PALETTE: { token: string; dot: string; chip: string; bar: 
     chip: "bg-cat-iptv/14 text-cat-iptv",
     bar: "border-l-cat-iptv",
   },
+  {
+    token: "cat-ekonomi",
+    dot: "bg-cat-ekonomi",
+    chip: "bg-cat-ekonomi/14 text-cat-ekonomi",
+    bar: "border-l-cat-ekonomi",
+  },
 ];
 
 export function paletteByToken(token: string) {

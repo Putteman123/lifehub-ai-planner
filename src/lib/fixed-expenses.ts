@@ -26,7 +26,7 @@ export function periodLabel(period: string) {
   return new Date(y ?? 2000, (m ?? 1) - 1, 1).toLocaleDateString("sv-SE", { month: "long" });
 }
 
-export type FixedStatus = "betald" | "kommande" | "forsenad";
+export type FixedStatus = "betald" | "kommande" | "forsenad" | "vilande";
 
 export type FixedView = {
   row: FixedExpenseRow;
@@ -34,7 +34,67 @@ export type FixedView = {
   payment: FixedPaymentRow | null;
   /** Obetalda månader före innevarande, äldst först. */
   carryOver: string[];
+  /** Nästa månad posten förfaller (YYYY-MM). */
+  nextPeriod: string;
 };
+
+/** Valbara intervall för en fast utgift/prenumeration. */
+export const FIXED_INTERVALS: { value: number; label: string; short: string }[] = [
+  { value: 1, label: "Varje månad", short: "mån" },
+  { value: 3, label: "Var tredje månad", short: "kvartal" },
+  { value: 6, label: "Var sjätte månad", short: "halvår" },
+  { value: 12, label: "En gång per år", short: "år" },
+];
+
+export function intervalLabel(months: number) {
+  return FIXED_INTERVALS.find((i) => i.value === months)?.label ?? `Var ${months}:e månad`;
+}
+
+function monthIndex(period: string) {
+  const [y, m] = period.split("-").map(Number);
+  return (y ?? 2000) * 12 + ((m ?? 1) - 1);
+}
+
+function addMonths(period: string, count: number) {
+  const total = monthIndex(period) + count;
+  return `${Math.floor(total / 12)}-${String((total % 12) + 1).padStart(2, "0")}`;
+}
+
+type IntervalRow = {
+  interval_months?: number | null;
+  anchor_month?: number | null;
+  created_at?: string | null;
+};
+
+/** Sant om posten faktiskt ska betalas under angiven månad. */
+export function isDueInPeriod(row: IntervalRow, period: string) {
+  const step = Math.max(Number(row.interval_months ?? 1) || 1, 1);
+  if (step === 1) return true;
+  const anchor = row.anchor_month
+    ? ((Number(row.anchor_month) - 1) % 12 + 12) % 12
+    : monthIndex(periodKey(row.created_at ?? new Date())) % 12;
+  return ((monthIndex(period) % 12) - anchor + 24) % step === 0;
+}
+
+/** Nästa månad (inklusive angiven) då posten förfaller. */
+export function nextDuePeriod(row: IntervalRow, from = periodKey()) {
+  let cursor = from;
+  for (let i = 0; i < 24; i += 1) {
+    if (isDueInPeriod(row, cursor)) return cursor;
+    cursor = addMonths(cursor, 1);
+  }
+  return from;
+}
+
+/** Alla förfallomånader framåt, t.ex. för kalendersynk. */
+export function duePeriods(row: IntervalRow, from = periodKey(), months = 12) {
+  const out: string[] = [];
+  for (let i = 0; i < months; i += 1) {
+    const period = addMonths(from, i);
+    if (isDueInPeriod(row, period)) out.push(period);
+  }
+  return out;
+}
 
 /**
  * Sätter status för varje fast utgift i innevarande månad och listar
@@ -61,20 +121,24 @@ export function fixedViews(
     const dayOfMonth = Number(
       new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Stockholm", day: "numeric" }).format(now),
     );
+    const dueNow = isDueInPeriod(row, period);
     const status: FixedStatus = payment
       ? "betald"
-      : dayOfMonth > row.due_day
-        ? "forsenad"
-        : "kommande";
+      : !dueNow
+        ? "vilande"
+        : dayOfMonth > row.due_day
+          ? "forsenad"
+          : "kommande";
 
     const created = periodKey(row.created_at);
     const carryOver = row.is_active
-      ? periods.filter((p) => p >= created && !paidSet.has(`${row.id}:${p}`))
+      ? periods.filter((p) => p >= created && isDueInPeriod(row, p) && !paidSet.has(`${row.id}:${p}`))
       : [];
 
-    return { row, status, payment, carryOver };
+    return { row, status, payment, carryOver, nextPeriod: nextDuePeriod(row, period) };
   });
 }
+
 
 /** Summa som fortfarande ska betalas: innevarande månad + restskulder. */
 export function unpaidFixedTotal(views: FixedView[]) {
@@ -83,7 +147,7 @@ export function unpaidFixedTotal(views: FixedView[]) {
     .reduce(
       (sum, v) =>
         sum +
-        (v.status === "betald" ? 0 : Number(v.row.amount)) +
+        (v.status === "betald" || v.status === "vilande" ? 0 : Number(v.row.amount)) +
         v.carryOver.length * Number(v.row.amount),
       0,
     );

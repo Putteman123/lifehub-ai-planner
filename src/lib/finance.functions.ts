@@ -260,6 +260,22 @@ export const setFixedPaid = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
+    // Uppdaterar kalendertitlarna (bock framför betalda månader).
+    const refreshCalendar = async () => {
+      const { data: expense } = await supabase
+        .from("fixed_expenses")
+        .select("*")
+        .eq("id", data.expenseId)
+        .maybeSingle();
+      if (!expense) return;
+      const { data: paid } = await supabase
+        .from("fixed_expense_payments")
+        .select("period")
+        .eq("expense_id", data.expenseId);
+      const { syncFixedEvents } = await import("@/lib/fixed-calendar.server");
+      await syncFixedEvents(supabase, userId, expense, (paid ?? []).map((p) => p.period));
+    };
+
     if (!data.paid) {
       const { error } = await supabase
         .from("fixed_expense_payments")
@@ -267,6 +283,7 @@ export const setFixedPaid = createServerFn({ method: "POST" })
         .eq("expense_id", data.expenseId)
         .eq("period", data.period);
       if (error) throw new Error(error.message);
+      await refreshCalendar();
       return { ok: true as const, paid: false };
     }
 
@@ -296,8 +313,10 @@ export const setFixedPaid = createServerFn({ method: "POST" })
       .eq("user_id", userId)
       .like("notes", `%fixed:${data.expenseId}:${data.period}%`);
 
+    await refreshCalendar();
     return { ok: true as const, paid: true };
   });
+
 
 /**
  * Matchar en uppladdad faktura mot de fasta utgifterna med Andrea och
@@ -317,9 +336,7 @@ export const matchInvoiceToFixed = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: rows } = await context.supabase
       .from("fixed_expenses")
-      .select(
-        "id, name, amount, due_day, category, is_active, created_at, updated_at, user_id, loan_id, part",
-      )
+      .select("*")
       .eq("is_active", true);
 
     const expenses = rows ?? [];
@@ -401,4 +418,88 @@ export const syncFixedCarryOver = createServerFn({ method: "POST" })
     if (stale.length) await supabase.from("todos").delete().in("id", stale);
 
     return { created: inserts.length, removed: stale.length };
+  });
+
+/** Sparar en fast utgift/prenumeration och håller kalendern i synk. */
+export const saveFixedExpense = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        id: z.string().uuid().optional(),
+        name: z.string().trim().min(1),
+        amount: z.number(),
+        due_day: z.number().int().min(1).max(28),
+        category: z.string().trim().nullable().default(null),
+        is_active: z.boolean().default(true),
+        is_subscription: z.boolean().default(false),
+        interval_months: z.number().int().min(1).max(12).default(1),
+        anchor_month: z.number().int().min(1).max(12).nullable().default(null),
+        sync_calendar: z.boolean().default(true),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { id, ...rest } = data;
+    const payload = id ? { ...rest, id, user_id: userId } : { ...rest, user_id: userId };
+
+    const { data: saved, error } = await supabase
+      .from("fixed_expenses")
+      .upsert(payload)
+      .select("*")
+      .single();
+    if (error) throw new Error(error.message);
+
+    const { data: payments } = await supabase
+      .from("fixed_expense_payments")
+      .select("period")
+      .eq("expense_id", saved.id);
+
+    const { syncFixedEvents } = await import("@/lib/fixed-calendar.server");
+    await syncFixedEvents(
+      supabase,
+      userId,
+      saved,
+      (payments ?? []).map((p) => p.period),
+    );
+
+    return { ok: true as const, id: saved.id as string };
+  });
+
+/** Tar bort en fast utgift och dess kalenderhändelser. */
+export const deleteFixedExpense = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { removeFixedEvents } = await import("@/lib/fixed-calendar.server");
+    await removeFixedEvents(supabase, userId, data.id);
+    const { error } = await supabase.from("fixed_expenses").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+/** Synkar kalenderhändelser för alla aktiva fasta utgifter (körs vid sidladdning). */
+export const syncFixedCalendar = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const [{ data: expenses }, { data: payments }] = await Promise.all([
+      supabase.from("fixed_expenses").select("*"),
+      supabase.from("fixed_expense_payments").select("expense_id, period"),
+    ]);
+
+    const { syncFixedEvents } = await import("@/lib/fixed-calendar.server");
+    let created = 0;
+    let removed = 0;
+    for (const row of expenses ?? []) {
+      const paid = (payments ?? [])
+        .filter((p) => p.expense_id === row.id)
+        .map((p) => p.period);
+      const res = await syncFixedEvents(supabase, userId, row, paid);
+      created += res.created;
+      removed += res.removed;
+    }
+    return { created, removed };
   });

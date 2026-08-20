@@ -74,10 +74,18 @@ import {
   type IncomeRow,
   type SpendRow,
 } from "@/lib/finance";
-import { financeInsight, setFixedPaid, syncFixedCarryOver } from "@/lib/finance.functions";
+import {
+  deleteFixedExpense,
+  financeInsight,
+  saveFixedExpense,
+  setFixedPaid,
+  syncFixedCarryOver,
+} from "@/lib/finance.functions";
 import {
   fixedViews,
   periodKey,
+  FIXED_INTERVALS,
+  intervalLabel,
   periodLabel,
   type FixedPaymentRow,
 } from "@/lib/fixed-expenses";
@@ -168,7 +176,7 @@ function MoneyPage() {
 
           <AccountsCard accounts={accounts} />
           <IncomesCard incomes={incomes} />
-          <FixedCard expenses={fixed} payments={payments} />
+          <FixedCard expenses={fixed} payments={payments} spends={spends} />
           <LoansCard accounts={accounts} fixed={fixed} payments={payments} />
           <SpendListCard accounts={accounts} spends={spends} />
           <FilesCard files={files} className="lg:col-span-2" />
@@ -226,12 +234,40 @@ function BudgetCard({
 }
 
 /** Stor inmatningsruta för hur mycket som spenderats. */
+type FixedInput = {
+  id?: string;
+  name: string;
+  amount: number;
+  due_day: number;
+  category: string | null;
+  is_active: boolean;
+  is_subscription: boolean;
+  interval_months: number;
+  anchor_month: number | null;
+  sync_calendar: boolean;
+};
+
 function SpendCard({ accounts, spends }: { accounts: AccountRow[]; spends: SpendRow[] }) {
   const save = useSaveSpend();
+  const qc = useQueryClient();
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [category, setCategory] = useState("");
   const [accountId, setAccountId] = useState("");
+  const [asFixed, setAsFixed] = useState(false);
+  const [asSubscription, setAsSubscription] = useState(false);
+  const [interval, setInterval] = useState("1");
+
+  const makeFixed = useMutation({
+    mutationFn: (values: FixedInput) => saveFixedExpense({ data: values }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["fixed_expenses"] });
+      void qc.invalidateQueries({ queryKey: ["events"] });
+      toast.success("Lagd som återkommande betalning i kalendern");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const categories = spendCategories(spends);
   const suggestion = guessCategory(note, spends);
@@ -276,12 +312,30 @@ function SpendCard({ accounts, spends }: { accounts: AccountRow[]; spends: Spend
       },
       {
         onSuccess: () => {
+          if (asFixed || asSubscription) {
+            const months = Number(interval) || 1;
+            makeFixed.mutate({
+              name: note.trim() || (category || suggestion || "Återkommande betalning"),
+              amount: value,
+              due_day: Math.min(new Date().getDate(), 28),
+              category: (category || suggestion || "").trim() || null,
+              is_active: true,
+              is_subscription: asSubscription,
+              interval_months: months,
+              anchor_month: months === 1 ? null : new Date().getMonth() + 1,
+              sync_calendar: true,
+            });
+          }
           setAmount("");
           setNote("");
           setCategory("");
+          setAsFixed(false);
+          setAsSubscription(false);
+          setInterval("1");
         },
       },
     );
+
   }
 
 
@@ -347,6 +401,44 @@ function SpendCard({ accounts, spends }: { accounts: AccountRow[]; spends: Spend
           Andrea föreslår kategorin {suggestion}.
         </p>
       ) : null}
+      <div className="mt-3 space-y-2 rounded-xl border border-border/70 p-3">
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={asFixed}
+            onChange={(e) => setAsFixed(e.target.checked)}
+            className="size-4 accent-[var(--primary)]"
+          />
+          Spara som fast utgift
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={asSubscription}
+            onChange={(e) => {
+              setAsSubscription(e.target.checked);
+              if (e.target.checked) setAsFixed(true);
+            }}
+            className="size-4 accent-[var(--primary)]"
+          />
+          Det här är en prenumeration
+        </label>
+        {asFixed || asSubscription ? (
+          <Select value={interval} onValueChange={setInterval}>
+            <SelectTrigger className="h-11" aria-label="Betalningsintervall">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {FIXED_INTERVALS.map((item) => (
+                <SelectItem key={item.value} value={String(item.value)}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : null}
+      </div>
+
       <Button
         className="mt-3 h-12 w-full text-base"
         onClick={submit}
@@ -668,10 +760,13 @@ function IncomesCard({ incomes }: { incomes: IncomeRow[] }) {
 function FixedCard({
   expenses,
   payments,
+  spends,
 }: {
   expenses: FixedExpenseRow[];
   payments: FixedPaymentRow[];
+  spends: SpendRow[];
 }) {
+
   const qc = useQueryClient();
   const setPaid = useMutation({
     mutationFn: (vars: { expenseId: string; period: string; paid: boolean }) =>
@@ -688,23 +783,52 @@ function FixedCard({
   const paidCount = views.filter((v) => v.row.is_active && v.status === "betald").length;
   const activeCount = views.filter((v) => v.row.is_active).length;
 
-  const save = useSaveFinance("fixed_expenses", "Fast utgift sparad");
-  const remove = useDeleteFinance("fixed_expenses", "Fast utgift borttagen");
+  const save = useMutation({
+    mutationFn: (values: FixedInput) => saveFixedExpense({ data: values }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["fixed_expenses"] });
+      void qc.invalidateQueries({ queryKey: ["events"] });
+      toast.success("Fast utgift sparad");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) => deleteFixedExpense({ data: { id } }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["fixed_expenses"] });
+      void qc.invalidateQueries({ queryKey: ["events"] });
+      toast.success("Fast utgift borttagen");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<FixedExpenseRow | null>(null);
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [day, setDay] = useState("25");
+  const [category, setCategory] = useState("");
+  const [subscription, setSubscription] = useState(false);
+  const [interval, setInterval] = useState("1");
+  const [syncCal, setSyncCal] = useState(true);
+
+  const categories = spendCategories(spends);
 
   const total = expenses
     .filter((e) => e.is_active)
-    .reduce((sum, e) => sum + Number(e.amount), 0);
+    .reduce(
+      (sum, e) => sum + Number(e.amount) / Math.max(Number(e.interval_months ?? 1) || 1, 1),
+      0,
+    );
 
   function openNew() {
     setEditing(null);
     setName("");
     setAmount("");
     setDay("25");
+    setCategory("");
+    setSubscription(false);
+    setInterval("1");
+    setSyncCal(true);
     setOpen(true);
   }
 
@@ -713,23 +837,37 @@ function FixedCard({
     setName(row.name);
     setAmount(String(row.amount));
     setDay(String(row.due_day));
+    setCategory(row.category ?? "");
+    setSubscription(Boolean(row.is_subscription));
+    setInterval(String(row.interval_months ?? 1));
+    setSyncCal(row.sync_calendar !== false);
     setOpen(true);
   }
 
   function submit() {
     if (!name.trim()) return;
     const parsedDay = Math.min(Math.max(Number(day) || 1, 1), 28);
+    const months = Number(interval) || 1;
     save.mutate(
       {
         ...(editing ? { id: editing.id } : {}),
         name: name.trim(),
         amount: num(amount),
         due_day: parsedDay,
+        category: category.trim() || null,
         is_active: editing?.is_active ?? true,
+        is_subscription: subscription,
+        interval_months: months,
+        anchor_month:
+          months === 1
+            ? null
+            : (editing?.anchor_month ?? new Date().getMonth() + 1),
+        sync_calendar: syncCal,
       },
       { onSuccess: () => setOpen(false) },
     );
   }
+
 
   return (
     <SectionCard
@@ -751,7 +889,7 @@ function FixedCard({
         <p className="text-sm text-muted-foreground">Lägg in hyra, el, bredband och liknande.</p>
       ) : (
         <ul className="space-y-2">
-          {views.map(({ row, status, carryOver }) => (
+          {views.map(({ row, status, carryOver, nextPeriod }) => (
             <li
               key={row.id}
               className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 ${
@@ -784,11 +922,16 @@ function FixedCard({
 
               <div className="min-w-0 flex-1">
                 <p
-                  className={`truncate text-sm font-medium ${
+                  className={`flex items-center gap-1.5 truncate text-sm font-medium ${
                     status === "betald" ? "text-muted-foreground line-through" : ""
                   }`}
                 >
-                  {row.name}
+                  <span className="truncate">{row.name}</span>
+                  {row.is_subscription ? (
+                    <span className="shrink-0 rounded-full bg-cat-ekonomi/15 px-1.5 py-0.5 text-[10px] font-medium text-cat-ekonomi">
+                      Prenumeration
+                    </span>
+                  ) : null}
                 </p>
                 <p
                   className={`text-xs ${
@@ -797,9 +940,12 @@ function FixedCard({
                 >
                   {status === "betald"
                     ? "Betald denna månad"
-                    : status === "forsenad"
-                      ? `Förfallen den ${row.due_day}:e`
-                      : `Dras den ${row.due_day}:e`}
+                    : status === "vilande"
+                      ? `${intervalLabel(Number(row.interval_months ?? 1))} · nästa ${periodLabel(nextPeriod)}`
+                      : status === "forsenad"
+                        ? `Förfallen den ${row.due_day}:e`
+                        : `Dras den ${row.due_day}:e`}
+                  {row.category ? ` · ${row.category}` : ""}
                   {carryOver.length
                     ? ` · ${carryOver.length} obetald${carryOver.length > 1 ? "a" : ""} månad${
                         carryOver.length > 1 ? "er" : ""
@@ -807,6 +953,7 @@ function FixedCard({
                     : ""}
                 </p>
               </div>
+
 
               <span className="shrink-0 text-sm font-semibold tabular-nums">
                 {kr(Number(row.amount))}
@@ -844,7 +991,7 @@ function FixedCard({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="fix-amount">Belopp per månad</Label>
+                <Label htmlFor="fix-amount">Belopp per betalning</Label>
                 <Input
                   id="fix-amount"
                   inputMode="decimal"
@@ -862,7 +1009,58 @@ function FixedCard({
                 />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Kategori</Label>
+                <Select value={category} onValueChange={setCategory}>
+                  <SelectTrigger className="h-11" aria-label="Kategori">
+                    <SelectValue placeholder="Välj kategori" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((item) => (
+                      <SelectItem key={item} value={item}>
+                        {item}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Intervall</Label>
+                <Select value={interval} onValueChange={setInterval}>
+                  <SelectTrigger className="h-11" aria-label="Intervall">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FIXED_INTERVALS.map((item) => (
+                      <SelectItem key={item.value} value={String(item.value)}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={subscription}
+                onChange={(e) => setSubscription(e.target.checked)}
+                className="size-4 accent-[var(--primary)]"
+              />
+              Det här är en prenumeration
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={syncCal}
+                onChange={(e) => setSyncCal(e.target.checked)}
+                className="size-4 accent-[var(--primary)]"
+              />
+              Visa återkommande betalningar i kalendern
+            </label>
           </div>
+
           <DialogFooter>
             <Button onClick={submit} disabled={save.isPending}>
               Spara

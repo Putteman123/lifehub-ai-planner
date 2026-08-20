@@ -5,6 +5,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { SectionCard } from "@/components/SectionCard";
 import { kr, type FixedExpenseRow, type SpendRow } from "@/lib/finance";
 import { TOBACCO_CATEGORIES } from "@/lib/spend-categories";
+import { CategoryDetailDialog } from "@/components/pengar/CategoryDetailDialog";
 
 const COLORS = [
   "var(--chart-1)",
@@ -35,6 +36,7 @@ export function SpendPieCard({
 }) {
   const [days, setDays] = useState(30);
   const [withFixed, setWithFixed] = useState(true);
+  const [detail, setDetail] = useState<string | null>(null);
 
   const slices = useMemo(() => {
     const since = Date.now() - days * 86400000;
@@ -109,6 +111,8 @@ export function SpendPieCard({
                   outerRadius="88%"
                   paddingAngle={2}
                   stroke="none"
+                  onClick={(slice: { name?: string }) => setDetail(slice?.name ?? null)}
+                  className="cursor-pointer"
                 >
                   {slices.map((s, i) => (
                     <Cell key={s.name} fill={COLORS[i % COLORS.length]} />
@@ -134,7 +138,12 @@ export function SpendPieCard({
 
           <ul className="space-y-1.5 self-center">
             {slices.map((s, i) => (
-              <li key={s.name} className="flex items-center gap-2 text-sm">
+              <li key={s.name}>
+                <button
+                  type="button"
+                  onClick={() => setDetail(s.name)}
+                  className="flex w-full items-center gap-2 rounded-lg px-1 py-0.5 text-left text-sm transition-colors hover:bg-muted"
+                >
                 <span
                   className="size-2.5 shrink-0 rounded-full"
                   style={{ background: COLORS[i % COLORS.length] }}
@@ -146,6 +155,7 @@ export function SpendPieCard({
                 <span className="w-20 shrink-0 text-right text-xs font-medium tabular-nums">
                   {kr(s.value)}
                 </span>
+                </button>
               </li>
             ))}
             {tobacco > 0 ? (
@@ -173,6 +183,17 @@ export function SpendPieCard({
         />
         Räkna med fasta utgifter
       </label>
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        Klicka på en kategori för att se alla köp bakom summan.
+      </p>
+
+      <CategoryDetailDialog
+        category={detail}
+        spends={spends}
+        fixed={fixed}
+        days={days}
+        onOpenChange={(open) => !open && setDetail(null)}
+      />
     </SectionCard>
   );
 }
