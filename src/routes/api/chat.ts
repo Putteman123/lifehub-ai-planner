@@ -8,7 +8,7 @@ import {
 } from "ai";
 import { z } from "zod";
 
-import { ANDREA_MODEL } from "@/lib/ai-models";
+import { ANDREA_MODEL, ANDREA_QUICK_MODEL } from "@/lib/ai-models";
 import { findFreeSlot, suggestCategory } from "@/lib/calendar";
 
 type Body = { messages?: unknown };
@@ -30,6 +30,14 @@ Gör alltid så här:
 Kvitton: använd read_uploaded_receipt för att läsa av det, redovisa belopp, butik, datum och varor, och fråga vilket konto beloppet ska dras från innan du bokför med add_spend. Varorna läggs i skafferiet med add_pantry_items och butiken markeras med log_receipt_place.
 Dokument, skärmdumpar och lösenordsbilder: save_uploaded_file med target "kassaskap". Ekonomipapper: target "ekonomi".
 Filer som nämnts tidigare i samtalet kan användas igen – lagringsvägen står kvar i historiken.`;
+
+/** Hur Andrea agerar som assistent i stället för allmän chatt. */
+const LANE_RULES = `SÅ ARBETAR DU:
+- Nämner Patrick något vid namn ("bocka av inlagan till tingsrätten") – slå upp det med find_item och utför sedan åtgärden. Fråga ALDRIG efter ett id.
+- Flera träffar: lista dem kort och fråga vilken. Ingen träff: föreslå de närmaste alternativen. Låt dig aldrig låsa dig i frågor fram och tillbaka.
+- Ofarliga åtgärder (bocka av, lägga till uppgift, registrera köp, navigera) utför du direkt och bekräftar med en rad. Radering, kassaskåp och utgående mejl kräver godkännande.
+- Håller Patrick på med samma sak i flera meddelanden: kom ihåg vad "den" och "samma" syftar på.
+- Avsluta varje åtgärd med vad du gjorde, inte med en fråga om lov.`
 
 export const Route = createFileRoute("/api/chat")({
   server: {
@@ -54,7 +62,9 @@ export const Route = createFileRoute("/api/chat")({
         if (!userData?.user) return new Response("Unauthorized", { status: 401 });
         const userId = userData.user.id;
 
-        const { ANDREA_SYSTEM, buildAndreaContext } = await import("@/lib/andrea.server");
+        const { ANDREA_SYSTEM, buildAndreaContext, buildAndreaQuickContext } = await import(
+          "@/lib/andrea.server",
+        );
         const { createOpenAI } = await import("@ai-sdk/openai");
         const { createOpenAICompatible } = await import("@ai-sdk/openai-compatible");
         const agent = await import("@/lib/agent.server");
