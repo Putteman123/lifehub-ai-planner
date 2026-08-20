@@ -758,28 +758,72 @@ export const Route = createFileRoute("/api/chat")({
               inputSchema: z.object({ days: z.number().min(1).max(180).nullable() }),
               execute: async ({ days }) => agent.applesDeadlines(days ?? 30),
             }),
+            find_item: tool({
+              description:
+                "Slå upp id för en sak Patrick nämner vid namn: juristuppgift, att göra, händelse, påminnelse, fast utgift, plats eller ärende. Använd ALLTID detta innan du ändrar något du inte har ett id för.",
+              inputSchema: z.object({
+                query: z.string().describe("Ord ur namnet, t.ex. 'inlagan tingsrätten'."),
+                types: z
+                  .array(
+                    z.enum([
+                      "case_task",
+                      "todo",
+                      "event",
+                      "reminder",
+                      "fixed_expense",
+                      "place",
+                      "legal_case",
+                    ]),
+                  )
+                  .nullable()
+                  .describe("Begränsa sökningen till vissa typer, eller null för alla."),
+              }),
+              execute: async ({ query, types }) =>
+                agent.findItem(userId, query, types ?? undefined),
+            }),
+        };
 
-          },
-          providerOptions: {
-            openai: {
-              // Gateway-modell-id känns inte igen som resonemangsmodell utan detta.
-              forceReasoning: true,
-              reasoningEffort: "medium",
-              reasoningSummary: "auto",
-              // Gateway är tillståndslös: historiken skickas med varje gång.
-              store: false,
-              include: ["reasoning.encrypted_content"],
-              // Verktygsschemana använder valfria fält – kör inte strikt läge.
-              strictJsonSchema: false,
-            },
-          },
+        // Ofarliga, lätt ångrade åtgärder körs utan manuellt godkännande.
+        const toolEntries = Object.entries(allTools).filter(
+          ([name]) => lane === "deep" || QUICK_TOOLS.has(name),
+        );
+        const tools = Object.fromEntries(
+          toolEntries.map(([name, def]) =>
+            SAFE_TOOLS.has(name) ? [name, { ...def, needsApproval: false }] : [name, def],
+          ),
+        ) as typeof allTools;
+
+        const result = streamText({
+          model: lane === "quick" ? gemini(ANDREA_QUICK_MODEL) : openai.responses(ANDREA_MODEL),
+          system: `${ANDREA_SYSTEM}\n\n${UPLOAD_RULES}\n\n${LANE_RULES}\n\nAKTUELLT UNDERLAG FRÅN KALENDERN:\n${context}`,
+          messages: await convertToModelMessages(uiMessages),
+          stopWhen: stepCountIs(lane === "quick" ? 12 : 50),
+          tools,
+          ...(lane === "deep"
+            ? {
+                providerOptions: {
+                  openai: {
+                    // Gateway-modell-id känns inte igen som resonemangsmodell utan detta.
+                    forceReasoning: true,
+                    reasoningEffort: "medium",
+                    reasoningSummary: "auto",
+                    // Gateway är tillståndslös: historiken skickas med varje gång.
+                    store: false,
+                    include: ["reasoning.encrypted_content"],
+                    // Verktygsschemana använder valfria fält – kör inte strikt läge.
+                    strictJsonSchema: false,
+                  },
+                },
+              }
+            : {}),
         });
 
         return result.toUIMessageStreamResponse({
-          originalMessages: body.messages as UIMessage[],
+          originalMessages: uiMessages,
           sendReasoning: true,
         });
       },
+
     },
   },
 });
