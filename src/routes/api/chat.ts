@@ -248,7 +248,7 @@ export const Route = createFileRoute("/api/chat")({
             // --- Filer som Patrick laddat upp i chatten ---
             read_uploaded_receipt: tool({
               description:
-                "Läs av ett uppladdat kvitto eller en faktura (bild eller PDF) och få ut belopp, butik, datum, adress, kategori, varor och tobak. Sparar ingenting.",
+                "Läs av ett uppladdat kvitto eller en faktura (bild eller PDF) och få ut belopp, butik, datum, adress, kategori, varor, tobak, rabatter (discounts) samt balanskontroll (balanced/diff: stämmer varor + tobak − rabatter mot totalen). Nämn rabatt, tobaksuppdelning och om summan balanserar i ditt svar. Sparar ingenting.",
               inputSchema: z.object({
                 storage_path: z.string().describe("Lagringsvägen som stod i meddelandet."),
                 file_name: z.string(),

@@ -28,6 +28,11 @@ import { analyzeDaySegments } from "@/lib/day-mapping.functions";
 import { kr, useSaveSpend, useUploadFinanceFiles, type AccountRow, type SpendRow } from "@/lib/finance";
 import { spendCategories } from "@/lib/spend-categories";
 import { useAddPantryItems } from "@/lib/shopping";
+import { isNonGrocery } from "@/lib/pantry-name";
+
+/** Formaterar belopp med ören, t.ex. 406,94. */
+const ore = (n: number) =>
+  n.toLocaleString("sv-SE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 
 type Read = Awaited<ReturnType<typeof analyzeReceipt>>;
@@ -44,7 +49,7 @@ async function toDataUrl(file: File): Promise<string> {
   }
 
   const bitmap = await createImageBitmap(file);
-  const max = 1600;
+  const max = 2048;
   const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(bitmap.width * scale);
@@ -135,6 +140,20 @@ export function ReceiptScanner({
       }, {}),
     ).filter((row) => row.amount > 0);
 
+  /** Kontrollräkning: varor + tobak − rabatter ska matcha beloppet. */
+  const grocerySum = (read?.groceries ?? []).reduce((sum, item) => sum + (item.amount ?? 0), 0);
+  const tobaccoSum = tobaccoSplits.reduce((sum, row) => sum + row.amount, 0);
+  const discountSum = (read?.discounts ?? []).reduce((sum, row) => sum + (row.amount ?? 0), 0);
+  const enteredTotal = Number(amount.replace(/\s/g, "").replace(",", "."));
+  const rowsTotal = grocerySum + tobaccoSum - discountSum;
+  const showBalance =
+    read !== null &&
+    Number.isFinite(enteredTotal) &&
+    enteredTotal > 0 &&
+    grocerySum + tobaccoSum > 0;
+  const balanceDiff = Math.round((rowsTotal - enteredTotal) * 100) / 100;
+  const balanced = Math.abs(balanceDiff) <= 2;
+
 
 
 
@@ -153,7 +172,14 @@ export function ReceiptScanner({
       setAddress(result.address ?? "");
       setMarkMap(result.kind !== "faktura");
       setCategory(result.category ?? "");
-      setItemDest({});
+      // Icke-matvaror (kasse, pant, rabattrader) får "Hoppa över" som förval.
+      setItemDest(
+        Object.fromEntries(
+          result.groceries
+            .filter((item) => isNonGrocery(item.name))
+            .map((item) => [item.name, "skip" as Dest]),
+        ),
+      );
       setItemCat(
         Object.fromEntries(result.groceries.map((item) => [item.name, "Övrigt"])),
       );
@@ -406,6 +432,9 @@ export function ReceiptScanner({
           <div className="flex items-center gap-2 text-sm font-medium">
             <Sparkles className="size-4 text-nav-handla" />
             {read.merchant ?? "Kvitto"} {read.total ? `· ${kr(read.total)}` : ""}
+            {read.payment ? (
+              <span className="text-xs font-normal text-muted-foreground">· {read.payment}</span>
+            ) : null}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -544,6 +573,33 @@ export function ReceiptScanner({
                 ))}
               </ul>
             </div>
+          ) : null}
+
+          {read.discounts.length > 0 ? (
+            <ul className="space-y-1 rounded-2xl border border-border/60 bg-muted/40 p-3 text-sm">
+              {read.discounts.map((row) => (
+                <li key={row.name} className="flex justify-between tabular-nums">
+                  <span className="text-muted-foreground">{row.name}</span>
+                  <span className="text-cat-jurist">−{ore(row.amount ?? 0)} kr</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {showBalance ? (
+            <p
+              className={`rounded-xl px-3 py-2 text-xs font-medium tabular-nums ${
+                balanced
+                  ? "bg-nav-handla/10 text-nav-handla"
+                  : "bg-cat-viktigt/10 text-cat-viktigt"
+              }`}
+            >
+              Varor {ore(grocerySum)} + tobak {ore(tobaccoSum)} − rabatt {ore(discountSum)} ={" "}
+              {ore(rowsTotal)} kr
+              {balanced
+                ? " ✓ stämmer mot beloppet"
+                : ` – diff ${ore(balanceDiff)} kr mot beloppet, kontrollera raderna`}
+            </p>
           ) : null}
 
           <div className="rounded-2xl border border-border/60 bg-background/60 p-3">

@@ -56,7 +56,7 @@ const SYNONYMS: { re: RegExp; key: string }[] = [
 
 /** Poster som inte är matvaror och därför inte hör hemma i skafferiet. */
 const NON_GROCERY =
-  /^(plastkasse|papperskasse|bärkasse|kasse|påse|pant|pantretur|pantflaska|avrundning|rabatt|bonus|totalt|summa)$/;
+  /\b(plastkasse|papperskasse|bärkasse|kasse|påse|pant|pantretur|pantflaska|avrundning|öresavrundning|kupong)\b|\brabatt|\bbonus/i;
 
 function stripUnits(text: string) {
   return text
