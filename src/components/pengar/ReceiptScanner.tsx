@@ -181,20 +181,22 @@ export function ReceiptScanner({
       setAddress(result.address ?? "");
       setMarkMap(result.kind !== "faktura");
       setCategory(result.category ?? "");
-      // Icke-matvaror (kasse, pant, rabattrader) får "Hoppa över" som förval.
+      // Icke-matvaror (kasse, pant) får "Hoppa över" som förval.
+      const allRead = [
+        ...result.groceries,
+        ...result.other.map((item) => ({ ...item, quantity: null })),
+      ];
       setItemDest(
         Object.fromEntries(
-          result.groceries
+          allRead
             .filter((item) => isNonGrocery(item.name))
             .map((item) => [item.name, "skip" as Dest]),
         ),
       );
-      setItemCat(
-        Object.fromEntries(result.groceries.map((item) => [item.name, "Övrigt"])),
-      );
+      setItemCat(Object.fromEntries(allRead.map((item) => [item.name, "Övrigt"])));
       setItemAmount(
         Object.fromEntries(
-          result.groceries.map((item) => [item.name, item.amount ? String(item.amount) : ""]),
+          allRead.map((item) => [item.name, item.amount ? String(item.amount) : ""]),
         ),
       );
       setDupAck(false);
