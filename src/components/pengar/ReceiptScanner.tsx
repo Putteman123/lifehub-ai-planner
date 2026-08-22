@@ -605,7 +605,7 @@ export function ReceiptScanner({
                   : "bg-cat-viktigt/10 text-cat-viktigt"
               }`}
             >
-              Varor {ore(grocerySum)} + tobak {ore(tobaccoSum)} − rabatt {ore(discountSum)} ={" "}
+              Rader {ore(grocerySum)} + tobak {ore(tobaccoSum)} − rabatt {ore(discountSum)} ={" "}
               {ore(rowsTotal)} kr
               {balanced
                 ? " ✓ stämmer mot beloppet"
