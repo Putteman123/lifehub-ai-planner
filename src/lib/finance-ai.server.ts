@@ -252,15 +252,27 @@ Rabatter: varje rabatt- eller kupongrad (t.ex. "Lidl Plus-rabatt -10,00", "Bonus
     .filter((item) => item.name.length > 0)
     .slice(0, 20);
 
-  // Kontrollräkning: varor + tobak − rabatter ska matcha totalen.
+  const other = (parsed.other ?? [])
+    .map((item) => {
+      const amount = Math.abs(Number(item.amount));
+      return {
+        name: String(item.name ?? "").trim(),
+        amount: Number.isFinite(amount) && amount > 0 ? amount : null,
+      };
+    })
+    .filter((item) => item.name.length > 0 && !tobaccoCategory(item.name))
+    .slice(0, 20);
+
+  // Kontrollräkning: varor + tobak + övrigt − rabatter ska matcha totalen.
   const totalValue = Number.isFinite(total) && total > 0 ? total : null;
-  const rowCount = groceries.length + tobacco.length;
+  const rowCount = groceries.length + tobacco.length + other.length;
   let balanced: boolean | null = null;
   let diff: number | null = null;
   if (totalValue !== null && rowCount > 0) {
     const sum =
       groceries.reduce((acc, item) => acc + (item.amount ?? 0), 0) +
-      tobacco.reduce((acc, item) => acc + (item.amount ?? 0), 0) -
+      tobacco.reduce((acc, item) => acc + (item.amount ?? 0), 0) +
+      other.reduce((acc, item) => acc + (item.amount ?? 0), 0) -
       discounts.reduce((acc, item) => acc + (item.amount ?? 0), 0);
     diff = Math.round((sum - totalValue) * 100) / 100;
     balanced = Math.abs(diff) <= 2;
@@ -278,6 +290,7 @@ Rabatter: varje rabatt- eller kupongrad (t.ex. "Lidl Plus-rabatt -10,00", "Bonus
     groceries,
     tobacco,
     discounts,
+    other,
     balanced,
     diff,
   };
