@@ -636,17 +636,17 @@ export function ReceiptScanner({
             </div>
           </div>
 
-          {read.groceries.length > 0 ? (
+          {allItems.length > 0 ? (
             <div>
               <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                 <ShoppingCart className="size-3.5" /> Varor på kvittot – välj vart varje rad ska
               </p>
               <ul className="mt-2 space-y-2">
-                {read.groceries.map((item) => {
+                {allItems.map((item, index) => {
                   const dest = destOf(item.name);
                   return (
                     <li
-                      key={item.name}
+                      key={`${item.name}-${index}`}
                       className="rounded-2xl border border-border/60 bg-background/60 p-2.5"
                     >
                       <div className="flex items-center justify-between gap-2">
