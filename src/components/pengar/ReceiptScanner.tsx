@@ -111,12 +111,19 @@ export function ReceiptScanner({
   const categories = spendCategories(spends);
 
   const destOf = (name: string): Dest => itemDest[name] ?? defaultDest;
-  const picked = (read?.groceries ?? [])
-    .filter((item) => destOf(item.name) === "skafferi")
+
+  /** Alla rader som listas i granskningen: varor + icke-matvaror (kasse, pant). */
+  const allItems: { name: string; quantity: string | null; amount: number | null }[] = [
+    ...(read?.groceries ?? []),
+    ...(read?.other ?? []).map((item) => ({ ...item, quantity: null })),
+  ];
+
+  const picked = allItems
+    .filter((item) => destOf(item.name) === "skafferi" && !isNonGrocery(item.name))
     .map((item) => item.name);
 
   /** Varor som användaren styrt till en egen utgiftspost. */
-  const itemSplits = (read?.groceries ?? [])
+  const itemSplits = allItems
     .filter((item) => destOf(item.name) === "utgift")
     .map((item) => ({
       name: item.name,
@@ -140,8 +147,10 @@ export function ReceiptScanner({
       }, {}),
     ).filter((row) => row.amount > 0);
 
-  /** Kontrollräkning: varor + tobak − rabatter ska matcha beloppet. */
-  const grocerySum = (read?.groceries ?? []).reduce((sum, item) => sum + (item.amount ?? 0), 0);
+  /** Kontrollräkning: varor + övrigt + tobak − rabatter ska matcha beloppet. */
+  const grocerySum =
+    (read?.groceries ?? []).reduce((sum, item) => sum + (item.amount ?? 0), 0) +
+    (read?.other ?? []).reduce((sum, item) => sum + (item.amount ?? 0), 0);
   const tobaccoSum = tobaccoSplits.reduce((sum, row) => sum + row.amount, 0);
   const discountSum = (read?.discounts ?? []).reduce((sum, row) => sum + (row.amount ?? 0), 0);
   const enteredTotal = Number(amount.replace(/\s/g, "").replace(",", "."));
