@@ -116,14 +116,31 @@ export async function readAttachmentReceipt(
   });
 }
 
-/** Lägger varor i skafferiet (utan att röra inköpslistan). */
-export async function addPantryItems(userId: string, names: string[]): Promise<Ok> {
+/** En vara att lägga i skafferiet, med valfri prisinformation från kvittot. */
+export type PantryLine = {
+  name: string;
+  amount?: number | null;
+  quantity?: string | null;
+  is_campaign?: boolean;
+};
+
+/** Lägger varor i skafferiet (utan att röra inköpslistan) och sparar prisrader i prisboken. */
+export async function addPantryItems(
+  userId: string,
+  items: PantryLine[],
+  context?: { merchant?: string | undefined; purchased_at?: string | undefined },
+): Promise<Ok> {
   const { canonicalKey, isNonGrocery } = await import("./pantry-name");
-  const clean = names.map((n) => n.trim()).filter(Boolean);
+  const clean = items.filter((item) => item.name.trim());
   if (!clean.length) return ok("Inga varor att lägga in.");
 
+  const purchased = context?.purchased_at ?? new Date().toISOString();
+  const merchant = context?.merchant?.trim() || null;
+  const now = new Date().toISOString();
+  const priceRows: Record<string, unknown>[] = [];
   let added = 0;
-  for (const raw of clean) {
+  for (const item of clean) {
+    const raw = item.name.trim();
     if (isNonGrocery(raw)) continue;
     const key = canonicalKey(raw);
     if (!key) continue;
@@ -133,22 +150,81 @@ export async function addPantryItems(userId: string, names: string[]): Promise<O
       .eq("user_id", userId)
       .eq("name_key", key)
       .maybeSingle();
+    let pantryId: string | null = null;
     if (existing.data) {
+      pantryId = existing.data.id;
       await supabaseAdmin
         .from("pantry_items")
         .update({
           times_added: existing.data.times_added + 1,
-          last_added_at: new Date().toISOString(),
+          last_added_at: now,
+          last_purchased_at: purchased,
         })
         .eq("id", existing.data.id);
     } else {
-      await supabaseAdmin
+      const created = await supabaseAdmin
         .from("pantry_items")
-        .insert({ user_id: userId, name: raw, name_key: key, source: "ai" });
+        .insert({ user_id: userId, name: raw, name_key: key, source: "ai" })
+        .select("id")
+        .maybeSingle();
+      pantryId = created.data?.id ?? null;
+    }
+    const price = Number(item.amount);
+    if (Number.isFinite(price) && price > 0) {
+      priceRows.push({
+        user_id: userId,
+        pantry_item_id: pantryId,
+        name: raw,
+        name_key: key,
+        merchant,
+        price,
+        quantity: item.quantity?.trim() || null,
+        is_campaign: item.is_campaign === true,
+        purchased_at: purchased,
+        source: "kvitto",
+      });
     }
     added += 1;
   }
-  return ok(`La in ${added} varor i skafferiet.`);
+  if (priceRows.length) {
+    const { error } = await supabaseAdmin.from("pantry_prices").insert(priceRows);
+    if (error) throw new Error(error.message);
+  }
+  return ok(
+    `La in ${added} varor i skafferiet${priceRows.length ? ` och sparade ${priceRows.length} priser i prisboken` : ""}.`,
+  );
+}
+
+/**
+ * Slår upp normalpriser i prisboken. Returnerar senaste icke-kampanjpris
+ * per matchande vara samt lägsta/högsta noterade normalpris.
+ */
+export async function lookupPrices(userId: string, query: string): Promise<Ok> {
+  const needle = query.trim();
+  if (!needle) return ok("Ange en vara att slå upp.");
+  const { data, error } = await supabaseAdmin
+    .from("pantry_prices")
+    .select("name, merchant, price, quantity, is_campaign, purchased_at")
+    .eq("user_id", userId)
+    .ilike("name", `%${needle}%`)
+    .order("purchased_at", { ascending: false })
+    .limit(60);
+  if (error) throw new Error(error.message);
+  if (!data?.length) return ok(`Hittade inga noterade priser på "${needle}" i prisboken.`);
+
+  const byName = new Map<string, typeof data>();
+  for (const row of data) {
+    const key = row.name.toLowerCase();
+    byName.set(key, [...(byName.get(key) ?? []), row]);
+  }
+  const lines = [...byName.entries()].slice(0, 10).map(([name, rows]) => {
+    const normal = rows.filter((r) => !r.is_campaign);
+    const latest = normal[0] ?? rows[0];
+    const prices = normal.map((r) => Number(r.price));
+    const span = prices.length > 1 ? ` (lägst ${Math.min(...prices)} kr, högst ${Math.max(...prices)} kr)` : "";
+    return `- ${name}: ${latest.price} kr hos ${latest.merchant ?? "okänd butik"} ${String(latest.purchased_at).slice(0, 10)}${span}`;
+  });
+  return ok(`Prisboken för "${needle}":\n${lines.join("\n")}`);
 }
 
 /** Markerar butiken på kartan och lägger in köpet i kalendern. */

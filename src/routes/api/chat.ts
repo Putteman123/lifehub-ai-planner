@@ -295,12 +295,35 @@ export const Route = createFileRoute("/api/chat")({
             }),
             add_pantry_items: tool({
               description:
-                "Lägg varor från ett kvitto i skafferiet under Handla (utan att röra inköpslistan).",
-              inputSchema: z.object({ items: z.array(z.string()) }),
+                "Lägg varor från ett kvitto i skafferiet under Handla (utan att röra inköpslistan). Skicka med pris, mängd och kampanjflagga från kvittoavläsningen samt butik och datum så sparas allt i prisboken.",
+              inputSchema: z.object({
+                items: z.array(
+                  z.object({
+                    name: z.string(),
+                    amount: z.number().nullable(),
+                    quantity: z.string().nullable(),
+                    is_campaign: z.boolean().nullable(),
+                  }),
+                ),
+                merchant: z.string().nullable(),
+                purchased_at: z.string().nullable(),
+              }),
               needsApproval: true,
-              execute: async ({ items }) => {
+              execute: async ({ items, merchant, purchased_at }) => {
                 const files = await import("@/lib/andrea-files.server");
-                return files.addPantryItems(userId, items);
+                return files.addPantryItems(userId, items, {
+                  merchant: merchant ?? undefined,
+                  purchased_at: purchased_at ?? undefined,
+                });
+              },
+            }),
+            lookup_prices: tool({
+              description:
+                "Slå upp noterade normalpriser på en vara i prisboken (skafferiet). Använd när användaren undrar vad något brukar kosta eller var det är billigast. Kampanjpriser räknas inte som normalpris.",
+              inputSchema: z.object({ query: z.string().describe("Varunamn, t.ex. 'mjölk'") }),
+              execute: async ({ query }) => {
+                const files = await import("@/lib/andrea-files.server");
+                return files.lookupPrices(userId, query);
               },
             }),
             log_receipt_place: tool({
