@@ -11,7 +11,13 @@ export type ReceiptRead = {
   kind: "kvitto" | "faktura" | "annat";
   /** Betalsättet på kvittot, t.ex. "Kort", "Kontant", "Swish". */
   payment: string | null;
-  groceries: { name: string; quantity: string | null; amount: number | null }[];
+  groceries: {
+    name: string;
+    quantity: string | null;
+    amount: number | null;
+    /** true om raden är kampanj-/extraprismärkt – räknas inte som normalpris. */
+    is_campaign: boolean;
+  }[];
   /** Tobak (cigaretter/snus) hålls skilt från mat och hamnar inte i skafferiet. */
   tobacco: {
     name: string;
@@ -139,6 +145,7 @@ Varurader:
 - Antalsrader: "Vetefralla 3,50 x 4   14,00" betyder quantity "4 st" och amount 14,00 – amount är ALLTID radens totalpris, aldrig styckpriset.
 - quantity kan vara tom sträng, amount = radens pris i kronor (0 om priset saknas).
 - Om två rader annars skulle få samma namn, behåll ett särskiljande ord ("Salami fänkål" och "Salami napoli", inte två "Salami").
+- is_campaign = true om raden är kampanjmärkt ("Extrapris", "Kampanj", "2 för", "Erbjudande", tillfälligt nedsatt pris), annars false.
 - Läs ALDRIG in marknadsföring, tävlingstexter eller kupongavsnitt (t.ex. "Inlösta kuponger", "Tävla om fina vinster") som varor – de är inte köp.
 
 Övrigt: kassar, påsar, pant, pantreturer och öresavrundning läggs i other med namn och amount (radens totalpris). De ska varken ligga i groceries eller tobacco.
@@ -196,7 +203,7 @@ Rabatter: varje rabatt- eller kupongrad (t.ex. "Lidl Plus-rabatt -10,00", "Bonus
     .trim();
 
   let parsed: Partial<ReceiptRead> & {
-    groceries?: { name?: string; quantity?: string; amount?: number }[];
+    groceries?: { name?: string; quantity?: string; amount?: number; is_campaign?: boolean }[];
     tobacco?: { name?: string; category?: string; amount?: number; quantity?: string }[];
     discounts?: { name?: string; amount?: number }[];
     other?: { name?: string; amount?: number }[];
@@ -217,6 +224,7 @@ Rabatter: varje rabatt- eller kupongrad (t.ex. "Lidl Plus-rabatt -10,00", "Bonus
         name: String(item.name ?? "").trim(),
         quantity: item.quantity?.trim() ? item.quantity.trim() : null,
         amount: Number.isFinite(amount) && amount > 0 ? amount : null,
+        is_campaign: item.is_campaign === true,
       };
     })
     .filter(
