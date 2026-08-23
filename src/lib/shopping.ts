@@ -284,24 +284,52 @@ export function daysSincePurchase(row: PantryItem): number | null {
   return Math.max(0, Math.floor(diff / 86_400_000));
 }
 
+/** En inläst vara med prisuppgifter från ett kvitto. */
+export type PricedItem = {
+  name: string;
+  amount?: number | null;
+  quantity?: string | null;
+  is_campaign?: boolean;
+};
+
 /**
- * Lägger inlästa kvittovaror i skafferiet (inte direkt i inköpslistan)
- * och stämplar när de köptes.
+ * Lägger inlästa kvittovaror i skafferiet (inte direkt i inköpslistan),
+ * stämplar när de köptes och sparar prisraden i prisboken (pantry_prices).
  */
 export function useAddPantryItems() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { names: string[]; purchasedAt?: string }) => {
+    mutationFn: async (input: {
+      items: PricedItem[];
+      purchasedAt?: string;
+      merchant?: string;
+    }) => {
       const user_id = await currentUserId();
       const purchased = input.purchasedAt ?? new Date().toISOString();
+      const merchant = input.merchant?.trim() || null;
       const index = await loadPantryIndex();
+      const priceRows: {
+        user_id: string;
+        pantry_item_id: string | null;
+        name: string;
+        name_key: string;
+        merchant: string | null;
+        price: number;
+        quantity: string | null;
+        is_campaign: boolean;
+        purchased_at: string;
+        source: string;
+      }[] = [];
       let saved = 0;
-      for (const raw of input.names) {
+      for (const item of input.items) {
+        const raw = item.name;
         const key = nameKey(raw);
         if (!key || isNonGrocery(raw)) continue;
         const existing = matchPantry(index, raw);
+        let pantryId: string | null = null;
         if (existing) {
           existing.times_added += 1;
+          pantryId = existing.id;
           await supabase
             .from("pantry_items")
             .update({
@@ -323,14 +351,57 @@ export function useAddPantryItems() {
             })
             .select("id, name_key, times_added")
             .maybeSingle();
-          if (created) index.push(created as PantryLite);
+          if (created) {
+            pantryId = created.id;
+            index.push(created as PantryLite);
+          }
+        }
+        const price = Number(item.amount);
+        if (Number.isFinite(price) && price > 0) {
+          priceRows.push({
+            user_id,
+            pantry_item_id: pantryId,
+            name: prettyName(raw),
+            name_key: canonicalKey(raw) || key,
+            merchant,
+            price,
+            quantity: item.quantity?.trim() || null,
+            is_campaign: item.is_campaign === true,
+            purchased_at: purchased,
+            source: "kvitto",
+          });
         }
         saved += 1;
+      }
+      if (priceRows.length) {
+        const { error } = await supabase.from("pantry_prices").insert(priceRows);
+        if (error) throw new Error(error.message);
       }
       return saved;
     },
 
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["pantry_items"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pantry_items"] });
+      qc.invalidateQueries({ queryKey: ["pantry_prices"] });
+    },
     onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+/** Hela prisboken – alla prisrader, nyast först. */
+export type PantryPrice = Tables<"pantry_prices">;
+
+export function usePantryPrices() {
+  return useQuery({
+    queryKey: ["pantry_prices"],
+    queryFn: async (): Promise<PantryPrice[]> => {
+      const { data, error } = await supabase
+        .from("pantry_prices")
+        .select("*")
+        .order("purchased_at", { ascending: false })
+        .limit(500);
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
   });
 }

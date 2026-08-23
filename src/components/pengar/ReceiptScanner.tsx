@@ -113,14 +113,15 @@ export function ReceiptScanner({
   const destOf = (name: string): Dest => itemDest[name] ?? defaultDest;
 
   /** Alla rader som listas i granskningen: varor + icke-matvaror (kasse, pant). */
-  const allItems: { name: string; quantity: string | null; amount: number | null }[] = [
+  const allItems: {
+    name: string;
+    quantity: string | null;
+    amount: number | null;
+    is_campaign: boolean;
+  }[] = [
     ...(read?.groceries ?? []),
-    ...(read?.other ?? []).map((item) => ({ ...item, quantity: null })),
+    ...(read?.other ?? []).map((item) => ({ ...item, quantity: null, is_campaign: false })),
   ];
-
-  const picked = allItems
-    .filter((item) => destOf(item.name) === "skafferi" && !isNonGrocery(item.name))
-    .map((item) => item.name);
 
   /** Varor som användaren styrt till en egen utgiftspost. */
   const itemSplits = allItems
@@ -321,11 +322,22 @@ export function ReceiptScanner({
           if (splits.length) {
             toast.success(`Bokfört separat: ${splits.map((r) => r.label).join(", ")}`);
           }
-          const names = [...picked];
+          const pricedItems = allItems
+            .filter((item) => destOf(item.name) === "skafferi" && !isNonGrocery(item.name))
+            .map((item) => ({
+              name: item.name,
+              amount: item.amount,
+              quantity: item.quantity,
+              is_campaign: item.is_campaign,
+            }));
 
-          if (names.length) {
-            await addPantry.mutateAsync({ names, purchasedAt: spentAt });
-            toast.success(`${names.length} varor sparades i Skafferiet`);
+          if (pricedItems.length) {
+            await addPantry.mutateAsync({
+              items: pricedItems,
+              purchasedAt: spentAt,
+              merchant: merchant || undefined,
+            });
+            toast.success(`${pricedItems.length} varor sparades i Skafferiet`);
           }
 
           if (markMap && merchant) {
@@ -654,6 +666,11 @@ export function ReceiptScanner({
                           {item.name}
                           {item.quantity ? (
                             <span className="text-muted-foreground"> · {item.quantity}</span>
+                          ) : null}
+                          {item.is_campaign ? (
+                            <span className="ml-1.5 inline-block rounded-md bg-cat-kvall/15 px-1.5 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-cat-kvall">
+                              Kampanj
+                            </span>
                           ) : null}
                         </span>
                         {item.amount ? (

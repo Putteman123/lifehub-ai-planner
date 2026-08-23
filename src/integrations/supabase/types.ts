@@ -1083,6 +1083,59 @@ export type Database = {
         }
         Relationships: []
       }
+      pantry_prices: {
+        Row: {
+          created_at: string
+          id: string
+          is_campaign: boolean
+          merchant: string | null
+          name: string
+          name_key: string
+          pantry_item_id: string | null
+          price: number
+          purchased_at: string
+          quantity: string | null
+          source: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_campaign?: boolean
+          merchant?: string | null
+          name: string
+          name_key: string
+          pantry_item_id?: string | null
+          price: number
+          purchased_at?: string
+          quantity?: string | null
+          source?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_campaign?: boolean
+          merchant?: string | null
+          name?: string
+          name_key?: string
+          pantry_item_id?: string | null
+          price?: number
+          purchased_at?: string
+          quantity?: string | null
+          source?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pantry_prices_pantry_item_id_fkey"
+            columns: ["pantry_item_id"]
+            isOneToOne: false
+            referencedRelation: "pantry_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       places: {
         Row: {
           address: string | null
