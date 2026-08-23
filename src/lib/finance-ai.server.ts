@@ -53,8 +53,9 @@ const SCHEMA = {
           name: { type: "string" },
           quantity: { type: "string" },
           amount: { type: "number" },
+          is_campaign: { type: "boolean" },
         },
-        required: ["name", "quantity", "amount"],
+        required: ["name", "quantity", "amount", "is_campaign"],
       },
     },
     tobacco: {
