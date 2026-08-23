@@ -123,10 +123,6 @@ export function ReceiptScanner({
     ...(read?.other ?? []).map((item) => ({ ...item, quantity: null, is_campaign: false })),
   ];
 
-  const picked = allItems
-    .filter((item) => destOf(item.name) === "skafferi" && !isNonGrocery(item.name))
-    .map((item) => item.name);
-
   /** Varor som användaren styrt till en egen utgiftspost. */
   const itemSplits = allItems
     .filter((item) => destOf(item.name) === "utgift")
