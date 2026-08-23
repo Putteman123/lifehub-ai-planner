@@ -667,6 +667,11 @@ export function ReceiptScanner({
                           {item.quantity ? (
                             <span className="text-muted-foreground"> · {item.quantity}</span>
                           ) : null}
+                          {item.is_campaign ? (
+                            <span className="ml-1.5 inline-block rounded-md bg-cat-kvall/15 px-1.5 py-0.5 align-middle text-[10px] font-semibold uppercase tracking-wide text-cat-kvall">
+                              Kampanj
+                            </span>
+                          ) : null}
                         </span>
                         {item.amount ? (
                           <span className="text-xs tabular-nums text-muted-foreground">
