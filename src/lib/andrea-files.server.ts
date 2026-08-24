@@ -4,6 +4,7 @@
  * bekräftat vart den ska.
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { TablesInsert } from "@/integrations/supabase/types";
 
 type Ok = { ok: true; message: string };
 
