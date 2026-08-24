@@ -22,6 +22,7 @@ export const QUICK_TOOL_NAMES = [
   "add_shopping_items",
   "add_spend",
   "finance_overview",
+  "lookup_prices",
   "suggest_category",
   "remember_about_me",
 ] as const;
@@ -32,6 +33,7 @@ export const SAFE_TOOL_NAMES = [
   "find_free_time",
   "suggest_category",
   "finance_overview",
+  "lookup_prices",
   "create_todo",
   "update_todo",
   "complete_todo",
