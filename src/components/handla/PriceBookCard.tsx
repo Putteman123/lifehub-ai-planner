@@ -1,10 +1,29 @@
-import { ArrowDownRight, ArrowUpRight, Minus, Search, Tag } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, ChevronDown, Minus, Search, Tag } from "lucide-react";
 import { useMemo, useState } from "react";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceDot,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { SectionCard } from "@/components/SectionCard";
 import { Input } from "@/components/ui/input";
 import { usePantryPrices } from "@/lib/shopping";
 import type { PantryPrice } from "@/lib/shopping";
+
+/** Färger till butiksserierna i grafen. */
+const SERIES_COLORS = [
+  "hsl(var(--cat-jobb))",
+  "hsl(var(--cat-ledig))",
+  "hsl(var(--cat-barn))",
+  "hsl(var(--cat-privat))",
+  "hsl(var(--cat-kvall))",
+];
 
 const dateFmt = new Intl.DateTimeFormat("sv-SE", {
   day: "numeric",
