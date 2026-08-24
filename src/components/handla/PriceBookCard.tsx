@@ -18,11 +18,11 @@ import type { PantryPrice } from "@/lib/shopping";
 
 /** Färger till butiksserierna i grafen. */
 const SERIES_COLORS = [
-  "hsl(var(--cat-jobb))",
-  "hsl(var(--cat-ledig))",
-  "hsl(var(--cat-barn))",
-  "hsl(var(--cat-privat))",
-  "hsl(var(--cat-kvall))",
+  "var(--cat-ekonomi)",
+  "var(--cat-iptv)",
+  "var(--cat-privat)",
+  "var(--cat-jurist)",
+  "var(--cat-viktigt)",
 ];
 
 const dateFmt = new Intl.DateTimeFormat("sv-SE", {
