@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { SectionCard } from "@/components/SectionCard";
 import type { Tables } from "@/integrations/supabase/types";
 import { canonicalKey, isNonGrocery } from "@/lib/pantry-name";
+import { usePantryPrices } from "@/lib/shopping";
 
 type PantryRow = Tables<"pantry_items">;
 
@@ -42,6 +43,17 @@ export function PantryTopCard({
   onPick?: (name: string) => void;
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
+  const pricesQ = usePantryPrices();
+
+  /** Senaste normalpris (icke-kampanj) per kanonisk varunyckel. */
+  const latestPrice = useMemo(() => {
+    const map = new Map<string, { price: number; merchant: string | null }>();
+    for (const row of pricesQ.data ?? []) {
+      if (row.is_campaign || map.has(row.name_key)) continue;
+      map.set(row.name_key, { price: Number(row.price), merchant: row.merchant });
+    }
+    return map;
+  }, [pricesQ.data]);
 
   // Varianter av samma vara ("Iste", "Iste citron/lime") slås ihop till en rad.
   const top = useMemo(() => {
@@ -156,16 +168,35 @@ export function PantryTopCard({
                           {interval !== null ? `var ${interval}:e dag` : "för få köp"}
                         </dd>
                       </div>
-                      <div className="col-span-2">
-                        <dt className="text-muted-foreground">Först sparad</dt>
-                        <dd className="mt-0.5 flex items-center gap-1.5 font-medium">
-                          <CalendarClock className="size-3.5 text-muted-foreground" />
-                          {fmt(row.created_at)}
-                          <span className="font-normal text-muted-foreground">
-                            · {row.source === "ai" ? "från kvitto" : "manuellt"}
-                          </span>
-                        </dd>
-                      </div>
+                       <div className="col-span-2">
+                         <dt className="text-muted-foreground">Först sparad</dt>
+                         <dd className="mt-0.5 flex items-center gap-1.5 font-medium">
+                           <CalendarClock className="size-3.5 text-muted-foreground" />
+                           {fmt(row.created_at)}
+                           <span className="font-normal text-muted-foreground">
+                             · {row.source === "ai" ? "från kvitto" : "manuellt"}
+                           </span>
+                         </dd>
+                       </div>
+                       <div className="col-span-2">
+                         <dt className="text-muted-foreground">Normalpris</dt>
+                         <dd className="mt-0.5 font-medium tabular-nums">
+                           {(() => {
+                             const hit = latestPrice.get(canonicalKey(row.name));
+                             if (!hit) return "Inget pris noterat ännu";
+                             return (
+                               <>
+                                 {Math.round(hit.price)} kr
+                                 {hit.merchant ? (
+                                   <span className="ml-1 font-normal text-muted-foreground">
+                                     hos {hit.merchant}
+                                   </span>
+                                 ) : null}
+                               </>
+                             );
+                           })()}
+                         </dd>
+                       </div>
                     </dl>
                     {onPick ? (
                       <button

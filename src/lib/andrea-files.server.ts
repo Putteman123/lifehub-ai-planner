@@ -4,6 +4,7 @@
  * bekräftat vart den ska.
  */
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { TablesInsert } from "@/integrations/supabase/types";
 
 type Ok = { ok: true; message: string };
 
@@ -121,7 +122,7 @@ export type PantryLine = {
   name: string;
   amount?: number | null;
   quantity?: string | null;
-  is_campaign?: boolean;
+  is_campaign?: boolean | null;
 };
 
 /** Lägger varor i skafferiet (utan att röra inköpslistan) och sparar prisrader i prisboken. */
@@ -137,7 +138,7 @@ export async function addPantryItems(
   const purchased = context?.purchased_at ?? new Date().toISOString();
   const merchant = context?.merchant?.trim() || null;
   const now = new Date().toISOString();
-  const priceRows: Record<string, unknown>[] = [];
+  const priceRows: TablesInsert<"pantry_prices">[] = [];
   let added = 0;
   for (const item of clean) {
     const raw = item.name.trim();
@@ -219,7 +220,7 @@ export async function lookupPrices(userId: string, query: string): Promise<Ok> {
   }
   const lines = [...byName.entries()].slice(0, 10).map(([name, rows]) => {
     const normal = rows.filter((r) => !r.is_campaign);
-    const latest = normal[0] ?? rows[0];
+    const latest = normal[0] ?? rows[0]!;
     const prices = normal.map((r) => Number(r.price));
     const span = prices.length > 1 ? ` (lägst ${Math.min(...prices)} kr, högst ${Math.max(...prices)} kr)` : "";
     return `- ${name}: ${latest.price} kr hos ${latest.merchant ?? "okänd butik"} ${String(latest.purchased_at).slice(0, 10)}${span}`;

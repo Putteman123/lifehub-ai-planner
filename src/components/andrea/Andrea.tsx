@@ -126,7 +126,7 @@ function actionName(part: ToolPart) {
 }
 
 /** Läsverktyg som aldrig ska synas som åtgärdskort i chatten. */
-const SILENT_TOOLS = new Set(["goto", "find_item", "find_free_time", "suggest_category"]);
+const SILENT_TOOLS = new Set(["goto", "find_item", "find_free_time", "suggest_category", "lookup_prices"]);
 
 function isActionPart(part: ToolPart) {
   if (!part.type.startsWith("tool-")) return false;

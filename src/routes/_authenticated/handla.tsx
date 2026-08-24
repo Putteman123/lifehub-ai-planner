@@ -10,6 +10,7 @@ import { AppShell } from "@/components/AppShell";
 import { DataGate } from "@/components/DataGate";
 import { DoneOverlay } from "@/components/handla/DoneOverlay";
 import { PantryTopCard } from "@/components/handla/PantryTopCard";
+import { PriceBookCard } from "@/components/handla/PriceBookCard";
 import { ShoppingRow } from "@/components/handla/ShoppingRow";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -243,6 +244,8 @@ function ShoppingPage() {
             pantry={pantryQ.data ?? []}
             onPick={(name) => addItems.mutate({ names: [name] })}
           />
+
+          <PriceBookCard />
 
           {items.length === 0 ? (
             <div className="card-soft p-8 text-center">

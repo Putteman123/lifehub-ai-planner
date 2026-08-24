@@ -302,7 +302,7 @@ export function useAddPantryItems() {
     mutationFn: async (input: {
       items: PricedItem[];
       purchasedAt?: string;
-      merchant?: string;
+      merchant?: string | undefined;
     }) => {
       const user_id = await currentUserId();
       const purchased = input.purchasedAt ?? new Date().toISOString();
