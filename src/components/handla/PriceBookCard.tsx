@@ -1,10 +1,29 @@
-import { ArrowDownRight, ArrowUpRight, Minus, Search, Tag } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, ChevronDown, Minus, Search, Tag } from "lucide-react";
 import { useMemo, useState } from "react";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceDot,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { SectionCard } from "@/components/SectionCard";
 import { Input } from "@/components/ui/input";
 import { usePantryPrices } from "@/lib/shopping";
 import type { PantryPrice } from "@/lib/shopping";
+
+/** Färger till butiksserierna i grafen. */
+const SERIES_COLORS = [
+  "var(--cat-ekonomi)",
+  "var(--cat-iptv)",
+  "var(--cat-privat)",
+  "var(--cat-jurist)",
+  "var(--cat-viktigt)",
+];
 
 const dateFmt = new Intl.DateTimeFormat("sv-SE", {
   day: "numeric",
@@ -26,6 +45,127 @@ type PriceGroup = {
   trend: "up" | "down" | "flat" | null;
 };
 
+const shortFmt = new Intl.DateTimeFormat("sv-SE", { day: "numeric", month: "short" });
+
+/**
+ * Prisutveckling för en vara: en linje per butik med normalpris över tid,
+ * och kampanjköpen utmarkerade som fristående punkter.
+ */
+function PriceTrendChart({ group }: { group: PriceGroup }) {
+  const { data, merchants, campaigns } = useMemo(() => {
+    const rows = [...group.rows].sort(
+      (a, b) => new Date(a.purchased_at).getTime() - new Date(b.purchased_at).getTime(),
+    );
+    const merchantList = Array.from(
+      new Set(rows.filter((r) => !r.is_campaign).map((r) => r.merchant ?? "Okänd butik")),
+    ).slice(0, SERIES_COLORS.length);
+
+    const byTime = new Map<number, Record<string, number | string>>();
+    for (const row of rows) {
+      const t = new Date(row.purchased_at).getTime();
+      const point = byTime.get(t) ?? { t };
+      const merchant = row.merchant ?? "Okänd butik";
+      if (!row.is_campaign && merchantList.includes(merchant)) {
+        point[merchant] = Number(row.price);
+      }
+      byTime.set(t, point);
+    }
+
+    return {
+      data: Array.from(byTime.values()).sort((a, b) => Number(a["t"]) - Number(b["t"])),
+      merchants: merchantList,
+      campaigns: rows.filter((r) => r.is_campaign),
+    };
+  }, [group]);
+
+  if (group.rows.length < 2) {
+    return (
+      <p className="px-2 pb-2 text-xs text-muted-foreground">
+        För få prisnoteringar för en graf – ett köp till så ritas kurvan.
+      </p>
+    );
+  }
+
+  return (
+    <div className="pb-2">
+      <div className="h-44 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: -18 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+            <XAxis
+              dataKey="t"
+              type="number"
+              domain={["dataMin", "dataMax"]}
+              scale="time"
+              tickFormatter={(v: number) => shortFmt.format(new Date(v))}
+              tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+              stroke="var(--border)"
+            />
+            <YAxis
+              tickFormatter={(v: number) => `${Math.round(v)}`}
+              tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+              stroke="var(--border)"
+              width={38}
+            />
+            <Tooltip
+              contentStyle={{
+                background: "var(--card)",
+                border: "1px solid var(--border)",
+                borderRadius: 12,
+                fontSize: 12,
+              }}
+              labelFormatter={(v) => dateFmt.format(new Date(Number(v)))}
+              formatter={(value: number, name: string) => [`${Number(value).toFixed(2)} kr`, name]}
+            />
+            {merchants.map((merchant, i) => (
+              <Line
+                key={merchant}
+                type="monotone"
+                dataKey={merchant}
+                name={merchant}
+                stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
+                strokeWidth={2}
+                dot={{ r: 3 }}
+                connectNulls
+              />
+            ))}
+            {campaigns.map((row) => (
+              <ReferenceDot
+                key={row.id}
+                x={new Date(row.purchased_at).getTime()}
+                y={Number(row.price)}
+                r={4}
+                fill="var(--cat-kvall)"
+                stroke="var(--card)"
+                strokeWidth={2}
+                ifOverflow="extendDomain"
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 px-2 text-[10px] text-muted-foreground">
+        {merchants.map((merchant, i) => (
+          <span key={merchant} className="flex items-center gap-1">
+            <span
+              className="size-2 rounded-full"
+              style={{ background: SERIES_COLORS[i % SERIES_COLORS.length] }}
+            />
+            {merchant}
+          </span>
+        ))}
+        {campaigns.length ? (
+          <span className="flex items-center gap-1">
+            <span className="size-2 rounded-full bg-cat-kvall" />
+            Kampanjköp ({campaigns.length})
+          </span>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 /**
  * Prisboken – alla priser Andrea läst av från kvitton, grupperade per vara.
  * Kampanjpriser visas men räknas aldrig som normalpris.
@@ -33,6 +173,7 @@ type PriceGroup = {
 export function PriceBookCard() {
   const pricesQ = usePantryPrices();
   const [query, setQuery] = useState("");
+  const [openKey, setOpenKey] = useState<string | null>(null);
 
   const groups = useMemo<PriceGroup[]>(() => {
     const byKey = new Map<string, PantryPrice[]>();
