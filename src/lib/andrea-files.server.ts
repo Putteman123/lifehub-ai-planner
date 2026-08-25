@@ -196,36 +196,110 @@ export async function addPantryItems(
   );
 }
 
+const kr = (v: number) => `${Math.round(v * 100) / 100} kr`;
+const avg = (values: number[]) => values.reduce((s, v) => s + v, 0) / values.length;
+
 /**
- * Slår upp normalpriser i prisboken. Returnerar senaste icke-kampanjpris
- * per matchande vara samt lägsta/högsta noterade normalpris.
+ * Slår upp priser i prisboken: historiskt normalpris, billigaste butik den
+ * senaste perioden (30 dagar som standard) och en köprekommendation som
+ * jämför senaste priset mot det historiska normalpriset.
  */
-export async function lookupPrices(userId: string, query: string): Promise<Ok> {
+export async function lookupPrices(
+  userId: string,
+  query: string,
+  days = 30,
+): Promise<Ok> {
   const needle = query.trim();
   if (!needle) return ok("Ange en vara att slå upp.");
+  const { canonicalKey } = await import("./pantry-name");
+  const key = canonicalKey(needle);
+
   const { data, error } = await supabaseAdmin
     .from("pantry_prices")
-    .select("name, merchant, price, quantity, is_campaign, purchased_at")
+    .select("name, name_key, merchant, price, quantity, is_campaign, purchased_at")
     .eq("user_id", userId)
-    .ilike("name", `%${needle}%`)
+    .or(`name.ilike.%${needle}%,name_key.ilike.%${key}%`)
     .order("purchased_at", { ascending: false })
-    .limit(60);
+    .limit(300);
   if (error) throw new Error(error.message);
   if (!data?.length) return ok(`Hittade inga noterade priser på "${needle}" i prisboken.`);
 
-  const byName = new Map<string, typeof data>();
+  const window = days > 0 ? days : 30;
+  const since = Date.now() - window * 86_400_000;
+
+  const byKey = new Map<string, typeof data>();
   for (const row of data) {
-    const key = row.name.toLowerCase();
-    byName.set(key, [...(byName.get(key) ?? []), row]);
+    const k = row.name_key || row.name.toLowerCase();
+    byKey.set(k, [...(byKey.get(k) ?? []), row]);
   }
-  const lines = [...byName.entries()].slice(0, 10).map(([name, rows]) => {
+
+  const blocks = [...byKey.values()].slice(0, 6).map((rows) => {
+    const name = rows[0]!.name;
     const normal = rows.filter((r) => !r.is_campaign);
-    const latest = normal[0] ?? rows[0]!;
     const prices = normal.map((r) => Number(r.price));
-    const span = prices.length > 1 ? ` (lägst ${Math.min(...prices)} kr, högst ${Math.max(...prices)} kr)` : "";
-    return `- ${name}: ${latest.price} kr hos ${latest.merchant ?? "okänd butik"} ${String(latest.purchased_at).slice(0, 10)}${span}`;
+    const lines: string[] = [];
+
+    if (!prices.length) {
+      const latest = rows[0]!;
+      return `${name}: bara kampanjpriser noterade – senast ${kr(Number(latest.price))} hos ${latest.merchant ?? "okänd butik"} ${String(latest.purchased_at).slice(0, 10)}.`;
+    }
+
+    const historic = avg(prices);
+    const latest = normal[0]!;
+    lines.push(
+      `${name}: historiskt normalpris ${kr(historic)} (spann ${kr(Math.min(...prices))}–${kr(Math.max(...prices))}, ${prices.length} köp). Senast ${kr(Number(latest.price))} hos ${latest.merchant ?? "okänd butik"} ${String(latest.purchased_at).slice(0, 10)}.`,
+    );
+
+    // Butiksjämförelse i fönstret.
+    const recent = normal.filter((r) => new Date(r.purchased_at).getTime() >= since);
+    if (recent.length) {
+      const perMerchant = new Map<string, number[]>();
+      for (const r of recent) {
+        const m = r.merchant ?? "Okänd butik";
+        perMerchant.set(m, [...(perMerchant.get(m) ?? []), Number(r.price)]);
+      }
+      const ranked = [...perMerchant.entries()]
+        .map(([merchant, list]) => ({ merchant, price: avg(list), count: list.length }))
+        .sort((a, b) => a.price - b.price);
+      lines.push(
+        `Senaste ${window} dagarna: ${ranked
+          .map((r) => `${r.merchant} ${kr(r.price)}${r.count > 1 ? ` (snitt av ${r.count})` : ""}`)
+          .join(", ")}.`,
+      );
+      const best = ranked[0]!;
+      if (ranked.length > 1) {
+        const worst = ranked[ranked.length - 1]!;
+        lines.push(
+          `Billigast: ${best.merchant} – ${kr(worst.price - best.price)} billigare än ${worst.merchant}.`,
+        );
+      } else {
+        lines.push(`Enda butiken i perioden: ${best.merchant}.`);
+      }
+
+      const diff = best.price - historic;
+      const pct = Math.round((diff / historic) * 100);
+      lines.push(
+        diff <= -0.5
+          ? `Rekommendation: köp nu hos ${best.merchant} – ${Math.abs(pct)} % under ditt normalpris.`
+          : diff >= 0.5
+            ? `Rekommendation: avvakta om du kan – ${pct} % över ditt normalpris (${kr(historic)}).`
+            : `Rekommendation: priset ligger på normalnivå, köp där det passar (${best.merchant} ${kr(best.price)}).`,
+      );
+    } else {
+      lines.push(`Inga köp de senaste ${window} dagarna – jämför mot normalpriset ${kr(historic)}.`);
+    }
+
+    const campaigns = rows.filter((r) => r.is_campaign);
+    if (campaigns.length) {
+      const c = campaigns[0]!;
+      lines.push(
+        `Kampanj senast: ${kr(Number(c.price))} hos ${c.merchant ?? "okänd butik"} ${String(c.purchased_at).slice(0, 10)} (räknas inte som normalpris).`,
+      );
+    }
+    return lines.join(" ");
   });
-  return ok(`Prisboken för "${needle}":\n${lines.join("\n")}`);
+
+  return ok(`Prisboken för "${needle}":\n${blocks.map((b) => `- ${b}`).join("\n")}`);
 }
 
 /** Markerar butiken på kartan och lägger in köpet i kalendern. */
