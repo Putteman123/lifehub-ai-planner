@@ -301,7 +301,14 @@ export function PriceBookCard() {
                         {Math.round(Number(g.latest.price))} kr*
                       </span>
                     )}
+                    <ChevronDown
+                      className={`size-4 text-muted-foreground transition-transform ${
+                        openKey === g.key ? "rotate-180" : ""
+                      }`}
+                    />
                   </span>
+                </button>
+                {openKey === g.key ? <PriceTrendChart group={g} /> : null}
                 </li>
               ))}
             </ul>
