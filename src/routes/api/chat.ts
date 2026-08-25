@@ -320,11 +320,17 @@ export const Route = createFileRoute("/api/chat")({
             }),
             lookup_prices: tool({
               description:
-                "Slå upp noterade normalpriser på en vara i prisboken (skafferiet). Använd när användaren undrar vad något brukar kosta eller var det är billigast. Kampanjpriser räknas inte som normalpris.",
-              inputSchema: z.object({ query: z.string().describe("Varunamn, t.ex. 'mjölk'") }),
-              execute: async ({ query }) => {
+                "Slå upp priser på en vara i prisboken (skafferiet): historiskt normalpris, vilken butik som varit billigast den senaste perioden och en köprekommendation. Kampanjpriser räknas inte som normalpris.",
+              inputSchema: z.object({
+                query: z.string().describe("Varunamn, t.ex. 'mjölk'"),
+                days: z
+                  .number()
+                  .nullable()
+                  .describe("Antal dagar bakåt för butiksjämförelsen, standard 30"),
+              }),
+              execute: async ({ query, days }) => {
                 const files = await import("@/lib/andrea-files.server");
-                return files.lookupPrices(userId, query);
+                return files.lookupPrices(userId, query, days ?? 30);
               },
             }),
             log_receipt_place: tool({
