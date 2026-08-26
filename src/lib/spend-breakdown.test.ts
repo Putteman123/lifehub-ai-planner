@@ -90,9 +90,11 @@ describe("fasta utgifter i diagram vs detaljvy", () => {
 });
 
 describe("fixedAmountInWindow", () => {
-  it("räknar månadsposter en gång per månad i fönstret", () => {
+  it("räknar månadsposter en gång per kalendermånad i fönstret", () => {
     const hyra = fixed[0]!;
-    expect(fixedAmountInWindow(hyra, 30, NOW)).toBe(9000);
+    // 30-dagarsfönstret 27 juli–26 aug träffar två förfallomånader.
+    expect(fixedAmountInWindow(hyra, 30, NOW)).toBe(9000 * 2);
+    expect(fixedAmountInWindow(hyra, 10, NOW)).toBe(9000);
     expect(fixedAmountInWindow(hyra, 365, NOW)).toBe(9000 * 13);
   });
 
