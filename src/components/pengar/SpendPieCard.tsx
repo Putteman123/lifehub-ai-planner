@@ -6,6 +6,8 @@ import { SectionCard } from "@/components/SectionCard";
 import { kr, type FixedExpenseRow, type SpendRow } from "@/lib/finance";
 import { TOBACCO_CATEGORIES } from "@/lib/spend-categories";
 import { CategoryDetailDialog } from "@/components/pengar/CategoryDetailDialog";
+import { fixedAmountInWindow } from "@/lib/fixed-expenses";
+
 
 const COLORS = [
   "var(--chart-1)",
