@@ -102,8 +102,8 @@ export function duePeriods(row: IntervalRow, from = periodKey(), months = 12) {
  * (aldrig proportionerligt uppskattat). Poster som skapats senare räknas
  * först från och med sin startmånad.
  */
-export function fixedAmountInWindow(
-  row: IntervalRow & { amount: number | string; created_at?: string | null },
+export function dueMonthsInWindow(
+  row: IntervalRow & { created_at?: string | null },
   days: number,
   now = new Date(),
 ) {
@@ -111,12 +111,20 @@ export function fixedAmountInWindow(
   const startPeriod = periodKey(new Date(now.getTime() - days * 86400000));
   const created = row.created_at ? periodKey(row.created_at) : startPeriod;
   const months = monthIndex(endPeriod) - monthIndex(startPeriod) + 1;
-  let count = 0;
+  const out: string[] = [];
   for (let i = 0; i < months; i += 1) {
     const period = addMonths(startPeriod, i);
-    if (period >= created && isDueInPeriod(row, period)) count += 1;
+    if (period >= created && isDueInPeriod(row, period)) out.push(period);
   }
-  return Number(row.amount) * count;
+  return out;
+}
+
+export function fixedAmountInWindow(
+  row: IntervalRow & { amount: number | string; created_at?: string | null },
+  days: number,
+  now = new Date(),
+) {
+  return Number(row.amount) * dueMonthsInWindow(row, days, now).length;
 }
 
 

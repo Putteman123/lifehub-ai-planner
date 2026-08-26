@@ -14,7 +14,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { kr, type FixedExpenseRow, type SpendRow } from "@/lib/finance";
-import { intervalLabel } from "@/lib/fixed-expenses";
+import { intervalLabel, dueMonthsInWindow } from "@/lib/fixed-expenses";
 import { categoryBreakdown } from "@/lib/spend-breakdown";
 
 
@@ -131,21 +131,49 @@ export function CategoryDetailDialog({
                     </Tooltip>
                   </div>
                   <ul className="space-y-1.5">
-                    {data.fixedRows.map((row) => (
-                      <li
-                        key={row.id}
-                        className="flex items-center gap-2 rounded-lg border border-border/70 px-3 py-2 text-sm"
-                      >
-                        <Repeat className="size-3.5 shrink-0 text-muted-foreground" />
-                        <span className="min-w-0 flex-1 truncate">{row.name}</span>
-                        <span className="shrink-0 text-[11px] text-muted-foreground">
-                          {intervalLabel(Number(row.interval_months ?? 1))}
-                        </span>
-                        <span className="shrink-0 text-sm font-medium tabular-nums">
-                          {kr(Number(row.amount))}
-                        </span>
-                      </li>
-                    ))}
+                    {data.fixedRows.map((row) => {
+                      const due = dueMonthsInWindow(row, days);
+                      return (
+                        <li
+                          key={row.id}
+                          className="rounded-lg border border-border/70 px-3 py-2 text-sm"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Repeat className="size-3.5 shrink-0 text-muted-foreground" />
+                            <span className="min-w-0 flex-1 truncate">{row.name}</span>
+                            <span className="shrink-0 text-[11px] text-muted-foreground">
+                              {intervalLabel(Number(row.interval_months ?? 1))}
+                            </span>
+                            <span className="shrink-0 text-sm font-medium tabular-nums">
+                              {kr(Number(row.amount) * (due.length || 1))}
+                            </span>
+                          </div>
+                          <div className="mt-1.5 flex flex-wrap items-center gap-1 pl-6">
+                            <span className="text-[11px] text-muted-foreground">
+                              Förfallomånad:
+                            </span>
+                            {due.length ? (
+                              due.map((key) => (
+                                <span
+                                  key={key}
+                                  className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground"
+                                >
+                                  {monthLabel(key)} {key.slice(2, 4)}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-[11px] text-muted-foreground">
+                                ingen i perioden
+                              </span>
+                            )}
+                            <span className="text-[11px] text-muted-foreground">
+                              · {due.length} × {kr(Number(row.amount))} (
+                              {intervalLabel(Number(row.interval_months ?? 1)).toLowerCase()})
+                            </span>
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               ) : null}
