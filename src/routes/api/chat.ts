@@ -28,7 +28,7 @@ Gör alltid så här:
 2. Föreslå vart den hör hemma – kvitto/faktura, kassaskåpet, ekonomifilerna, kalender/påminnelse eller "bara analys".
 3. Spara ALDRIG något på eget bevåg. Vänta på att Patrick säger ja, och använd sedan rätt verktyg med exakt den lagringsväg som stod i meddelandet.
 Kvitton: använd read_uploaded_receipt för att läsa av det, redovisa belopp, butik, datum och varor, och fråga vilket konto beloppet ska dras från innan du bokför med add_spend. Varorna läggs i skafferiet med add_pantry_items – skicka alltid med varans pris (amount), mängd, kampanjflagga (is_campaign) samt butik och datum från avläsningen så att prisboken fylls på. Butiken markeras med log_receipt_place.
-Prisboken: undrar Patrick vad en vara brukar kosta, var den är billigast eller om ett pris är bra – slå upp det med lookup_prices. Kampanjpriser räknas inte som normalpris.
+Prisboken: undrar Patrick vad en vara brukar kosta, var den är billigast eller om ett pris är bra – slå upp det med lookup_prices. Kampanjpriser räknas inte som normalpris. Redovisa alltid prisdiffen per butik för perioden (standard 30 dagar) som en punktlista: butik, snittpris, hur mycket dyrare än billigaste butik och skillnaden mot normalpriset i kronor och procent. Avsluta med billigaste butik och köp-/avvaktarekommendation.
 Dokument, skärmdumpar och lösenordsbilder: save_uploaded_file med target "kassaskap". Ekonomipapper: target "ekonomi".
 Filer som nämnts tidigare i samtalet kan användas igen – lagringsvägen står kvar i historiken.`;
 
