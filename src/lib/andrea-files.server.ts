@@ -261,20 +261,29 @@ export async function lookupPrices(
       const ranked = [...perMerchant.entries()]
         .map(([merchant, list]) => ({ merchant, price: avg(list), count: list.length }))
         .sort((a, b) => a.price - b.price);
-      lines.push(
-        `Senaste ${window} dagarna: ${ranked
-          .map((r) => `${r.merchant} ${kr(r.price)}${r.count > 1 ? ` (snitt av ${r.count})` : ""}`)
-          .join(", ")}.`,
-      );
       const best = ranked[0]!;
+      lines.push(
+        `Prisdiff per butik senaste ${window} dagarna (mot billigaste ${best.merchant} ${kr(best.price)}):`,
+      );
+      for (const r of ranked) {
+        const diffBest = r.price - best.price;
+        const diffNormal = r.price - historic;
+        const pctNormal = Math.round((diffNormal / historic) * 100);
+        lines.push(
+          `- ${r.merchant}: ${kr(r.price)}${r.count > 1 ? ` (snitt av ${r.count} köp)` : ""} · ${
+            diffBest <= 0.001 ? "billigast" : `+${kr(diffBest)} dyrare`
+          } · mot normalpris ${diffNormal >= 0 ? "+" : "−"}${kr(Math.abs(diffNormal))} (${diffNormal >= 0 ? "+" : "−"}${Math.abs(pctNormal)} %)`,
+        );
+      }
       if (ranked.length > 1) {
         const worst = ranked[ranked.length - 1]!;
         lines.push(
-          `Billigast: ${best.merchant} – ${kr(worst.price - best.price)} billigare än ${worst.merchant}.`,
+          `Störst spridning: ${kr(worst.price - best.price)} mellan ${best.merchant} och ${worst.merchant}.`,
         );
       } else {
         lines.push(`Enda butiken i perioden: ${best.merchant}.`);
       }
+
 
       const diff = best.price - historic;
       const pct = Math.round((diff / historic) * 100);
