@@ -97,6 +97,30 @@ export function duePeriods(row: IntervalRow, from = periodKey(), months = 12) {
 }
 
 /**
+ * Faktisk kostnad för en fast utgift under de senaste `days` dagarna:
+ * beloppet gånger antalet månader posten verkligen förfaller i fönstret
+ * (aldrig proportionerligt uppskattat). Poster som skapats senare räknas
+ * först från och med sin startmånad.
+ */
+export function fixedAmountInWindow(
+  row: IntervalRow & { amount: number | string; created_at?: string | null },
+  days: number,
+  now = new Date(),
+) {
+  const endPeriod = periodKey(now);
+  const startPeriod = periodKey(new Date(now.getTime() - days * 86400000));
+  const created = row.created_at ? periodKey(row.created_at) : startPeriod;
+  const months = monthIndex(endPeriod) - monthIndex(startPeriod) + 1;
+  let count = 0;
+  for (let i = 0; i < months; i += 1) {
+    const period = addMonths(startPeriod, i);
+    if (period >= created && isDueInPeriod(row, period)) count += 1;
+  }
+  return Number(row.amount) * count;
+}
+
+
+/**
  * Sätter status för varje fast utgift i innevarande månad och listar
  * obetalda tidigare månader (restskulder som ska följa med framåt).
  */

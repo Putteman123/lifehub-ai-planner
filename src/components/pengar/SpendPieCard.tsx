@@ -6,6 +6,8 @@ import { SectionCard } from "@/components/SectionCard";
 import { kr, type FixedExpenseRow, type SpendRow } from "@/lib/finance";
 import { TOBACCO_CATEGORIES } from "@/lib/spend-categories";
 import { CategoryDetailDialog } from "@/components/pengar/CategoryDetailDialog";
+import { fixedAmountInWindow } from "@/lib/fixed-expenses";
+
 
 const COLORS = [
   "var(--chart-1)",
@@ -52,12 +54,12 @@ export function SpendPieCard({
     }
 
     if (withFixed) {
-      const months = days / 30.44;
       for (const row of fixed) {
         if (!row.is_active) continue;
-        add((row.category ?? "").trim() || "Boende", Number(row.amount) * months);
+        add((row.category ?? "").trim() || "Boende", fixedAmountInWindow(row, days));
       }
     }
+
 
     return [...sums.entries()]
       .map(([name, value]) => ({ name, value: Math.round(value) }))

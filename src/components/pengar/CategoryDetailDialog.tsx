@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { kr, type FixedExpenseRow, type SpendRow } from "@/lib/finance";
-import { intervalLabel } from "@/lib/fixed-expenses";
+import { fixedAmountInWindow, intervalLabel } from "@/lib/fixed-expenses";
 
 function monthKey(iso: string) {
   return iso.slice(0, 7);
@@ -48,11 +48,8 @@ export function CategoryDetailDialog({
 
     const spendTotal = rows.reduce((sum, r) => sum + Number(r.amount), 0);
     const months = Math.max(days / 30.44, 1);
-    const fixedTotal = fixedRows.reduce(
-      (sum, r) =>
-        sum + (Number(r.amount) * months) / Math.max(Number(r.interval_months ?? 1) || 1, 1),
-      0,
-    );
+    const fixedTotal = fixedRows.reduce((sum, r) => sum + fixedAmountInWindow(r, days), 0);
+
 
     const byMonth = new Map<string, number>();
     for (const row of rows) {
