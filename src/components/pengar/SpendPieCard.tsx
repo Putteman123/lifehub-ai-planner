@@ -30,6 +30,7 @@ const COLORS = [
 ];
 
 const RANGES = [
+  { value: 0, label: "Denna månad" },
   { value: 30, label: "30 dagar" },
   { value: 90, label: "3 mån" },
   { value: 365, label: "12 mån" },
@@ -43,9 +44,14 @@ export function SpendPieCard({
   spends: SpendRow[];
   fixed: FixedExpenseRow[];
 }) {
-  const [days, setDays] = useState(30);
-  const [withFixed, setWithFixed] = useState(true);
+  const [range, setRange] = useState(0);
+  const [withFixed, setWithFixed] = useState(false);
   const [detail, setDetail] = useState<string | null>(null);
+
+  const days = useMemo(
+    () => (range === 0 ? monthToDateDays() : range),
+    [range],
+  );
 
   const slices = useMemo(
     () => spendSlices(spends, fixed, days, withFixed),
@@ -56,6 +62,8 @@ export function SpendPieCard({
   const tobacco = slices
     .filter((s) => TOBACCO_CATEGORIES.includes(s.name))
     .reduce((sum, s) => sum + s.value, 0);
+  const matchesMonth = range === 0 && !withFixed;
+
 
   return (
     <TooltipProvider>
