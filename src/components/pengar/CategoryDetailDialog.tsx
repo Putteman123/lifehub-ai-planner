@@ -14,7 +14,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { kr, type FixedExpenseRow, type SpendRow } from "@/lib/finance";
-import { intervalLabel, dueMonthsInWindow } from "@/lib/fixed-expenses";
+import { intervalLabel, dueMonthsInWindow, fixedDueExplanation } from "@/lib/fixed-expenses";
 import { categoryBreakdown } from "@/lib/spend-breakdown";
 
 
