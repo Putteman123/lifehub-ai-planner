@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { kr, type FixedExpenseRow, type SpendRow } from "@/lib/finance";
-import { intervalLabel } from "@/lib/fixed-expenses";
+import { fixedAmountInWindow, intervalLabel } from "@/lib/fixed-expenses";
 
 function monthKey(iso: string) {
   return iso.slice(0, 7);
