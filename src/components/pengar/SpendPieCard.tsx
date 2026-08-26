@@ -6,7 +6,7 @@ import { SectionCard } from "@/components/SectionCard";
 import { kr, type FixedExpenseRow, type SpendRow } from "@/lib/finance";
 import { TOBACCO_CATEGORIES } from "@/lib/spend-categories";
 import { CategoryDetailDialog } from "@/components/pengar/CategoryDetailDialog";
-import { fixedAmountInWindow } from "@/lib/fixed-expenses";
+import { spendSlices } from "@/lib/spend-breakdown";
 import {
   Tooltip as UiTooltip,
   TooltipContent,
@@ -47,31 +47,10 @@ export function SpendPieCard({
   const [withFixed, setWithFixed] = useState(true);
   const [detail, setDetail] = useState<string | null>(null);
 
-  const slices = useMemo(() => {
-    const since = Date.now() - days * 86400000;
-    const sums = new Map<string, number>();
-    const add = (name: string, amount: number) => {
-      if (!(amount > 0)) return;
-      sums.set(name, (sums.get(name) ?? 0) + amount);
-    };
-
-    for (const row of spends) {
-      if (new Date(row.spent_at).getTime() < since) continue;
-      add((row.category ?? "").trim() || "Övrigt", Number(row.amount));
-    }
-
-    if (withFixed) {
-      for (const row of fixed) {
-        if (!row.is_active) continue;
-        add((row.category ?? "").trim() || "Boende", fixedAmountInWindow(row, days));
-      }
-    }
-
-
-    return [...sums.entries()]
-      .map(([name, value]) => ({ name, value: Math.round(value) }))
-      .sort((a, b) => b.value - a.value);
-  }, [spends, fixed, days, withFixed]);
+  const slices = useMemo(
+    () => spendSlices(spends, fixed, days, withFixed),
+    [spends, fixed, days, withFixed],
+  );
 
   const total = slices.reduce((sum, s) => sum + s.value, 0);
   const tobacco = slices

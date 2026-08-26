@@ -14,7 +14,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { kr, type FixedExpenseRow, type SpendRow } from "@/lib/finance";
-import { fixedAmountInWindow, intervalLabel } from "@/lib/fixed-expenses";
+import { intervalLabel } from "@/lib/fixed-expenses";
+import { categoryBreakdown } from "@/lib/spend-breakdown";
 
 
 function monthKey(iso: string) {
@@ -42,20 +43,14 @@ export function CategoryDetailDialog({
 }) {
   const data = useMemo(() => {
     if (!category) return null;
-    const since = Date.now() - days * 86400000;
-    const key = category.toLowerCase();
-    const rows = spends
-      .filter((row) => ((row.category ?? "").trim() || "Övrigt").toLowerCase() === key)
-      .filter((row) => new Date(row.spent_at).getTime() >= since)
-      .sort((a, b) => b.spent_at.localeCompare(a.spent_at));
-
-    const fixedRows = fixed.filter(
-      (row) => row.is_active && ((row.category ?? "").trim() || "Boende").toLowerCase() === key,
+    const { rows, fixedRows, spendTotal, fixedTotal } = categoryBreakdown(
+      category,
+      spends,
+      fixed,
+      days,
     );
-
-    const spendTotal = rows.reduce((sum, r) => sum + Number(r.amount), 0);
     const months = Math.max(days / 30.44, 1);
-    const fixedTotal = fixedRows.reduce((sum, r) => sum + fixedAmountInWindow(r, days), 0);
+
 
 
     const byMonth = new Map<string, number>();
