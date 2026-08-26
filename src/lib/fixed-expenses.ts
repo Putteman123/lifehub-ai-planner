@@ -50,6 +50,18 @@ export function intervalLabel(months: number) {
   return FIXED_INTERVALS.find((i) => i.value === months)?.label ?? `Var ${months}:e månad`;
 }
 
+/** Tydlig etikett för hur en fast utgifts intervall och start/ankarmånad räknas ut. */
+export function fixedDueExplanation(row: IntervalRow & { created_at?: string | null }) {
+  const step = Math.max(Number(row.interval_months ?? 1) || 1, 1);
+  const start = row.created_at ? periodKey(row.created_at) : periodKey();
+  if (row.anchor_month) {
+    const anchor = `${new Date().getFullYear()}-${String(row.anchor_month).padStart(2, "0")}`;
+    return `${intervalLabel(step)} från ${periodLabel(anchor)} (ankarmånad)`;
+  }
+  return `${intervalLabel(step)} från ${periodLabel(start)}`;
+}
+
+
 function monthIndex(period: string) {
   const [y, m] = period.split("-").map(Number);
   return (y ?? 2000) * 12 + ((m ?? 1) - 1);
