@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import type { FixedExpenseRow, SpendRow } from "@/lib/finance";
-import { categoryBreakdown, spendSlices } from "@/lib/spend-breakdown";
+import {
+  categoryBreakdown,
+  monthToDateDays,
+  monthToDateSpend,
+  spendSlices,
+} from "@/lib/spend-breakdown";
 import { fixedAmountInWindow } from "@/lib/fixed-expenses";
 
 const NOW = new Date("2026-08-26T08:00:00+02:00");
@@ -108,5 +113,20 @@ describe("fixedAmountInWindow", () => {
   it("räknar inte poster före deras startmånad", () => {
     const ny = fixedExpense({ name: "Ny", amount: 300, created_at: "2026-08-01T00:00:00Z" });
     expect(fixedAmountInWindow(ny, 365, NOW)).toBe(300);
+  });
+});
+
+describe("månadsfönstret matchar Spenderat i mån.", () => {
+  it("ger samma total som summan av månadens köp, utan fasta utgifter", () => {
+    const days = monthToDateDays(NOW);
+    const slices = spendSlices(spends, fixed, days, false, NOW);
+    const chartTotal = slices.reduce((sum, s) => sum + s.value, 0);
+    expect(chartTotal).toBe(Math.round(monthToDateSpend(spends, NOW)));
+  });
+
+  it("utesluter köp från föregående månad", () => {
+    const days = monthToDateDays(NOW);
+    const detail = categoryBreakdown("Mat", spends, fixed, days, NOW);
+    expect(detail.rows.every((r) => r.spent_at.startsWith("2026-08"))).toBe(true);
   });
 });
