@@ -167,9 +167,11 @@ export function CategoryDetailDialog({
                               </span>
                             )}
                             <span className="text-[11px] text-muted-foreground">
-                              · {due.length} × {kr(Number(row.amount))} (
-                              {intervalLabel(Number(row.interval_months ?? 1)).toLowerCase()})
+                              · {due.length} × {kr(Number(row.amount))}
                             </span>
+                          </div>
+                          <div className="pl-6 pt-1 text-[11px] leading-snug text-muted-foreground/80">
+                            {fixedDueExplanation(row)}
                           </div>
                         </li>
                       );
