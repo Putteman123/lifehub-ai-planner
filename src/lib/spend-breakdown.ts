@@ -67,3 +67,20 @@ export function categoryBreakdown(
 
   return { rows, fixedRows, spendTotal, fixedTotal, total: spendTotal + fixedTotal };
 }
+
+/**
+ * Antal dagar från den 1:a i innevarande månad till nu, dvs samma fönster som
+ * nyckeltalet "Spenderat i mån." på Pengar-sidan använder.
+ */
+export function monthToDateDays(now = new Date()) {
+  const start = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  return Math.max((now.getTime() - start) / 86400000, 0.0001);
+}
+
+/** Summan av alla registrerade köp sedan månadsskiftet (utan fasta utgifter). */
+export function monthToDateSpend(spends: SpendRow[], now = new Date()) {
+  const start = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  return spends
+    .filter((row) => new Date(row.spent_at).getTime() >= start)
+    .reduce((sum, row) => sum + Number(row.amount), 0);
+}
