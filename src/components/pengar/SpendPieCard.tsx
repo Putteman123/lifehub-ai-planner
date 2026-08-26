@@ -1,4 +1,4 @@
-import { PieChart as PieIcon } from "lucide-react";
+import { PieChart as PieIcon, Info } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
@@ -7,6 +7,13 @@ import { kr, type FixedExpenseRow, type SpendRow } from "@/lib/finance";
 import { TOBACCO_CATEGORIES } from "@/lib/spend-categories";
 import { CategoryDetailDialog } from "@/components/pengar/CategoryDetailDialog";
 import { fixedAmountInWindow } from "@/lib/fixed-expenses";
+import {
+  Tooltip as UiTooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 
 
 const COLORS = [
