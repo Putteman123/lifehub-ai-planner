@@ -6,7 +6,7 @@ import { SectionCard } from "@/components/SectionCard";
 import { kr, type FixedExpenseRow, type SpendRow } from "@/lib/finance";
 import { TOBACCO_CATEGORIES } from "@/lib/spend-categories";
 import { CategoryDetailDialog } from "@/components/pengar/CategoryDetailDialog";
-import { spendSlices } from "@/lib/spend-breakdown";
+import { spendSlices, monthToDateDays } from "@/lib/spend-breakdown";
 import {
   Tooltip as UiTooltip,
   TooltipContent,
@@ -30,6 +30,7 @@ const COLORS = [
 ];
 
 const RANGES = [
+  { value: 0, label: "Denna månad" },
   { value: 30, label: "30 dagar" },
   { value: 90, label: "3 mån" },
   { value: 365, label: "12 mån" },
@@ -43,9 +44,14 @@ export function SpendPieCard({
   spends: SpendRow[];
   fixed: FixedExpenseRow[];
 }) {
-  const [days, setDays] = useState(30);
-  const [withFixed, setWithFixed] = useState(true);
+  const [range, setRange] = useState(0);
+  const [withFixed, setWithFixed] = useState(false);
   const [detail, setDetail] = useState<string | null>(null);
+
+  const days = useMemo(
+    () => (range === 0 ? monthToDateDays() : range),
+    [range],
+  );
 
   const slices = useMemo(
     () => spendSlices(spends, fixed, days, withFixed),
@@ -56,6 +62,8 @@ export function SpendPieCard({
   const tobacco = slices
     .filter((s) => TOBACCO_CATEGORIES.includes(s.name))
     .reduce((sum, s) => sum + s.value, 0);
+  const matchesMonth = range === 0 && !withFixed;
+
 
   return (
     <TooltipProvider>
@@ -70,9 +78,9 @@ export function SpendPieCard({
               <button
                 key={r.value}
                 type="button"
-                onClick={() => setDays(r.value)}
+                onClick={() => setRange(r.value)}
                 className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-                  days === r.value
+                  range === r.value
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground hover:text-foreground"
                 }`}
@@ -122,6 +130,11 @@ export function SpendPieCard({
               <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-xs text-muted-foreground">Totalt</span>
                 <span className="font-display text-lg font-semibold">{kr(total)}</span>
+                <span className="mt-0.5 max-w-[8rem] text-center text-[10px] leading-tight text-muted-foreground">
+                  {matchesMonth
+                    ? "Samma som Spenderat i mån."
+                    : "Annan period/fasta utgifter – skiljer sig från Spenderat i mån."}
+                </span>
               </div>
             </div>
 
