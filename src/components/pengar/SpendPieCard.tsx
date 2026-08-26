@@ -52,12 +52,12 @@ export function SpendPieCard({
     }
 
     if (withFixed) {
-      const months = days / 30.44;
       for (const row of fixed) {
         if (!row.is_active) continue;
-        add((row.category ?? "").trim() || "Boende", Number(row.amount) * months);
+        add((row.category ?? "").trim() || "Boende", fixedAmountInWindow(row, days));
       }
     }
+
 
     return [...sums.entries()]
       .map(([name, value]) => ({ name, value: Math.round(value) }))
