@@ -79,130 +79,145 @@ export function SpendPieCard({
     .reduce((sum, s) => sum + s.value, 0);
 
   return (
-    <SectionCard
-      title="Vad pengarna går till"
-      icon={PieIcon}
-      accent="text-cat-privat"
-      tint="bg-cat-privat/12"
-      action={
-        <div className="flex gap-1">
-          {RANGES.map((r) => (
-            <button
-              key={r.value}
-              type="button"
-              onClick={() => setDays(r.value)}
-              className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
-                days === r.value
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
-      }
-    >
-      {slices.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Registrera några utgifter så visas fördelningen här.
-        </p>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="relative h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={slices}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius="58%"
-                  outerRadius="88%"
-                  paddingAngle={2}
-                  stroke="none"
-                  onClick={(slice: { name?: string }) => setDetail(slice?.name ?? null)}
-                  className="cursor-pointer"
-                >
-                  {slices.map((s, i) => (
-                    <Cell key={s.name} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value: number, name: string) => [kr(value), name]}
-                  contentStyle={{
-                    background: "var(--card)",
-                    border: "1px solid var(--border)",
-                    borderRadius: 12,
-                    fontSize: 12,
-                    color: "var(--foreground)",
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-xs text-muted-foreground">Totalt</span>
-              <span className="font-display text-lg font-semibold">{kr(total)}</span>
-            </div>
-          </div>
-
-          <ul className="space-y-1.5 self-center">
-            {slices.map((s, i) => (
-              <li key={s.name}>
-                <button
-                  type="button"
-                  onClick={() => setDetail(s.name)}
-                  className="flex w-full items-center gap-2 rounded-lg px-1 py-0.5 text-left text-sm transition-colors hover:bg-muted"
-                >
-                <span
-                  className="size-2.5 shrink-0 rounded-full"
-                  style={{ background: COLORS[i % COLORS.length] }}
-                />
-                <span className="min-w-0 flex-1 truncate">{s.name}</span>
-                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                  {total ? Math.round((s.value / total) * 100) : 0} %
-                </span>
-                <span className="w-20 shrink-0 text-right text-xs font-medium tabular-nums">
-                  {kr(s.value)}
-                </span>
-                </button>
-              </li>
+    <TooltipProvider>
+      <SectionCard
+        title="Vad pengarna går till"
+        icon={PieIcon}
+        accent="text-cat-privat"
+        tint="bg-cat-privat/12"
+        action={
+          <div className="flex gap-1">
+            {RANGES.map((r) => (
+              <button
+                key={r.value}
+                type="button"
+                onClick={() => setDays(r.value)}
+                className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                  days === r.value
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {r.label}
+              </button>
             ))}
-            {tobacco > 0 ? (
-              <li className="mt-2 flex items-center gap-2 border-t border-border/70 pt-2 text-sm font-medium">
-                <span className="min-w-0 flex-1 truncate">Tobak totalt</span>
-                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                  {total ? Math.round((tobacco / total) * 100) : 0} %
-                </span>
-                <span className="w-20 shrink-0 text-right text-xs tabular-nums">
-                  {kr(tobacco)}
-                </span>
-              </li>
-            ) : null}
-          </ul>
+          </div>
+        }
+      >
+        {slices.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Registrera några utgifter så visas fördelningen här.
+          </p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="relative h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={slices}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius="58%"
+                    outerRadius="88%"
+                    paddingAngle={2}
+                    stroke="none"
+                    onClick={(slice: { name?: string }) => setDetail(slice?.name ?? null)}
+                    className="cursor-pointer"
+                  >
+                    {slices.map((s, i) => (
+                      <Cell key={s.name} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: number, name: string) => [kr(value), name]}
+                    contentStyle={{
+                      background: "var(--card)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 12,
+                      fontSize: 12,
+                      color: "var(--foreground)",
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-xs text-muted-foreground">Totalt</span>
+                <span className="font-display text-lg font-semibold">{kr(total)}</span>
+              </div>
+            </div>
+
+            <ul className="space-y-1.5 self-center">
+              {slices.map((s, i) => (
+                <li key={s.name}>
+                  <button
+                    type="button"
+                    onClick={() => setDetail(s.name)}
+                    className="flex w-full items-center gap-2 rounded-lg px-1 py-0.5 text-left text-sm transition-colors hover:bg-muted"
+                  >
+                  <span
+                    className="size-2.5 shrink-0 rounded-full"
+                    style={{ background: COLORS[i % COLORS.length] }}
+                  />
+                  <span className="min-w-0 flex-1 truncate">{s.name}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                    {total ? Math.round((s.value / total) * 100) : 0} %
+                  </span>
+                  <span className="w-20 shrink-0 text-right text-xs font-medium tabular-nums">
+                    {kr(s.value)}
+                  </span>
+                  </button>
+                </li>
+              ))}
+              {tobacco > 0 ? (
+                <li className="mt-2 flex items-center gap-2 border-t border-border/70 pt-2 text-sm font-medium">
+                  <span className="min-w-0 flex-1 truncate">Tobak totalt</span>
+                  <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                    {total ? Math.round((tobacco / total) * 100) : 0} %
+                  </span>
+                  <span className="w-20 shrink-0 text-right text-xs tabular-nums">
+                    {kr(tobacco)}
+                  </span>
+                </li>
+              ) : null}
+            </ul>
+          </div>
+        )}
+
+
+        <div className="mt-3 flex items-center gap-2">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={withFixed}
+              onChange={(e) => setWithFixed(e.target.checked)}
+              className="size-3.5 accent-[var(--primary)]"
+            />
+            Räkna med fasta utgifter
+          </label>
+          <UiTooltip>
+            <TooltipTrigger asChild>
+              <button type="button" className="rounded-full p-0.5 text-muted-foreground hover:text-foreground">
+                <Info className="size-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs leading-relaxed">
+              Fasta utgifter räknas per faktisk förfallomånad inom det valda fönstret. Intervallet (t.ex. varje månad, kvartal) och startdatumet avgör hur många förfallodatum som träffas och därmed summan.
+            </TooltipContent>
+          </UiTooltip>
         </div>
-      )}
+        <p className="mt-1 text-[11px] text-muted-foreground">
+          Klicka på en kategori för att se alla köp bakom summan.
+        </p>
 
-
-      <label className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-        <input
-          type="checkbox"
-          checked={withFixed}
-          onChange={(e) => setWithFixed(e.target.checked)}
-          className="size-3.5 accent-[var(--primary)]"
+        <CategoryDetailDialog
+          category={detail}
+          spends={spends}
+          fixed={fixed}
+          days={days}
+          onOpenChange={(open) => !open && setDetail(null)}
         />
-        Räkna med fasta utgifter
-      </label>
-      <p className="mt-1 text-[11px] text-muted-foreground">
-        Klicka på en kategori för att se alla köp bakom summan.
-      </p>
-
-      <CategoryDetailDialog
-        category={detail}
-        spends={spends}
-        fixed={fixed}
-        days={days}
-        onOpenChange={(open) => !open && setDetail(null)}
-      />
-    </SectionCard>
+      </SectionCard>
+    </TooltipProvider>
   );
 }
+
