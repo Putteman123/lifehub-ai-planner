@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Repeat } from "lucide-react";
+import { Repeat, Info } from "lucide-react";
 
 import {
   Dialog,
@@ -7,8 +7,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { kr, type FixedExpenseRow, type SpendRow } from "@/lib/finance";
 import { fixedAmountInWindow, intervalLabel } from "@/lib/fixed-expenses";
+
 
 function monthKey(iso: string) {
   return iso.slice(0, 7);
