@@ -324,6 +324,17 @@ export function Andrea() {
   );
 }
 
+/** Läsbar text för fel från chatt-API:t. */
+function errorText(error: Error) {
+  const msg = error.message ?? "";
+  if (/40[23]/.test(msg) || /krediter|credit/i.test(msg))
+    return "AI-krediterna är slut eller spärrade – fyll på så svarar jag igen.";
+  if (msg.includes("429")) return "För många frågor just nu – vänta en stund.";
+  if (msg.includes("401")) return "Inloggningen gick ut. Ladda om appen.";
+  if (/failed to fetch|network/i.test(msg)) return "Ingen kontakt med AI-tjänsten.";
+  return msg.trim() || "Något gick fel. Försök igen.";
+}
+
 function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: boolean }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -352,6 +363,7 @@ function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: 
     error,
     setMessages,
     stop,
+    regenerate,
     addToolApprovalResponse,
   } = useChat({
     id: "andrea-lifehub",
@@ -732,14 +744,18 @@ function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: 
             </div>
           ) : null}
           {error ? (
-            <p className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-              {error.message.includes("402")
-                ? "AI-krediterna är slut. Fyll på i arbetsytans inställningar."
-                : error.message.includes("429")
-                  ? "AI:n är överbelastad just nu – försök igen strax."
-                  : "Något gick fel. Försök igen."}
-            </p>
+            <div className="space-y-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+              <p>{errorText(error)}</p>
+              <button
+                type="button"
+                onClick={() => regenerate()}
+                className="rounded-md border border-destructive/40 px-2 py-1 font-medium"
+              >
+                Försök igen
+              </button>
+            </div>
           ) : null}
+
           <div ref={endRef} />
         </div>
 

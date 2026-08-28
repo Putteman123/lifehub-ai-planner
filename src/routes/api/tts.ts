@@ -54,6 +54,11 @@ export const Route = createFileRoute("/api/tts")({
               headers: { "Content-Type": "audio/mpeg", "Cache-Control": "no-store" },
             });
           }
+          console.error(
+            "ElevenLabs TTS misslyckades:",
+            resp.status,
+            await resp.text().catch(() => ""),
+          );
           // Faller vidare till Lovable-rösten om ElevenLabs inte svarar.
         }
 
@@ -78,7 +83,12 @@ export const Route = createFileRoute("/api/tts")({
 
         if (!resp.ok) {
           const detail = await resp.text().catch(() => "");
-          return new Response(detail || "TTS misslyckades", { status: resp.status });
+          console.error("Lovable TTS misslyckades:", resp.status, detail);
+          const text =
+            resp.status === 402 || resp.status === 403
+              ? "AI-krediterna är slut – rösten är pausad."
+              : detail || "TTS misslyckades";
+          return new Response(text, { status: resp.status });
         }
 
         return new Response(resp.body, {
