@@ -14,7 +14,7 @@ Svara ENDAST med ordet quick eller deep.`;
  * faller vi tillbaka på djupfilen så att kvaliteten aldrig sänks av routern.
  */
 export async function routeAndreaTurn(opts: {
-  apiKey: string;
+  apiKey?: string;
   lastUserText: string;
   hasAttachments: boolean;
 }): Promise<AndreaLane> {
@@ -24,7 +24,7 @@ export async function routeAndreaTurn(opts: {
 
   try {
     const answer = await completeText({
-      apiKey: opts.apiKey,
+      ...(opts.apiKey ? { apiKey: opts.apiKey } : {}),
       model: ANDREA_ROUTER_MODEL,
       system: ROUTER_SYSTEM,
       input: text,
