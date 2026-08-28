@@ -324,15 +324,100 @@ export function Andrea() {
   );
 }
 
-/** Läsbar text för fel från chatt-API:t. */
-function errorText(error: Error) {
-  const msg = error.message ?? "";
+type AndreaError = { code: string; status: string; text: string; reason?: string };
+
+/** Tolkar fel från chatt-API:t till kod, statuskod och läsbar text. */
+function parseError(error: Error): AndreaError {
+  const msg = (error.message ?? "").trim();
+  const coded = /^(credits|rate|auth|upstream|unknown)\|([^|]*)\|([\s\S]*)$/.exec(msg);
+  if (coded) {
+    const [, code, status, rest] = coded;
+    if (code === "credits")
+      return {
+        code,
+        status: status || "403",
+        reason: rest || "credit_hard_block_workspace",
+        text: "AI-krediterna är slut eller spärrade för arbetsytan.",
+      };
+    return { code: code!, status: status ?? "", text: rest || "Något gick fel." };
+  }
   if (/40[23]/.test(msg) || /krediter|credit/i.test(msg))
-    return "AI-krediterna är slut eller spärrade – fyll på så svarar jag igen.";
-  if (msg.includes("429")) return "För många frågor just nu – vänta en stund.";
-  if (msg.includes("401")) return "Inloggningen gick ut. Ladda om appen.";
-  if (/failed to fetch|network/i.test(msg)) return "Ingen kontakt med AI-tjänsten.";
-  return msg.trim() || "Något gick fel. Försök igen.";
+    return {
+      code: "credits",
+      status: "403",
+      reason: "credit_hard_block_workspace",
+      text: "AI-krediterna är slut eller spärrade för arbetsytan.",
+    };
+  if (msg.includes("429"))
+    return { code: "rate", status: "429", text: "För många frågor just nu – vänta en stund." };
+  if (msg.includes("401"))
+    return { code: "auth", status: "401", text: "Inloggningen gick ut. Ladda om appen." };
+  if (/failed to fetch|network/i.test(msg))
+    return { code: "network", status: "", text: "Ingen kontakt med AI-tjänsten." };
+  return { code: "unknown", status: "", text: msg || "Något gick fel. Försök igen." };
+}
+
+const CREDITS_URL = "https://lovable.dev/settings/workspace?tab=billing";
+
+/** Kreditstatus med steg-för-steg-flöde för påfyllning och återstart. */
+function CreditStatus({
+  info,
+  checking,
+  onRetry,
+  voiceNote,
+}: {
+  info: AndreaError;
+  checking: boolean;
+  onRetry: () => void;
+  voiceNote?: string | null;
+}) {
+  const [openedTopUp, setOpenedTopUp] = useState(false);
+
+  return (
+    <div className="space-y-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs">
+      <div className="space-y-1">
+        <p className="text-sm font-semibold text-destructive">AI-krediterna är slut</p>
+        <p className="text-destructive/90">
+          Alla AI-anrop blockeras just nu av arbetsytan (HTTP {info.status}{" "}
+          <span className="font-mono">{info.reason}</span>). Det är inget fel i appen – varken
+          snabbfilen eller djupfilen får köra förrän krediterna fylls på eller kreditgränsen höjs.
+        </p>
+      </div>
+
+      <ol className="list-decimal space-y-1 pl-4 text-destructive/90">
+        <li>Öppna arbetsytans krediter och fyll på (eller höj den satta gränsen).</li>
+        <li>Kom tillbaka hit.</li>
+        <li>Tryck ”Kontrollera och återuppta” – jag skickar om din senaste fråga.</li>
+      </ol>
+
+      <div className="flex flex-wrap gap-2">
+        <a
+          href={CREDITS_URL}
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => setOpenedTopUp(true)}
+          className="rounded-md bg-destructive px-3 py-1.5 font-medium text-destructive-foreground"
+        >
+          Fyll på krediter
+        </a>
+        <button
+          type="button"
+          onClick={onRetry}
+          disabled={checking}
+          className="rounded-md border border-destructive/40 px-3 py-1.5 font-medium text-destructive disabled:opacity-60"
+        >
+          {checking ? "Kontrollerar…" : "Kontrollera och återuppta"}
+        </button>
+      </div>
+
+      {openedTopUp ? (
+        <p className="text-destructive/80">
+          När påfyllningen är klar återupptar jag automatiskt så snart du växlar tillbaka hit.
+        </p>
+      ) : null}
+      {voiceNote ? <p className="text-destructive/80">{voiceNote}</p> : null}
+    </div>
+  );
 }
 
 function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: boolean }) {
