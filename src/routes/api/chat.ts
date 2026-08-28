@@ -13,6 +13,75 @@ import { findFreeSlot, suggestCategory } from "@/lib/calendar";
 
 type Body = { messages?: unknown; page?: { path?: string; label?: string; selection?: string } | null };
 
+function repairMessagesForModel(messages: UIMessage[]): UIMessage[] {
+  return messages.flatMap((candidate, index) => {
+    if (!candidate || typeof candidate !== "object") return [];
+    if (candidate.role !== "user" && candidate.role !== "assistant") return [];
+    if (!Array.isArray(candidate.parts)) return [];
+
+    const parts: UIMessage["parts"] = [];
+    for (const part of candidate.parts) {
+      if (!part || typeof part !== "object") continue;
+      if (part.type === "text" && typeof part.text === "string") {
+        const text = part.text.trim();
+        if (text) parts.push({ type: "text", text });
+        continue;
+      }
+      if (
+        part.type === "file" &&
+        typeof part.url === "string" &&
+        part.url.length > 0 &&
+        typeof part.mediaType === "string" &&
+        part.mediaType.length > 0
+      ) {
+        parts.push({
+          type: "file",
+          url: part.url,
+          mediaType: part.mediaType,
+          ...(typeof part.filename === "string" ? { filename: part.filename } : {}),
+        });
+      }
+    }
+
+    if (parts.length === 0) return [];
+    return [
+      {
+        id: typeof candidate.id === "string" && candidate.id ? candidate.id : `repaired-${index}`,
+        role: candidate.role,
+        parts,
+      } as UIMessage,
+    ];
+  });
+}
+
+async function convertMessagesWithRepair(messages: UIMessage[]) {
+  try {
+    return {
+      messages: await convertToModelMessages(messages),
+      originalMessages: messages,
+      repaired: false,
+    };
+  } catch (error) {
+    const repairedMessages = repairMessagesForModel(messages);
+    const latestUser = [...repairedMessages].reverse().find((message) => message.role === "user");
+    if (!latestUser) throw error;
+
+    try {
+      return {
+        messages: await convertToModelMessages(repairedMessages),
+        originalMessages: repairedMessages,
+        repaired: true,
+      };
+    } catch {
+      return {
+        messages: await convertToModelMessages([latestUser]),
+        originalMessages: [latestUser],
+        repaired: true,
+      };
+    }
+  }
+}
+
 const CATEGORY = z
   .string()
   .describe(
@@ -854,16 +923,21 @@ export const Route = createFileRoute("/api/chat")({
           ),
         ) as typeof allTools;
 
+        const converted = await convertMessagesWithRepair(uiMessages);
+        if (converted.repaired) {
+          console.warn("Andrea: reparerade inkompatibel chatthistorik före modellanropet.");
+        }
+
         const result = streamText({
           model: gemini(lane === "quick" ? ANDREA_QUICK_MODEL : ANDREA_MODEL),
           system: `${ANDREA_SYSTEM}\n\n${UPLOAD_RULES}\n\n${LANE_RULES}\n\n${pageRules(body.page ?? null)}\n\nAKTUELLT UNDERLAG FRÅN KALENDERN:\n${context}`,
-          messages: await convertToModelMessages(uiMessages),
+          messages: converted.messages,
           stopWhen: stepCountIs(lane === "quick" ? 20 : 80),
           tools,
         });
 
         return result.toUIMessageStreamResponse({
-          originalMessages: uiMessages,
+          originalMessages: converted.originalMessages,
           sendReasoning: true,
           onError: (error) => gatewayMessage(error),
         });
