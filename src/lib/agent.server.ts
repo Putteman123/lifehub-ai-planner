@@ -53,6 +53,51 @@ export async function createEvent(userId: string, input: EventInput) {
   return ok(`Händelsen "${input.title}" är inlagd.`, data?.id);
 }
 
+export async function rememberFact(
+  userId: string,
+  input: {
+    content: string;
+    kind?: string | undefined;
+    confidence?: number | undefined;
+    source?: string | undefined;
+  },
+) {
+  const content = input.content.trim();
+  if (!content) throw new Error("Minnet saknar innehåll.");
+  const { data: existing, error: lookupError } = await supabaseAdmin
+    .from("andrea_memories")
+    .select("id")
+    .eq("user_id", userId)
+    .ilike("content", content)
+    .maybeSingle();
+  fail(lookupError);
+
+  const values = {
+    kind: input.kind ?? "fact",
+    confidence: Math.max(0, Math.min(1, input.confidence ?? 0.9)),
+    source: input.source ?? "chat",
+    status: "active",
+    last_confirmed_at: new Date().toISOString(),
+  };
+  if (existing) {
+    const { error } = await supabaseAdmin
+      .from("andrea_memories")
+      .update(values)
+      .eq("id", existing.id)
+      .eq("user_id", userId);
+    fail(error);
+    return ok("Jag uppdaterade det jag minns om dig.", existing.id);
+  }
+
+  const { data, error } = await supabaseAdmin
+    .from("andrea_memories")
+    .insert({ user_id: userId, content, ...values })
+    .select("id")
+    .single();
+  fail(error);
+  return ok("Jag kommer ihåg det framöver.", data?.id);
+}
+
 export async function updateEvent(
   userId: string,
   input: { event_id: string } & { [K in keyof EventInput]?: EventInput[K] | undefined },

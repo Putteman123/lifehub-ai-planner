@@ -16,7 +16,7 @@ export async function completeText(opts: {
   const apiKey = opts.apiKey ?? process.env["GEMINI_API_KEY"];
   if (!apiKey) throw new Error("Google AI Studio API-nyckel saknas.");
 
-  const googleFetch = createGoogleAiStudioFetch(apiKey, process.env["LOVABLE_API_KEY"]);
+  const googleFetch = createGoogleAiStudioFetch();
   const res = await googleFetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
     method: "POST",
     headers: {

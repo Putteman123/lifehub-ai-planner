@@ -2,6 +2,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 /** Alla tabeller där raderna hör till en användare via `user_id`. */
 const USER_TABLES = [
+  "andrea_memories",
   "andrea_profile",
   "calendars",
   "case_tasks",

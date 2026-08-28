@@ -13,6 +13,8 @@ import {
   Loader2,
   Mic,
   MicOff,
+  Brain,
+  Pencil,
   Paperclip,
   Send,
   Square,
@@ -394,7 +396,7 @@ type VoiceServiceStatus = {
 /** Tolkar fel från chatt-API:t till kod, statuskod och läsbar text. */
 function parseError(error: Error): AndreaError {
   const msg = (error.message ?? "").trim();
-  const coded = /^(credits|rate|auth|upstream|unknown)\|([^|]*)\|([\s\S]*)$/.exec(msg);
+  const coded = /^(credits|rate|auth|request|upstream|unknown)\|([^|]*)\|([\s\S]*)$/.exec(msg);
   if (coded) {
     const [, code, status, rest] = coded;
     if (code === "credits")
@@ -718,10 +720,41 @@ function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: 
   const [files, setFiles] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [showMemories, setShowMemories] = useState(false);
+  const [memories, setMemories] = useState<
+    Array<{ id: string; content: string; kind: string; confidence: number }>
+  >([]);
+  const [memoriesLoading, setMemoriesLoading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const isLoading = status === "submitted" || status === "streaming";
+
+  const loadMemories = useCallback(async () => {
+    setMemoriesLoading(true);
+    const { data, error: memoryError } = await supabase
+      .from("andrea_memories")
+      .select("id, content, kind, confidence")
+      .eq("status", "active")
+      .order("last_confirmed_at", { ascending: false });
+    if (!memoryError) setMemories(data ?? []);
+    setMemoriesLoading(false);
+  }, []);
+
+  async function editMemory(memory: (typeof memories)[number]) {
+    const content = window.prompt("Ändra det Andrea minns", memory.content)?.trim();
+    if (!content || content === memory.content) return;
+    const { error: memoryError } = await supabase
+      .from("andrea_memories")
+      .update({ content, last_confirmed_at: new Date().toISOString() })
+      .eq("id", memory.id);
+    if (!memoryError) setMemories((current) => current.map((item) => item.id === memory.id ? { ...item, content } : item));
+  }
+
+  async function removeMemory(id: string) {
+    const { error: memoryError } = await supabase.from("andrea_memories").delete().eq("id", id);
+    if (!memoryError) setMemories((current) => current.filter((item) => item.id !== id));
+  }
 
   async function pickFiles(list: FileList | null) {
     if (!list?.length) return;
@@ -922,6 +955,20 @@ function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: 
               variant="ghost"
               size="icon"
               className="size-8"
+              aria-pressed={showMemories}
+              aria-label="Visa det Andrea minns"
+              title="Det Andrea minns"
+              onClick={() => {
+                setShowMemories((value) => !value);
+                if (!showMemories) void loadMemories();
+              }}
+            >
+              <Brain className={showMemories ? "size-4 text-primary" : "size-4"} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8"
               aria-pressed={voice.ttsEnabled}
               aria-label={voice.ttsEnabled ? "Stäng av uppläsning" : "Slå på uppläsning"}
               title={voice.ttsEnabled ? "Uppläsning på" : "Uppläsning av"}
@@ -963,6 +1010,36 @@ function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: 
         </header>
 
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
+          {showMemories ? (
+            <section className="space-y-2 border-b border-border pb-4" aria-label="Det Andrea minns">
+              <div>
+                <h2 className="text-sm font-semibold">Det Andrea minns</h2>
+                <p className="text-xs text-muted-foreground">Personliga fakta och preferenser som används i framtida svar.</p>
+              </div>
+              {memoriesLoading ? (
+                <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="size-3.5 animate-spin" /> Hämtar minnen…</p>
+              ) : memories.length ? (
+                <div className="space-y-1.5">
+                  {memories.map((memory) => (
+                    <div key={memory.id} className="flex items-start gap-2 rounded-lg border border-border bg-surface p-2.5">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs text-foreground">{memory.content}</p>
+                        <p className="mt-1 text-[10px] text-muted-foreground">{memory.kind} · {Math.round(memory.confidence * 100)} % säkerhet</p>
+                      </div>
+                      <Button variant="ghost" size="icon" className="size-7" aria-label="Redigera minne" onClick={() => void editMemory(memory)}>
+                        <Pencil className="size-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="size-7 text-destructive" aria-label="Ta bort minne" onClick={() => void removeMemory(memory.id)}>
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">Inga långtidsminnen ännu. Berätta en preferens eller viktig fakta för Andrea.</p>
+              )}
+            </section>
+          ) : null}
           {initial.repaired ? (
             <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
               Jag reparerade en äldre del av chatthistoriken. Din senaste giltiga konversation är

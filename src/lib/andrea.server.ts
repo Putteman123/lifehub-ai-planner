@@ -15,7 +15,7 @@ export const ANDREA_SYSTEM = `Du är **Andrea**, Patricks personliga AI-guide oc
 
 Ton: varm, personlig och trygg – som en nära kollega som känner hela vardagen. Tilltala användaren med "du" och använd hans namn ibland.
 Var mänsklig: kommentera gärna hur dagen ser ut, uppmuntra när det är tungt och fira när något är avklarat – men håll det kort, aldrig svassande.
-Kom ihåg det Patrick berättar om sig själv och anpassa dig efter hans profil längst ner i underlaget.
+Kom ihåg det Patrick berättar om sig själv och anpassa dig efter hans profil och långtidsminnen längst ner i underlaget. När han uttryckligen berättar en varaktig fakta, preferens, rutin eller målsättning: spara den direkt med remember_fact. Spara aldrig lösenord, pinkoder, hälsouppgifter eller egna gissningar som minnen.
 Var kort och konkret. Punktlistor och klockslag framför långa stycken. Ingen svamlig inledning.
 
 Ditt jobb:
@@ -83,7 +83,7 @@ export async function buildAndreaContext(userId: string) {
   const now = new Date();
   const until = new Date(now.getTime() + 21 * 86400000);
 
-  const [eventsRes, childrenRes, casesRes, tasksRes, remindersRes] = await Promise.all([
+  const [eventsRes, childrenRes, casesRes, tasksRes, remindersRes, memoriesRes] = await Promise.all([
     supabaseAdmin
       .from("events")
       .select("*")
@@ -104,6 +104,13 @@ export async function buildAndreaContext(userId: string) {
       .from("reminders")
       .select("id, title, remind_at, is_done")
       .eq("user_id", userId),
+    supabaseAdmin
+      .from("andrea_memories")
+      .select("content, kind, confidence, last_confirmed_at")
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .order("last_confirmed_at", { ascending: false })
+      .limit(30),
   ]);
 
   const todosRes = await supabaseAdmin
@@ -172,6 +179,9 @@ export async function buildAndreaContext(userId: string) {
         ...(profile.notes ? [`- Att minnas: ${profile.notes}`] : []),
       ]
     : [];
+  const memoryLines = (memoriesRes.data ?? []).map(
+    (memory) => `- [${memory.kind}] ${memory.content} (säkerhet ${Math.round(memory.confidence * 100)} %)`,
+  );
 
   return [
     `Nu: ${weekdayLocal(now)} ${timeLocal(now)} (${fmtLocal(now)}, tidszon Europe/Stockholm)`,
@@ -223,6 +233,9 @@ export async function buildAndreaContext(userId: string) {
       ? `- Nästa lediga timme: ${weekdayLocal(freeSlot.start)} ${timeLocal(freeSlot.start)}`
       : "- Ingen ledig timme hittad de närmaste 7 dagarna",
     ...profileLines,
+    "",
+    "Det Andrea minns om Patrick:",
+    ...(memoryLines.length ? memoryLines : ["- inga sparade långtidsminnen ännu"]),
   ].join("\n");
 }
 
@@ -234,7 +247,7 @@ export async function buildAndreaQuickContext(userId: string) {
   const now = new Date();
   const until = new Date(now.getTime() + 2 * 86400000);
 
-  const [eventsRes, tasksRes, todosRes, remindersRes] = await Promise.all([
+  const [eventsRes, tasksRes, todosRes, remindersRes, memoriesRes] = await Promise.all([
     supabaseAdmin
       .from("events")
       .select("id, title, starts_at, ends_at, category, location, all_day")
@@ -260,6 +273,13 @@ export async function buildAndreaQuickContext(userId: string) {
       .eq("user_id", userId)
       .eq("is_done", false)
       .limit(15),
+    supabaseAdmin
+      .from("andrea_memories")
+      .select("content")
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .order("last_confirmed_at", { ascending: false })
+      .limit(12),
   ]);
 
   return [
@@ -291,6 +311,11 @@ export async function buildAndreaQuickContext(userId: string) {
     ...((remindersRes.data ?? []).length
       ? (remindersRes.data ?? []).map((r) => `- ${r.title} ${fmtDate(r.remind_at, false)} [id=${r.id}]`)
       : ["- inga"]),
+    "",
+    "Sparade fakta och preferenser:",
+    ...((memoriesRes.data ?? []).length
+      ? (memoriesRes.data ?? []).map((memory) => `- ${memory.content}`)
+      : ["- inga ännu"]),
     "",
     "Saknas något i underlaget: använd find_item för att slå upp id innan du ändrar.",
   ].join("\n");
