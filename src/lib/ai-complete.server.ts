@@ -1,4 +1,5 @@
 import { ANDREA_FAST_MODEL } from "@/lib/ai-models";
+import { createGoogleAiStudioFetch } from "@/lib/google-ai.server";
 
 type JsonSchema = { name: string; schema: Record<string, unknown> };
 
@@ -15,7 +16,8 @@ export async function completeText(opts: {
   const apiKey = opts.apiKey ?? process.env["GEMINI_API_KEY"];
   if (!apiKey) throw new Error("Google AI Studio API-nyckel saknas.");
 
-  const res = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
+  const googleFetch = createGoogleAiStudioFetch(apiKey, process.env["LOVABLE_API_KEY"]);
+  const res = await googleFetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

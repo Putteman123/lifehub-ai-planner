@@ -104,7 +104,7 @@ export const Route = createFileRoute("/api/chat")({
         const { ANDREA_SYSTEM, buildAndreaContext, buildAndreaQuickContext } = await import(
           "@/lib/andrea.server",
         );
-        const { createOpenAICompatible } = await import("@ai-sdk/openai-compatible");
+        const { createGoogleAiStudioProvider } = await import("@/lib/google-ai.server");
         const agent = await import("@/lib/agent.server");
         const { routeAndreaTurn } = await import("@/lib/andrea-router.server");
         const { isSafeTool } = await import("@/lib/agent-tools");
@@ -126,11 +126,10 @@ export const Route = createFileRoute("/api/chat")({
             ? await buildAndreaQuickContext(userId)
             : await buildAndreaContext(userId);
         // Googles officiella OpenAI-kompatibla API ger AI SDK streaming och verktygsanrop.
-        const gemini = createOpenAICompatible({
-          name: "google-ai-studio",
-          baseURL: "https://generativelanguage.googleapis.com/v1beta/openai",
-          apiKey: geminiKey,
-        });
+        const gemini = createGoogleAiStudioProvider(
+          geminiKey,
+          process.env["LOVABLE_API_KEY"],
+        );
 
         const allTools = {
             goto: tool({
