@@ -138,6 +138,8 @@ function gatewayMessage(error: unknown) {
   }
   if (status === "429") return `rate|429|För många frågor just nu – vänta en stund och försök igen.`;
   if (status === "401") return `auth|401|AI-nyckeln är inte giltig. Den behöver konfigureras om.`;
+  if (status === "400")
+    return `request|400|AI-tjänsten avvisade samtalshistoriken. Andrea har rensat den trasiga delen – försök igen.`;
   if (status && status.startsWith("5"))
     return `upstream|${status}|AI-tjänsten svarade inte. Försök igen om en stund.`;
   console.error("Andrea chat-fel:", raw);
@@ -157,7 +159,10 @@ export const Route = createFileRoute("/api/chat")({
         }
 
         const geminiKey = process.env["GEMINI_API_KEY"];
-        if (!geminiKey) return new Response("Google AI Studio är inte konfigurerat.", { status: 500 });
+        const lovableKey = process.env["LOVABLE_API_KEY"];
+        if (!geminiKey && !lovableKey) {
+          return new Response("Ingen AI-tjänst är konfigurerad.", { status: 500 });
+        }
 
         const authHeader = request.headers.get("authorization");
         const bearer = authHeader?.toLowerCase().startsWith("bearer ")
@@ -174,6 +179,9 @@ export const Route = createFileRoute("/api/chat")({
           "@/lib/andrea.server",
         );
         const { createGoogleAiStudioProvider } = await import("@/lib/google-ai.server");
+        const { createLovableResponsesModel, withModelFallback } = await import(
+          "@/lib/ai-gateway.server"
+        );
         const agent = await import("@/lib/agent.server");
         const { routeAndreaTurn } = await import("@/lib/andrea-router.server");
         const { isSafeTool } = await import("@/lib/agent-tools");
@@ -186,7 +194,7 @@ export const Route = createFileRoute("/api/chat")({
           .join(" ");
         const hasAttachments = (lastUser?.parts ?? []).some((p) => p.type === "file");
         const lane =
-          uiMessages.length > 24
+          !geminiKey || uiMessages.length > 24
             ? "deep"
             : await routeAndreaTurn({ apiKey: geminiKey, lastUserText, hasAttachments });
 
@@ -195,10 +203,13 @@ export const Route = createFileRoute("/api/chat")({
             ? await buildAndreaQuickContext(userId)
             : await buildAndreaContext(userId);
         // Googles officiella OpenAI-kompatibla API ger AI SDK streaming och verktygsanrop.
-        const gemini = createGoogleAiStudioProvider(
-          geminiKey,
-          process.env["LOVABLE_API_KEY"],
-        );
+        const gemini = geminiKey ? createGoogleAiStudioProvider(geminiKey) : null;
+        const fallback = lovableKey
+          ? createLovableResponsesModel(
+              lovableKey,
+              request.headers.get("X-Lovable-AIG-Run-ID") ?? undefined,
+            )
+          : null;
 
         const allTools = {
             goto: tool({
@@ -865,6 +876,22 @@ export const Route = createFileRoute("/api/chat")({
                   ...(notes !== null ? { notes } : {}),
                 }),
             }),
+            remember_fact: tool({
+              description:
+                "Spara en varaktig personlig fakta eller preferens som Patrick uttryckligen berättar, så att Andrea kan använda den i framtida samtal. Spara inte tillfälliga uppgifter, hemligheter eller slutsatser du själv har gissat.",
+              inputSchema: z.object({
+                content: z.string(),
+                kind: z.enum(["preference", "person", "routine", "goal", "fact"]).nullable(),
+                confidence: z.number().nullable(),
+              }),
+              execute: async ({ content, kind, confidence }) =>
+                agent.rememberFact(userId, {
+                  content,
+                  ...(kind !== null ? { kind } : {}),
+                  ...(confidence !== null ? { confidence } : {}),
+                  source: "andrea-chat",
+                }),
+            }),
             legal_search_cases: tool({
               description:
                 "Sök ärenden i juristappen (PM Juridik). Endast läsning. Använd vid juridiska frågor om pågående ärenden.",
@@ -923,17 +950,53 @@ export const Route = createFileRoute("/api/chat")({
           ),
         ) as typeof allTools;
 
-        const converted = await convertMessagesWithRepair(uiMessages);
+        let converted: Awaited<ReturnType<typeof convertMessagesWithRepair>>;
+        try {
+          converted = await convertMessagesWithRepair(uiMessages);
+        } catch (error) {
+          console.error("Andrea: chatthistoriken kunde inte repareras:", error);
+          const latestText = lastUserText.trim();
+          if (!latestText) {
+            return new Response("request|400|Den senaste frågan kunde inte läsas. Rensa chatten och försök igen.", {
+              status: 400,
+            });
+          }
+          const latestOnly: UIMessage[] = [
+            { id: `recovered-${Date.now()}`, role: "user", parts: [{ type: "text", text: latestText }] },
+          ];
+          converted = {
+            messages: await convertToModelMessages(latestOnly),
+            originalMessages: latestOnly,
+            repaired: true,
+          };
+        }
         if (converted.repaired) {
           console.warn("Andrea: reparerade inkompatibel chatthistorik före modellanropet.");
         }
 
+        const primaryModel = gemini
+          ? gemini(lane === "quick" ? ANDREA_QUICK_MODEL : ANDREA_MODEL)
+          : fallback?.model;
+        if (!primaryModel) return new Response("Ingen AI-modell är tillgänglig.", { status: 500 });
+        const model = gemini && fallback
+          ? withModelFallback(primaryModel, fallback.model)
+          : primaryModel;
+
         const result = streamText({
-          model: gemini(lane === "quick" ? ANDREA_QUICK_MODEL : ANDREA_MODEL),
+          model,
           system: `${ANDREA_SYSTEM}\n\n${UPLOAD_RULES}\n\n${LANE_RULES}\n\n${pageRules(body.page ?? null)}\n\nAKTUELLT UNDERLAG FRÅN KALENDERN:\n${context}`,
           messages: converted.messages,
           stopWhen: stepCountIs(lane === "quick" ? 20 : 80),
           tools,
+          providerOptions: {
+            openai: {
+              forceReasoning: true,
+              reasoningEffort: "medium",
+              reasoningSummary: "auto",
+              store: false,
+              include: ["reasoning.encrypted_content"],
+            },
+          },
         });
 
         return result.toUIMessageStreamResponse({
