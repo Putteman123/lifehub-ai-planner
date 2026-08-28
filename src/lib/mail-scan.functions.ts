@@ -11,70 +11,11 @@ export const scanMailForFinance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input?: { max?: number; query?: string }) => input ?? {})
   .handler(async ({ data, context }) => {
-    const { gmailList, gmailMessageBody, hasGoogle, mailQueryWithRules } = await import(
-      "./google.server"
-    );
-    if (!hasGoogle("mail")) {
-      return { connected: false as const, scanned: 0, created: 0 };
-    }
-
-    const base =
-      data.query ??
-      "newer_than:30d (faktura OR räkning OR kvitto OR betalning OR prenumeration OR abonnemang OR invoice OR receipt)";
-    const query = await mailQueryWithRules(base);
-    const mails = await gmailList(query, Math.min(data.max ?? 15, 25));
-    if (!mails.length) return { connected: true as const, scanned: 0, created: 0 };
-
-    const { data: known } = await context.supabase
-      .from("mail_findings")
-      .select("message_id")
-      .in(
-        "message_id",
-        mails.map((m) => m.id),
-      );
-    const seen = new Set((known ?? []).map((row) => row.message_id));
-    const fresh = mails.filter((mail) => !seen.has(mail.id));
-    if (!fresh.length) return { connected: true as const, scanned: mails.length, created: 0 };
-
-    const { classifyMail } = await import("./mail-scan.server");
-    let created = 0;
-
-    for (const mail of fresh) {
-      try {
-        const body = await gmailMessageBody(mail.id);
-        const result = await classifyMail({
-          from: mail.from,
-          subject: mail.subject,
-          date: mail.date,
-          body,
-        });
-        if (!result) continue;
-
-        const occurred = result.occurred_at ?? (mail.date ? new Date(mail.date).toISOString() : null);
-        const { error } = await context.supabase.from("mail_findings").insert({
-          user_id: context.userId,
-          message_id: mail.id,
-          kind: result.kind,
-          sender: mail.from,
-          subject: mail.subject,
-          merchant: result.merchant,
-          amount: result.amount,
-          currency: result.currency ?? "SEK",
-          due_date: result.due_date,
-          occurred_at: occurred ? new Date(occurred).toISOString() : null,
-          reference: result.reference,
-          category: result.category,
-          summary: result.summary,
-          raw_ai: result as unknown as Record<string, unknown>,
-          status: "pending",
-        });
-        if (!error) created += 1;
-      } catch (error) {
-        console.error("mail-scan", mail.id, error);
-      }
-    }
-
-    return { connected: true as const, scanned: fresh.length, created };
+    const { scanInbox } = await import("./mail-scan.server");
+    const opts: { max?: number; query?: string } = {};
+    if (data.max !== undefined) opts.max = data.max;
+    if (data.query !== undefined) opts.query = data.query;
+    return scanInbox(context.supabase, context.userId, opts);
   });
 
 /** Avfärdar ett fynd så att det inte föreslås igen. */
