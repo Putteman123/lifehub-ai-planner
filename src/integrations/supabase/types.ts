@@ -65,6 +65,45 @@ export type Database = {
           },
         ]
       }
+      andrea_memories: {
+        Row: {
+          confidence: number
+          content: string
+          created_at: string
+          id: string
+          kind: string
+          last_confirmed_at: string
+          source: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confidence?: number
+          content: string
+          created_at?: string
+          id?: string
+          kind?: string
+          last_confirmed_at?: string
+          source?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          confidence?: number
+          content?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          last_confirmed_at?: string
+          source?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       andrea_profile: {
         Row: {
           call_name: string | null
