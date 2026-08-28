@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { kr, type AccountRow } from "@/lib/finance";
-import { spendCategories } from "@/lib/spend-categories";
+import { DEFAULT_SPEND_CATEGORIES } from "@/lib/spend-categories";
 import {
   MAIL_FINDING_LABEL,
   useApproveFinding,
@@ -48,7 +48,7 @@ function FindingRow({ row, accounts }: { row: MailFindingRow; accounts: AccountR
   const [occurred, setOccurred] = useState(dateInput(row.occurred_at));
   const [accountId, setAccountId] = useState(row.account_id ?? "");
 
-  const categories = spendCategories();
+  const categories = DEFAULT_SPEND_CATEGORIES;
 
   function submit() {
     approve.mutate({
