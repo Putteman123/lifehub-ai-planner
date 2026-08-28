@@ -5,20 +5,22 @@
 - Det senaste felet lämnar inga anrop i Lovable AI-loggen. Andreas svar går alltså fortfarande via den direkta Google AI Studio-vägen och når inte den nuvarande reservvägen.
 - Reserven är idag `google/gemini-3.7-flash` via Lovable AI, inte Lovables starkaste modell.
 - Google- och reservtrafiken är hopkopplade i samma `fetch`-adapter. Det gör att reservvägen inte är en fullständig, oberoende modellkörning med egen API-typ och egen felhantering.
+- Den kvarvarande generiska felvägen är bekräftad i koden: historikreparationen kan kasta ett fel innan `streamText` och dess felhantering har startat. Dessutom klassificeras inte HTTP 400, och den nuvarande reservadaptern aktiveras bara vid 429/5xx.
 - Andrea har redan en personlig profil (`andrea_profile`), men den är tom och består bara av ett enda anteckningsfält. Det finns inget strukturerat, löpande långtidsminne att söka, uppdatera eller glömma enskilt.
 
 ## 1. Hitta och rätta det aktuella felet
 
 - Logga Googles riktiga HTTP-status och säkra feltext server-side innan den generiska chattexten skapas.
 - Återskapa frågan som misslyckas genom samma autentiserade `/api/chat`-väg som appen använder.
-- Kontrollera särskilt meddelandekonvertering, verktygsscheman och strömstarten, eftersom felet sker innan någon fungerande Lovable-reserv syns i loggarna.
+- Lägg hela konverteringen och strömstarten bakom samma felgräns, och garantera att den reparerade historiken avslutas med en giltig användarfråga.
+- Klassificera HTTP 400 separat och skilj på trasig historik/verktygsschema och leverantörs-/modellfel.
 - Visa en konkret svensk feltyp i Andrea-panelen i stället för samma generiska text för alla fel.
 
 ## 2. Riktig reserv med Lovables bästa AI
 
 - Behåll den betalda Gemini-anslutningen som förstahandsval.
 - Bygg reservanropet separat på Lovable AI Responses API med `openai/gpt-5.6-sol`, full konversationshistorik, samma sidkontext och samma verktyg.
-- Aktivera reserv automatiskt när Google inte kan starta svaret eller returnerar ett tjänste-, kvot-, behörighets- eller modellfel. Ett Google-fel ska fortfarande synas i statuskortet så det inte döljs.
+- Aktivera reserv automatiskt när Google inte kan starta svaret eller returnerar ett tjänste-, kvot-, behörighets- eller modellfel. Vid ett ogiltigt meddelande- eller verktygsschema normaliseras anropet först; samma trasiga payload skickas aldrig blint en gång till. Google-felet ska fortfarande synas i statuskortet så det inte döljs.
 - Vid fel efter att ett svar redan börjat strömmas ska Andrea inte dubbelsvara; ”Försök igen” skickar då samma fråga direkt genom Lovable-reserven.
 - Följ gatewayens statusregler: inga blinda återförsök vid 400/401/402/403, begränsad väntan endast vid 429/5xx och tydlig kostnads-/blockeringsinformation.
 - Propagera Lovables run-id till klienten så varje reservanrop kan verifieras i AI-loggen.
