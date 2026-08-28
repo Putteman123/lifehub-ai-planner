@@ -27,10 +27,11 @@ export function createGoogleAiStudioFetch(geminiApiKey: string, lovableApiKey?: 
     headers.set("Lovable-API-Key", lovableApiKey);
     headers.set("X-Lovable-AIG-SDK", "vercel-ai-sdk");
 
+    const fallbackBody = withFallbackModel(init?.body);
     return fetch(fallbackUrl, {
       ...init,
       headers,
-      body: withFallbackModel(init?.body),
+      ...(fallbackBody === undefined ? {} : { body: fallbackBody }),
     });
   };
 }
