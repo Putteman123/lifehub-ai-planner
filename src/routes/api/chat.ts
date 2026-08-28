@@ -19,11 +19,13 @@ function repairMessagesForModel(messages: UIMessage[]): UIMessage[] {
     if (candidate.role !== "user" && candidate.role !== "assistant") return [];
     if (!Array.isArray(candidate.parts)) return [];
 
-    const parts = candidate.parts.flatMap((part) => {
-      if (!part || typeof part !== "object") return [];
+    const parts: UIMessage["parts"] = [];
+    for (const part of candidate.parts) {
+      if (!part || typeof part !== "object") continue;
       if (part.type === "text" && typeof part.text === "string") {
         const text = part.text.trim();
-        return text ? [{ type: "text" as const, text }] : [];
+        if (text) parts.push({ type: "text", text });
+        continue;
       }
       if (
         part.type === "file" &&
@@ -32,17 +34,14 @@ function repairMessagesForModel(messages: UIMessage[]): UIMessage[] {
         typeof part.mediaType === "string" &&
         part.mediaType.length > 0
       ) {
-        return [
-          {
-            type: "file" as const,
-            url: part.url,
-            mediaType: part.mediaType,
-            ...(typeof part.filename === "string" ? { filename: part.filename } : {}),
-          },
-        ];
+        parts.push({
+          type: "file",
+          url: part.url,
+          mediaType: part.mediaType,
+          ...(typeof part.filename === "string" ? { filename: part.filename } : {}),
+        });
       }
-      return [];
-    });
+    }
 
     if (parts.length === 0) return [];
     return [
