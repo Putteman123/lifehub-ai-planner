@@ -2,6 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 
 type Body = { text?: unknown };
 
+/** Naturlig, varm kvinnoröst (ElevenLabs "Charlotte", flerspråkig). */
+const DEFAULT_VOICE_ID = "XB0fDUnXU5powFXDhCwa";
+
 export const Route = createFileRoute("/api/tts")({
   server: {
     handlers: {
@@ -9,9 +12,6 @@ export const Route = createFileRoute("/api/tts")({
         const body = (await request.json()) as Body;
         const text = typeof body.text === "string" ? body.text.trim() : "";
         if (!text) return new Response("text required", { status: 400 });
-
-        const key = process.env["LOVABLE_API_KEY"];
-        if (!key) return new Response("AI är inte konfigurerad.", { status: 500 });
 
         const authHeader = request.headers.get("authorization");
         const bearer = authHeader?.toLowerCase().startsWith("bearer ")
@@ -23,7 +23,42 @@ export const Route = createFileRoute("/api/tts")({
         const { data: userData } = await supabaseAdmin.auth.getUser(bearer);
         if (!userData?.user) return new Response("Unauthorized", { status: 401 });
 
-        const input = text.length > 800 ? `${text.slice(0, 800)}…` : text;
+        const input = text.length > 900 ? `${text.slice(0, 900)}…` : text;
+
+        const elevenKey = process.env["ELEVENLABS_API_KEY"];
+        if (elevenKey) {
+          const voiceId = process.env["ELEVENLABS_VOICE_ID"] || DEFAULT_VOICE_ID;
+          const resp = await fetch(
+            `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?output_format=mp3_44100_128`,
+            {
+              method: "POST",
+              headers: {
+                "xi-api-key": elevenKey,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                text: input,
+                model_id: "eleven_flash_v2_5",
+                language_code: "sv",
+                voice_settings: {
+                  stability: 0.4,
+                  similarity_boost: 0.8,
+                  style: 0.2,
+                  use_speaker_boost: true,
+                },
+              }),
+            },
+          );
+          if (resp.ok && resp.body) {
+            return new Response(resp.body, {
+              headers: { "Content-Type": "audio/mpeg", "Cache-Control": "no-store" },
+            });
+          }
+          // Faller vidare till Lovable-rösten om ElevenLabs inte svarar.
+        }
+
+        const key = process.env["LOVABLE_API_KEY"];
+        if (!key) return new Response("Röst är inte konfigurerad.", { status: 500 });
 
         const resp = await fetch("https://ai.gateway.lovable.dev/v1/audio/speech", {
           method: "POST",

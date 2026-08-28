@@ -12,14 +12,26 @@ type SpeechRecognitionLike = {
   onresult:
     | ((event: {
         resultIndex: number;
-        results: ArrayLike<ArrayLike<{ transcript: string }>>;
+        results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal?: boolean }>;
       }) => void)
     | null;
   onerror: ((event: { error?: string }) => void) | null;
   onend: (() => void) | null;
 };
 
-const STOP_WORDS = ["tyst", "stopp", "sluta", "stop", "tysta"];
+/** Ord som tystar Andrea direkt medan hon talar. */
+const STOP_WORDS = ["tyst", "tysta", "stopp", "stoppa", "sluta", "stop", "vänta", "okej okej"];
+
+function normalize(text: string) {
+  return text.toLowerCase().replace(/[.,!?]/g, "").trim();
+}
+
+function isStopCommand(text: string) {
+  const t = normalize(text);
+  if (!t) return false;
+  if (t.split(/\s+/).length > 4) return false;
+  return STOP_WORDS.some((w) => t === w || t.startsWith(`${w} `) || t.endsWith(` ${w}`));
+}
 
 function createRecognition(): SpeechRecognitionLike | null {
   if (typeof window === "undefined") return null;
@@ -34,7 +46,11 @@ function createRecognition(): SpeechRecognitionLike | null {
   return rec;
 }
 
-/** Röstsamtal med Andrea: kontinuerlig diktering (sv-SE) + uppläsning med AI-röst. */
+/**
+ * Handsfree-samtal med Andrea: mikrofonen är igång även medan hon talar.
+ * "Tyst"/"stopp" tystar henne direkt, och säger man något annat under
+ * uppläsningen avbryts hon och svarar på det nya (barge-in).
+ */
 export function useVoice(onTranscript: (text: string) => void) {
   const [supported, setSupported] = useState(false);
   const [listening, setListening] = useState(false);
@@ -43,21 +59,62 @@ export function useVoice(onTranscript: (text: string) => void) {
 
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const activeRef = useRef(false);
-  const stopListenerRef = useRef<SpeechRecognitionLike | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const speakingRef = useRef(false);
+  const playStartedAtRef = useRef(0);
+  const spokenWordsRef = useRef<string[]>([]);
   const cbRef = useRef(onTranscript);
   cbRef.current = onTranscript;
+
+  const silenceRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     setSupported(!!createRecognition());
     return () => {
       activeRef.current = false;
       recRef.current?.abort();
-      stopListenerRef.current?.abort();
       audioRef.current?.pause();
       if (typeof window !== "undefined") window.speechSynthesis?.cancel();
     };
   }, []);
+
+  /** Andreas eget ljud får inte tolkas som att Patrick pratar. */
+  const isEcho = useCallback((text: string) => {
+    if (!speakingRef.current) return false;
+    if (Date.now() - playStartedAtRef.current < 350) return true;
+    const words = normalize(text).split(/\s+/).filter(Boolean);
+    if (words.length === 0) return true;
+    const spoken = spokenWordsRef.current;
+    if (spoken.length === 0) return false;
+    const hits = words.filter((w) => w.length > 3 && spoken.includes(w)).length;
+    return hits / words.length > 0.6;
+  }, []);
+
+  const handleSpeech = useCallback(
+    (text: string, isFinal: boolean) => {
+      const clean = text.trim();
+      if (!clean) return;
+
+      if (speakingRef.current) {
+        if (isStopCommand(clean)) {
+          silenceRef.current();
+          return;
+        }
+        if (isEcho(clean)) return;
+        // Barge-in: Patrick pratar över henne – tysta och svara på det nya.
+        if (isFinal) {
+          silenceRef.current();
+          cbRef.current(clean);
+        }
+        return;
+      }
+
+      if (!isFinal) return;
+      if (isStopCommand(clean)) return;
+      cbRef.current(clean);
+    },
+    [isEcho],
+  );
 
   const stopListening = useCallback(() => {
     activeRef.current = false;
@@ -66,18 +123,22 @@ export function useVoice(onTranscript: (text: string) => void) {
   }, []);
 
   const startListening = useCallback(() => {
+    if (activeRef.current) return;
     const rec = createRecognition();
     if (!rec) return;
     rec.continuous = true;
-    rec.interimResults = false;
+    rec.interimResults = true;
     rec.onresult = (event) => {
       const results = event.results;
-      const last = results[results.length - 1];
-      const text = (last?.[0]?.transcript ?? "").trim();
-      if (text) cbRef.current(text);
+      for (let i = event.resultIndex ?? 0; i < results.length; i++) {
+        const res = results[i];
+        if (!res) continue;
+        const text = res[0]?.transcript ?? "";
+        handleSpeech(text, !!res.isFinal);
+      }
     };
     rec.onerror = (event) => {
-      const fatal = ["not-allowed", "service-not-allowed", "network"];
+      const fatal = ["not-allowed", "service-not-allowed"];
       if (event?.error && fatal.includes(event.error)) {
         activeRef.current = false;
         setListening(false);
@@ -103,13 +164,7 @@ export function useVoice(onTranscript: (text: string) => void) {
       activeRef.current = false;
       setListening(false);
     }
-  }, []);
-
-  /** Lyssnar efter "tyst"/"stopp" medan Andrea talar. */
-  const stopStopWordListener = useCallback(() => {
-    stopListenerRef.current?.stop();
-    stopListenerRef.current = null;
-  }, []);
+  }, [handleSpeech]);
 
   const silence = useCallback(() => {
     if (audioRef.current) {
@@ -117,43 +172,16 @@ export function useVoice(onTranscript: (text: string) => void) {
       audioRef.current = null;
     }
     if (typeof window !== "undefined") window.speechSynthesis?.cancel();
-    stopStopWordListener();
+    speakingRef.current = false;
+    spokenWordsRef.current = [];
     setSpeaking(false);
-  }, [stopStopWordListener]);
-
-  const startStopWordListener = useCallback(() => {
-    if (stopListenerRef.current) return;
-    const rec = createRecognition();
-    if (!rec) return;
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.onresult = (event) => {
-      const results = event.results;
-      for (let i = event.resultIndex ?? 0; i < results.length; i++) {
-        const t = (results[i]?.[0]?.transcript ?? "").toLowerCase().trim();
-        if (STOP_WORDS.some((w) => t.includes(w))) {
-          silence();
-          break;
-        }
-      }
-    };
-    rec.onerror = () => {
-      stopListenerRef.current = null;
-    };
-    rec.onend = () => {
-      stopListenerRef.current = null;
-    };
-    stopListenerRef.current = rec;
-    try {
-      rec.start();
-    } catch {
-      stopListenerRef.current = null;
-    }
-  }, [silence]);
+  }, []);
+  silenceRef.current = silence;
 
   const fallbackSpeak = useCallback(
     (text: string) => {
       if (typeof window === "undefined" || !window.speechSynthesis) {
+        speakingRef.current = false;
         setSpeaking(false);
         return;
       }
@@ -163,16 +191,17 @@ export function useVoice(onTranscript: (text: string) => void) {
       const sv = window.speechSynthesis.getVoices().find((v) => v.lang?.startsWith("sv"));
       if (sv) utter.voice = sv;
       utter.onend = () => {
-        stopStopWordListener();
+        speakingRef.current = false;
         setSpeaking(false);
       };
       utter.onerror = () => {
-        stopStopWordListener();
+        speakingRef.current = false;
         setSpeaking(false);
       };
+      playStartedAtRef.current = Date.now();
       window.speechSynthesis.speak(utter);
     },
-    [stopStopWordListener],
+    [],
   );
 
   const speak = useCallback(
@@ -185,9 +214,11 @@ export function useVoice(onTranscript: (text: string) => void) {
       if (!clean) return;
 
       silence();
-      const text = clean.length > 800 ? `${clean.slice(0, 800)}…` : clean;
+      const text = clean.length > 900 ? `${clean.slice(0, 900)}…` : clean;
+      spokenWordsRef.current = normalize(text).split(/\s+/).filter(Boolean);
+      speakingRef.current = true;
+      playStartedAtRef.current = Date.now();
       setSpeaking(true);
-      startStopWordListener();
 
       try {
         const { data } = await supabase.auth.getSession();
@@ -203,25 +234,25 @@ export function useVoice(onTranscript: (text: string) => void) {
         if (!resp.ok) throw new Error("tts");
         const blob = await resp.blob();
         if (blob.size < 500) throw new Error("tts-empty");
+        if (!speakingRef.current) return; // tystad medan ljudet hämtades
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
         audioRef.current = audio;
         audio.onended = () => {
           URL.revokeObjectURL(url);
           audioRef.current = null;
-          stopStopWordListener();
+          speakingRef.current = false;
+          spokenWordsRef.current = [];
           setSpeaking(false);
         };
+        playStartedAtRef.current = Date.now();
         await audio.play();
       } catch {
-        // Fallback: webbläsarens uppläsning
-        fallbackSpeak(text);
+        if (speakingRef.current) fallbackSpeak(text);
       }
     },
-    [silence, startStopWordListener, stopStopWordListener, fallbackSpeak],
+    [silence, fallbackSpeak],
   );
-
-  const stopSpeaking = silence;
 
   return {
     supported,
@@ -232,6 +263,6 @@ export function useVoice(onTranscript: (text: string) => void) {
     setTtsEnabled,
     speaking,
     speak,
-    stopSpeaking,
+    stopSpeaking: silence,
   };
 }
