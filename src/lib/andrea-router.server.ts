@@ -24,7 +24,7 @@ export async function routeAndreaTurn(opts: {
 
   try {
     const answer = await completeText({
-      apiKey: opts.apiKey,
+      ...(opts.apiKey ? { apiKey: opts.apiKey } : {}),
       model: ANDREA_ROUTER_MODEL,
       system: ROUTER_SYSTEM,
       input: text,

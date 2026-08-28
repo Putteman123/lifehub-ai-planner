@@ -401,7 +401,7 @@ function countdown(iso: string, now: number) {
   return `om ${m} min`;
 }
 
-/** Kreditstatus med exakt saldo, spärrtid och flöde för påfyllning. */
+/** Separat status för Google AI Studio, Lovable-reserven och ElevenLabs. */
 function CreditStatus({
   info,
   checking,
@@ -454,28 +454,29 @@ function CreditStatus({
     <div className="space-y-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs">
       <div className="space-y-1">
         <p className="text-sm font-semibold text-destructive">
-          {status && !status.blocked ? "Andrea AI är tillgänglig igen" : "Andrea AI är blockerad"}
+          {status && !status.blocked ? "Andrea AI är tillgänglig igen" : "Google AI Studio svarar inte"}
         </p>
         <p className="text-destructive/90">
-          Alla AI-anrop blockeras just nu av arbetsytan (HTTP {status?.status ?? info.status}{" "}
-          <span className="font-mono">{status?.type ?? info.reason}</span>). Det är inget fel i
-          appen – varken snabbfilen eller djupfilen får köra förrän krediterna fylls på eller
-          kreditgränsen höjs.
+          Andreas primära textmotor svarade med HTTP {status?.status ?? info.status}{" "}
+          <span className="font-mono">{status?.type ?? info.reason}</span>. Kontrollera kvot och
+          betalning i Google AI Studio. ElevenLabs påverkas inte.
         </p>
       </div>
 
       <dl className="grid grid-cols-1 gap-1.5 rounded-lg border border-destructive/30 bg-background/40 p-2.5 text-destructive/90 sm:grid-cols-2">
         <div className="flex items-center justify-between gap-2 sm:col-span-2">
-          <dt className="font-medium">Månadsgräns</dt>
-          <dd className="tabular-nums font-semibold">
-            {status ? `${status.monthlyLimit} AI-krediter` : "100 AI-krediter"}
-          </dd>
+          <dt className="font-medium">Primär text-AI</dt>
+          <dd className="text-right font-semibold">Google AI Studio · Gemini 3.6 Flash</dd>
         </div>
         <div className="flex items-center justify-between gap-2 sm:col-span-2">
-          <dt className="font-medium">AI Gateway</dt>
+          <dt className="font-medium">Google AI Studio</dt>
           <dd className="text-right font-semibold">
             {status ? (status.blocked ? "blockerad" : "tillgänglig") : "kontroll krävs"}
           </dd>
+        </div>
+        <div className="flex items-center justify-between gap-2 sm:col-span-2">
+          <dt className="font-medium">Lovable AI</dt>
+          <dd className="text-right font-semibold">reserv vid tillfälliga driftfel</dd>
         </div>
         <div className="flex items-center justify-between gap-2 sm:col-span-2">
           <dt className="font-medium">ElevenLabs-röst</dt>
@@ -488,7 +489,7 @@ function CreditStatus({
           </dd>
         </div>
         <p className="sm:col-span-2 text-destructive/80">
-          ElevenLabs-krediter används bara för rösten och kan inte låsa upp Andreas textsvar.
+          ElevenLabs används bara för rösten. Google AI Studio betalar och kör Andreas textsvar.
         </p>
         <div className="flex items-center justify-between gap-2 sm:col-span-2">
           <dt className="font-medium">Spärren släpper</dt>
@@ -499,9 +500,7 @@ function CreditStatus({
                 ? `${formatSv(status.resetsAt)} (${countdown(status.resetsAt, now)})`
                 : status && !status.blocked
                   ? "redan släppt"
-                  : status?.requires === "top_up"
-                    ? "direkt efter påfyllning"
-                    : "när gränsen höjs"}
+                    : "när Google-kvoten eller konfigurationen är återställd"}
           </dd>
         </div>
         {status?.details ? (
@@ -509,8 +508,8 @@ function CreditStatus({
         ) : null}
         {limitReached ? (
           <p className="sm:col-span-2 text-destructive/80">
-            Månadsgränsen för AI räknas per kalendermånad och nollställs vid månadsskiftet – höj
-            gränsen för att komma igång tidigare.
+            Google AI Studios kvot har nåtts. Kontrollera den betalda planens gränser för att komma
+            igång igen.
           </p>
         ) : null}
       </dl>
@@ -522,7 +521,7 @@ function CreditStatus({
         <dl className="mt-2 space-y-1 text-destructive/85">
           <div className="flex justify-between gap-2">
             <dt>AI-tjänst</dt>
-            <dd className="text-right font-medium">{status?.service ?? "Lovable AI Gateway"}</dd>
+            <dd className="text-right font-medium">{status?.service ?? "Google AI Studio (primär)"}</dd>
           </div>
           <div className="flex justify-between gap-2">
             <dt>Endpoint</dt>
@@ -577,16 +576,15 @@ function CreditStatus({
           ))}
         </ul>
         <p className="mt-2 text-[11px] text-destructive/80">
-          Vid lågt saldo: kör snabbfilen och proaktiva koller som vanligt, spara djupanalyser och
-          kvittoläsning till efter påfyllning, och stäng av uppläsningen (eller använd ElevenLabs)
-          – då räcker saldot till många fler kommandon.
+          Vid låg Google-kvot: prioritera korta frågor och rutinåtgärder. ElevenLabs-saldot påverkar
+          endast uppläsning, inte textkommandon.
         </p>
       </details>
 
 
 
       <ol className="list-decimal space-y-1 pl-4 text-destructive/90">
-        <li>Öppna arbetsytans krediter och fyll på (eller höj den satta gränsen).</li>
+        <li>Kontrollera betalning och API-kvot i Google AI Studio.</li>
         <li>Kom tillbaka hit.</li>
         <li>Tryck ”Kontrollera och återuppta” – jag skickar om din senaste fråga.</li>
       </ol>
