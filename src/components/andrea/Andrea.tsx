@@ -243,16 +243,56 @@ function ActionDetails({ input }: { input?: Record<string, unknown> | undefined 
 }
 
 
+const PAGE_LABELS: Record<string, string> = {
+  "/dashboard": "Startsidan",
+  "/kalender": "Kalendern",
+  "/kalendrar": "Kalendrar",
+  "/attgora": "Att göra",
+  "/handla": "Handla (inköpslista, skafferi och prisbok)",
+  "/pengar": "Pengar (konton, köp, fasta utgifter, lån)",
+  "/platser": "Platser (besök, resor och dagskarta)",
+  "/barn": "Barn",
+  "/jurist": "Jurist",
+  "/iptv": "IPTV",
+  "/kassaskap": "Kassaskåpet",
+};
+
 export function Andrea() {
   const [open, setOpen] = useState(false);
+  const [voiceStart, setVoiceStart] = useState(false);
+  const holdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function beginHold() {
+    holdRef.current = setTimeout(() => {
+      holdRef.current = null;
+      setVoiceStart(true);
+      setOpen(true);
+    }, 500);
+  }
+
+  function endHold() {
+    if (holdRef.current) {
+      clearTimeout(holdRef.current);
+      holdRef.current = null;
+      setVoiceStart(false);
+      setOpen(true);
+    }
+  }
 
   return (
     <>
       {!open ? (
         <button
-          onClick={() => setOpen(true)}
+          onPointerDown={beginHold}
+          onPointerUp={endHold}
+          onPointerLeave={() => {
+            if (holdRef.current) {
+              clearTimeout(holdRef.current);
+              holdRef.current = null;
+            }
+          }}
           aria-label="Öppna Andrea"
-          title="Öppna Andrea – din AI-guide"
+          title="Tryck för att chatta – håll in för röstläge"
           className="fixed right-4 z-40 flex items-center justify-center transition-transform duration-200 hover:scale-110 active:scale-95 sm:right-6"
           style={{ bottom: "calc(1.25rem + env(safe-area-inset-bottom, 0px))" }}
         >
@@ -271,13 +311,25 @@ export function Andrea() {
           />
         </button>
       ) : null}
-      {open ? <AndreaPanel onClose={() => setOpen(false)} /> : null}
+      {open ? (
+        <AndreaPanel
+          autoVoice={voiceStart}
+          onClose={() => {
+            setOpen(false);
+            setVoiceStart(false);
+          }}
+        />
+      ) : null}
     </>
   );
 }
 
-function AndreaPanel({ onClose }: { onClose: () => void }) {
+function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: boolean }) {
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const pageRef = useRef({ path: pathname, label: PAGE_LABELS[pathname] ?? pathname });
+  pageRef.current = { path: pathname, label: PAGE_LABELS[pathname] ?? pathname };
+
   const transport = useRef(
     new DefaultChatTransport({
       api: "/api/chat",
@@ -286,10 +338,12 @@ function AndreaPanel({ onClose }: { onClose: () => void }) {
         const token = data.session?.access_token;
         return token ? { Authorization: `Bearer ${token}` } : {};
       },
+      body: () => ({ page: pageRef.current }),
     }),
   ).current;
 
   const initial = useRef(loadHistory()).current;
+
   const queryClient = useQueryClient();
   const {
     messages,
