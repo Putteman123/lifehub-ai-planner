@@ -27,6 +27,12 @@ import ReactMarkdown from "react-markdown";
 import andreaAvatar from "@/assets/andrea-avatar.png";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  COMMAND_COSTS,
+  PRIORITY_LABEL,
+  commandsPerCredit,
+  formatCredits,
+} from "@/lib/ai-cost";
 import { getAiCreditStatus } from "@/lib/ai-credits.functions";
 import type { AiCreditStatus } from "@/lib/ai-credits.server";
 import { useVoice } from "@/lib/voice";
@@ -470,6 +476,76 @@ function CreditStatus({
           </p>
         ) : null}
       </dl>
+
+      <details className="rounded-lg border border-destructive/30 bg-background/40 p-2.5">
+        <summary className="cursor-pointer font-medium text-destructive">
+          Detaljer om kontrollen
+        </summary>
+        <dl className="mt-2 space-y-1 text-destructive/85">
+          <div className="flex justify-between gap-2">
+            <dt>AI-tjänst</dt>
+            <dd className="text-right font-medium">{status?.service ?? "Lovable AI Gateway"}</dd>
+          </div>
+          <div className="flex justify-between gap-2">
+            <dt>Endpoint</dt>
+            <dd className="break-all text-right font-mono text-[10px]">
+              {status?.endpoint ?? "—"}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-2">
+            <dt>Kontrollmodell</dt>
+            <dd className="text-right font-mono text-[10px]">{status?.model ?? "—"}</dd>
+          </div>
+          <div className="flex justify-between gap-2">
+            <dt>Svarstid</dt>
+            <dd className="text-right tabular-nums">
+              {status ? `${status.latencyMs} ms` : loading ? "…" : "—"}
+            </dd>
+          </div>
+          <div className="flex justify-between gap-2">
+            <dt>Feltyp</dt>
+            <dd className="text-right font-mono text-[10px]">
+              {status ? (status.blocked ? `${status.status} ${status.type ?? ""}` : "inget fel") : "—"}
+            </dd>
+          </div>
+          {status?.requestId ? (
+            <div className="flex justify-between gap-2">
+              <dt>Spårnings-id</dt>
+              <dd className="break-all text-right font-mono text-[10px]">{status.requestId}</dd>
+            </div>
+          ) : null}
+        </dl>
+      </details>
+
+      <details className="rounded-lg border border-destructive/30 bg-background/40 p-2.5">
+        <summary className="cursor-pointer font-medium text-destructive">
+          Vad kostar mina kommandon?
+        </summary>
+        <ul className="mt-2 space-y-2 text-destructive/85">
+          {COMMAND_COSTS.map((c) => (
+            <li key={c.id} className="space-y-0.5">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="font-medium">{c.label}</span>
+                <span className="tabular-nums font-semibold">≈ {formatCredits(c.credits)}</span>
+              </div>
+              <p className="text-[11px] text-destructive/70">
+                {c.chain} · {PRIORITY_LABEL[c.priority]} ·{" "}
+                {commandsPerCredit(c.credits) > 999
+                  ? "tusentals per kredit"
+                  : `~${commandsPerCredit(c.credits)} st per kredit`}
+              </p>
+              <p className="text-[11px] text-destructive/70">{c.note}</p>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2 text-[11px] text-destructive/80">
+          Vid lågt saldo: kör snabbfilen och proaktiva koller som vanligt, spara djupanalyser och
+          kvittoläsning till efter påfyllning, och stäng av uppläsningen (eller använd ElevenLabs)
+          – då räcker saldot till många fler kommandon.
+        </p>
+      </details>
+
+
 
       <ol className="list-decimal space-y-1 pl-4 text-destructive/90">
         <li>Öppna arbetsytans krediter och fyll på (eller höj den satta gränsen).</li>
