@@ -1047,6 +1047,113 @@ export type Database = {
         }
         Relationships: []
       }
+      mail_findings: {
+        Row: {
+          account_id: string | null
+          amount: number | null
+          category: string | null
+          created_at: string
+          created_expense_id: string | null
+          created_spend_id: string | null
+          created_todo_id: string | null
+          currency: string
+          due_date: string | null
+          id: string
+          kind: string
+          merchant: string | null
+          message_id: string
+          occurred_at: string | null
+          raw_ai: Json | null
+          reference: string | null
+          sender: string | null
+          status: string
+          subject: string | null
+          summary: string | null
+          thread_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount?: number | null
+          category?: string | null
+          created_at?: string
+          created_expense_id?: string | null
+          created_spend_id?: string | null
+          created_todo_id?: string | null
+          currency?: string
+          due_date?: string | null
+          id?: string
+          kind?: string
+          merchant?: string | null
+          message_id: string
+          occurred_at?: string | null
+          raw_ai?: Json | null
+          reference?: string | null
+          sender?: string | null
+          status?: string
+          subject?: string | null
+          summary?: string | null
+          thread_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number | null
+          category?: string | null
+          created_at?: string
+          created_expense_id?: string | null
+          created_spend_id?: string | null
+          created_todo_id?: string | null
+          currency?: string
+          due_date?: string | null
+          id?: string
+          kind?: string
+          merchant?: string | null
+          message_id?: string
+          occurred_at?: string | null
+          raw_ai?: Json | null
+          reference?: string | null
+          sender?: string | null
+          status?: string
+          subject?: string | null
+          summary?: string | null
+          thread_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mail_findings_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mail_findings_created_expense_id_fkey"
+            columns: ["created_expense_id"]
+            isOneToOne: false
+            referencedRelation: "fixed_expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mail_findings_created_spend_id_fkey"
+            columns: ["created_spend_id"]
+            isOneToOne: false
+            referencedRelation: "spend_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mail_findings_created_todo_id_fkey"
+            columns: ["created_todo_id"]
+            isOneToOne: false
+            referencedRelation: "todos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mail_rules: {
         Row: {
           created_at: string
