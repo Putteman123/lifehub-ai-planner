@@ -11,7 +11,7 @@ import { z } from "zod";
 import { ANDREA_MODEL, ANDREA_QUICK_MODEL } from "@/lib/ai-models";
 import { findFreeSlot, suggestCategory } from "@/lib/calendar";
 
-type Body = { messages?: unknown };
+type Body = { messages?: unknown; page?: { path?: string; label?: string; selection?: string } | null };
 
 const CATEGORY = z
   .string()
@@ -85,7 +85,7 @@ export const Route = createFileRoute("/api/chat")({
         const { createOpenAICompatible } = await import("@ai-sdk/openai-compatible");
         const agent = await import("@/lib/agent.server");
         const { routeAndreaTurn } = await import("@/lib/andrea-router.server");
-        const { QUICK_TOOLS, SAFE_TOOLS } = await import("@/lib/agent-tools");
+        const { isSafeTool } = await import("@/lib/agent-tools");
 
         // Vilken fil ska turen gå? Snabbfilen (Gemini) eller djupfilen (ChatGPT).
         const uiMessages = body.messages as UIMessage[];
@@ -838,21 +838,18 @@ export const Route = createFileRoute("/api/chat")({
             }),
         };
 
-        // Ofarliga, lätt ångrade åtgärder körs utan manuellt godkännande.
-        const toolEntries = Object.entries(allTools).filter(
-          ([name]) => lane === "deep" || QUICK_TOOLS.has(name),
-        );
+        // Andrea har fulla befogenheter – bara radering och utgående mejl kräver ja.
         const tools = Object.fromEntries(
-          toolEntries.map(([name, def]) =>
-            SAFE_TOOLS.has(name) ? [name, { ...def, needsApproval: false }] : [name, def],
+          Object.entries(allTools).map(([name, def]) =>
+            isSafeTool(name) ? [name, { ...def, needsApproval: false }] : [name, def],
           ),
         ) as typeof allTools;
 
         const result = streamText({
           model: lane === "quick" ? gemini(ANDREA_QUICK_MODEL) : openai.responses(ANDREA_MODEL),
-          system: `${ANDREA_SYSTEM}\n\n${UPLOAD_RULES}\n\n${LANE_RULES}\n\nAKTUELLT UNDERLAG FRÅN KALENDERN:\n${context}`,
+          system: `${ANDREA_SYSTEM}\n\n${UPLOAD_RULES}\n\n${LANE_RULES}\n\n${pageRules(body.page ?? null)}\n\nAKTUELLT UNDERLAG FRÅN KALENDERN:\n${context}`,
           messages: await convertToModelMessages(uiMessages),
-          stopWhen: stepCountIs(lane === "quick" ? 12 : 50),
+          stopWhen: stepCountIs(lane === "quick" ? 20 : 80),
           tools,
           ...(lane === "deep"
             ? {
