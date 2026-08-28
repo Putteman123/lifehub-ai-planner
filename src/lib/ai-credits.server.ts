@@ -29,7 +29,11 @@ export type AiCreditStatus = {
   latencyMs: number;
   /** Gatewayens spårnings-id för kontrollen. */
   requestId: string | null;
+  /** Aktiv månadsgräns för Andrea i arbetsytan. */
+  monthlyLimit: number;
 };
+
+const ANDREA_MONTHLY_AI_LIMIT = 100;
 
 function nextMonthStartIso(now = new Date()): string {
   return new Date(
@@ -48,6 +52,7 @@ export async function probeAiCredits(): Promise<AiCreditStatus> {
     service: "Lovable AI Gateway",
     endpoint: GATEWAY_ENDPOINT,
     model: PROBE_MODEL,
+    monthlyLimit: ANDREA_MONTHLY_AI_LIMIT,
   };
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) {
@@ -124,8 +129,9 @@ export async function probeAiCredits(): Promise<AiCreditStatus> {
     details: typeof body["details"] === "string" ? (body["details"] as string) : null,
     requires: typeof props["requires"] === "string" ? (props["requires"] as string) : null,
     scope: typeof props["scope"] === "string" ? (props["scope"] as string) : null,
-    // Spärren slår till först när perioden är förbrukad – kvar är då exakt 0.
-    remaining: isLimit ? 0 : null,
+    // Gatewayen lämnar inte ut ett exakt saldo i felsvaret. Visa därför inte
+    // ett påhittat nollsaldo – arbetsytans riktiga saldo och gräns är skilda saker.
+    remaining: null,
     // Gränser räknas per kalendermånad (UTC) och nollställs vid månadsskiftet.
     resetsAt: isLimit && type !== "insufficient_credits" ? nextMonthStartIso() : null,
     retryAfterSeconds: Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : null,

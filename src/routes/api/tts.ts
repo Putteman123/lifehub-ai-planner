@@ -2,26 +2,82 @@ import { createFileRoute } from "@tanstack/react-router";
 
 type Body = { text?: unknown };
 
+type ElevenLabsSubscription = {
+  character_count?: number;
+  character_limit?: number;
+  status?: string;
+};
+
+async function authenticatedUser(request: Request) {
+  const authHeader = request.headers.get("authorization");
+  const bearer = authHeader?.toLowerCase().startsWith("bearer ")
+    ? authHeader.slice(7)
+    : null;
+  if (!bearer) return null;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin.auth.getUser(bearer);
+  return data?.user ?? null;
+}
+
 /** Naturlig, varm kvinnoröst (ElevenLabs "Charlotte", flerspråkig). */
 const DEFAULT_VOICE_ID = "XB0fDUnXU5powFXDhCwa";
 
 export const Route = createFileRoute("/api/tts")({
   server: {
     handlers: {
+      GET: async ({ request }) => {
+        if (!(await authenticatedUser(request))) {
+          return Response.json({ available: false, errorType: "unauthorized" }, { status: 401 });
+        }
+
+        const elevenKey = process.env["ELEVENLABS_API_KEY"];
+        if (!elevenKey) {
+          return Response.json({
+            service: "ElevenLabs",
+            available: false,
+            errorType: "missing_api_key",
+            fallback: "Webbläsarens svenska röst",
+          });
+        }
+
+        const started = Date.now();
+        const response = await fetch("https://api.elevenlabs.io/v1/user/subscription", {
+          headers: { "xi-api-key": elevenKey },
+        });
+        const latencyMs = Date.now() - started;
+        if (!response.ok) {
+          return Response.json({
+            service: "ElevenLabs",
+            available: false,
+            status: response.status,
+            errorType: response.status === 401 ? "invalid_api_key" : "provider_error",
+            latencyMs,
+            fallback: "Webbläsarens svenska röst",
+          });
+        }
+
+        const subscription = (await response.json()) as ElevenLabsSubscription;
+        const used = subscription.character_count ?? null;
+        const limit = subscription.character_limit ?? null;
+        return Response.json({
+          service: "ElevenLabs",
+          available: true,
+          status: 200,
+          errorType: null,
+          latencyMs,
+          used,
+          limit,
+          remaining: used !== null && limit !== null ? Math.max(0, limit - used) : null,
+          subscriptionStatus: subscription.status ?? null,
+          fallback: "Webbläsarens svenska röst",
+        });
+      },
       POST: async ({ request }) => {
         const body = (await request.json()) as Body;
         const text = typeof body.text === "string" ? body.text.trim() : "";
         if (!text) return new Response("text required", { status: 400 });
 
-        const authHeader = request.headers.get("authorization");
-        const bearer = authHeader?.toLowerCase().startsWith("bearer ")
-          ? authHeader.slice(7)
-          : null;
-        if (!bearer) return new Response("Unauthorized", { status: 401 });
-
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data: userData } = await supabaseAdmin.auth.getUser(bearer);
-        if (!userData?.user) return new Response("Unauthorized", { status: 401 });
+        if (!(await authenticatedUser(request))) return new Response("Unauthorized", { status: 401 });
 
         const input = text.length > 900 ? `${text.slice(0, 900)}…` : text;
 
@@ -54,11 +110,8 @@ export const Route = createFileRoute("/api/tts")({
               headers: { "Content-Type": "audio/mpeg", "Cache-Control": "no-store" },
             });
           }
-          console.error(
-            "ElevenLabs TTS misslyckades:",
-            resp.status,
-            await resp.text().catch(() => ""),
-          );
+          const detail = await resp.text().catch(() => "");
+          console.error("ElevenLabs TTS misslyckades:", resp.status, detail);
           // Faller vidare till Lovable-rösten om ElevenLabs inte svarar.
         }
 

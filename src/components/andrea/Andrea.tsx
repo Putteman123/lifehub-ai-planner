@@ -334,6 +334,18 @@ export function Andrea() {
 
 type AndreaError = { code: string; status: string; text: string; reason?: string };
 
+type VoiceServiceStatus = {
+  service?: string;
+  available: boolean;
+  status?: number;
+  errorType?: string | null;
+  latencyMs?: number;
+  used?: number | null;
+  limit?: number | null;
+  remaining?: number | null;
+  fallback?: string;
+};
+
 /** Tolkar fel från chatt-API:t till kod, statuskod och läsbar text. */
 function parseError(error: Error): AndreaError {
   const msg = (error.message ?? "").trim();
@@ -403,7 +415,8 @@ function CreditStatus({
 }) {
   const [openedTopUp, setOpenedTopUp] = useState(false);
   const [status, setStatus] = useState<AiCreditStatus | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [voiceStatus, setVoiceStatus] = useState<VoiceServiceStatus | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
   const refresh = useCallback(() => {
@@ -415,8 +428,20 @@ function CreditStatus({
   }, []);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    let active = true;
+    void supabase.auth.getSession().then(async ({ data }) => {
+      const token = data.session?.access_token;
+      if (!token) return;
+      const response = await fetch("/api/tts", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const result = (await response.json().catch(() => null)) as VoiceServiceStatus | null;
+      if (active && result) setVoiceStatus(result);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     const id = window.setInterval(() => setNow(Date.now()), 30_000);
@@ -429,7 +454,7 @@ function CreditStatus({
     <div className="space-y-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs">
       <div className="space-y-1">
         <p className="text-sm font-semibold text-destructive">
-          {status && !status.blocked ? "Krediterna är tillgängliga igen" : "AI-krediterna är slut"}
+          {status && !status.blocked ? "Andrea AI är tillgänglig igen" : "Andrea AI är blockerad"}
         </p>
         <p className="text-destructive/90">
           Alla AI-anrop blockeras just nu av arbetsytan (HTTP {status?.status ?? info.status}{" "}
@@ -441,17 +466,30 @@ function CreditStatus({
 
       <dl className="grid grid-cols-1 gap-1.5 rounded-lg border border-destructive/30 bg-background/40 p-2.5 text-destructive/90 sm:grid-cols-2">
         <div className="flex items-center justify-between gap-2 sm:col-span-2">
-          <dt className="font-medium">Krediter kvar</dt>
+          <dt className="font-medium">Månadsgräns</dt>
           <dd className="tabular-nums font-semibold">
-            {loading
-              ? "kontrollerar…"
-              : status
-                ? status.blocked
-                  ? `${status.remaining ?? 0} krediter (spärr aktiv)`
-                  : "tillgängliga"
-                : "okänt"}
+            {status ? `${status.monthlyLimit} AI-krediter` : "100 AI-krediter"}
           </dd>
         </div>
+        <div className="flex items-center justify-between gap-2 sm:col-span-2">
+          <dt className="font-medium">AI Gateway</dt>
+          <dd className="text-right font-semibold">
+            {status ? (status.blocked ? "blockerad" : "tillgänglig") : "kontroll krävs"}
+          </dd>
+        </div>
+        <div className="flex items-center justify-between gap-2 sm:col-span-2">
+          <dt className="font-medium">ElevenLabs-röst</dt>
+          <dd className="text-right font-semibold">
+            {voiceStatus
+              ? voiceStatus.available
+                ? `${voiceStatus.remaining?.toLocaleString("sv-SE") ?? "saldo ok"} tecken kvar`
+                : `ej tillgänglig (${voiceStatus.errorType ?? voiceStatus.status ?? "okänt fel"})`
+              : "kontrollerar…"}
+          </dd>
+        </div>
+        <p className="sm:col-span-2 text-destructive/80">
+          ElevenLabs-krediter används bara för rösten och kan inte låsa upp Andreas textsvar.
+        </p>
         <div className="flex items-center justify-between gap-2 sm:col-span-2">
           <dt className="font-medium">Spärren släpper</dt>
           <dd className="text-right tabular-nums font-semibold">
@@ -768,17 +806,6 @@ function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: 
     const text = textOf(last).toLowerCase();
     if (/(försök igen|forsok igen|prova igen|fortsätt|kör igen)/.test(text)) retry();
   }, [messages, errorInfo, retry]);
-
-  // Tillbaka i appen efter påfyllning: prova automatiskt en gång.
-  useEffect(() => {
-    if (!errorInfo || errorInfo.code !== "credits") return;
-    const onVisible = () => {
-      if (document.visibilityState === "visible") retry();
-    };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [errorInfo, retry]);
-
 
   // Håll in Andrea-knappen: panelen öppnas direkt i röstläge.
   useEffect(() => {
