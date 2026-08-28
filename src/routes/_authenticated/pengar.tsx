@@ -51,6 +51,7 @@ import { SpendPieCard } from "@/components/pengar/SpendPieCard";
 import { BetsCard } from "@/components/pengar/BetsCard";
 import { TransferCard } from "@/components/pengar/TransferCard";
 import { LoansCard } from "@/components/pengar/LoansCard";
+import { MailFindingsCard } from "@/components/pengar/MailFindingsCard";
 import {
   buildBudget,
   financeSignedUrl,
