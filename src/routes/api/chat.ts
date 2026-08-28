@@ -54,19 +54,25 @@ function pageRules(ctx: { path?: string; label?: string; selection?: string } | 
 ${ctx.selection ? `- Markerat/valt just nu: ${ctx.selection}\n` : ""}Syftar Patrick på "den här", "det där", "dagen" eller "posten" utan att namnge något – utgå från den här vyn och det som är valt där.`;
 }
 
-/** Översätter fel från AI-tjänsten till en kort, läsbar rad i chatten. */
+/**
+ * Översätter fel från AI-tjänsten till en kort, läsbar rad i chatten.
+ * Formatet är "kod|status|text" så panelen kan visa rätt åtgärdsflöde.
+ */
 function gatewayMessage(error: unknown) {
   const raw = error instanceof Error ? error.message : String(error ?? "");
-  const status = /\b(400|401|402|403|429|5\d\d)\b/.exec(raw)?.[1];
+  const status = /\b(400|401|402|403|429|5\d\d)\b/.exec(raw)?.[1] ?? "";
   const lower = raw.toLowerCase();
+  const reason = /credit_hard_block_workspace|credit_limit|insufficient_credits/.exec(lower)?.[0];
   if (status === "402" || status === "403" || lower.includes("credit")) {
-    return "AI-krediterna är slut eller spärrade för arbetsytan. Fyll på så svarar jag igen.";
+    console.error("Andrea: AI-krediter blockerade:", raw);
+    return `credits|${status || "403"}|${reason ?? "credit_hard_block_workspace"}`;
   }
-  if (status === "429") return "För många frågor just nu – vänta en stund och försök igen.";
-  if (status === "401") return "AI-nyckeln är inte giltig. Den behöver konfigureras om.";
-  if (status && status.startsWith("5")) return "AI-tjänsten svarade inte. Försök igen om en stund.";
+  if (status === "429") return `rate|429|För många frågor just nu – vänta en stund och försök igen.`;
+  if (status === "401") return `auth|401|AI-nyckeln är inte giltig. Den behöver konfigureras om.`;
+  if (status && status.startsWith("5"))
+    return `upstream|${status}|AI-tjänsten svarade inte. Försök igen om en stund.`;
   console.error("Andrea chat-fel:", raw);
-  return "Något gick fel hos AI-tjänsten. Försök igen.";
+  return `unknown||Något gick fel hos AI-tjänsten. Försök igen.`;
 }
 
 
