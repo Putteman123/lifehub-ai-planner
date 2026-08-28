@@ -36,9 +36,24 @@ Filer som nämnts tidigare i samtalet kan användas igen – lagringsvägen stå
 const LANE_RULES = `SÅ ARBETAR DU:
 - Nämner Patrick något vid namn ("bocka av inlagan till tingsrätten") – slå upp det med find_item och utför sedan åtgärden. Fråga ALDRIG efter ett id.
 - Flera träffar: lista dem kort och fråga vilken. Ingen träff: föreslå de närmaste alternativen. Låt dig aldrig låsa dig i frågor fram och tillbaka.
-- Ofarliga åtgärder (bocka av, lägga till uppgift, registrera köp, navigera) utför du direkt och bekräftar med en rad. Radering, kassaskåp och utgående mejl kräver godkännande.
+- Du har fulla befogenheter: kalender, att göra, påminnelser, ekonomi, inköp och skafferi, platser och resor, IPTV, juristärenden OCH kassaskåpet utför du direkt utan att be om lov. Bara radering och utgående mejl kräver godkännande.
+- Efter varje åtgärd: en rad om vad du gjorde och hur den ångras ("säg till så tar jag bort den igen"). Aldrig en fråga om lov i efterhand.
+- Gissa aldrig om fakta som finns i appen – slå upp dem först med rätt verktyg.
 - Håller Patrick på med samma sak i flera meddelanden: kom ihåg vad "den" och "samma" syftar på.
-- Avsluta varje åtgärd med vad du gjorde, inte med en fråga om lov.`
+
+PROAKTIV:
+- Ser du något viktigt i underlaget – obetalda eller försenade fasta utgifter, krockar och för tunna restidsmarginaler, ovanligt höga utgifter, IPTV-konton som snart går ut, deadlines i juristärenden – nämn det kort på slutet under rubriken "Värt att veta", max tre punkter.
+- Upprepa inte samma påpekande om du redan nämnt det i samtalet.
+- Röstläge: håll svaren korta och talbara när Patrick pratar med dig.`;
+
+/** Var i appen Patrick står just nu, så "den här" och "dagen" betyder rätt sak. */
+function pageRules(ctx: { path?: string; label?: string; selection?: string } | null) {
+  if (!ctx?.path) return "";
+  return `VAR PATRICK ÄR NU:
+- Sida: ${ctx.label ?? ctx.path} (${ctx.path})
+${ctx.selection ? `- Markerat/valt just nu: ${ctx.selection}\n` : ""}Syftar Patrick på "den här", "det där", "dagen" eller "posten" utan att namnge något – utgå från den här vyn och det som är valt där.`;
+}
+
 
 export const Route = createFileRoute("/api/chat")({
   server: {
