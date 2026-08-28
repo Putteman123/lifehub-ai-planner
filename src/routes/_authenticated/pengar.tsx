@@ -170,6 +170,7 @@ function MoneyPage() {
           />
           <SpendCard accounts={accounts} spends={spends} />
           <ReceiptScanner accounts={accounts} spends={spends} />
+          <MailFindingsCard accounts={accounts} className="lg:col-span-2" />
           <SpendPieCard spends={spends} fixed={fixed} />
           <BetsCard accounts={accounts} />
           <TransferCard accounts={accounts} />
