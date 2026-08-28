@@ -1,6 +1,6 @@
 import { useChat } from "@ai-sdk/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   DefaultChatTransport,
   lastAssistantMessageIsCompleteWithApprovalResponses,
@@ -443,6 +443,14 @@ function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: 
 
   const voice = useVoice((text) => submit(text));
   const spokenRef = useRef<string | null>(null);
+  const autoVoiceRef = useRef(false);
+
+  // Håll in Andrea-knappen: panelen öppnas direkt i röstläge.
+  useEffect(() => {
+    if (!autoVoice || autoVoiceRef.current || !voice.supported) return;
+    autoVoiceRef.current = true;
+    voice.startListening();
+  }, [autoVoice, voice]);
 
   useEffect(() => {
     taRef.current?.focus();
