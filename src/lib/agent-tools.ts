@@ -1,50 +1,24 @@
 /**
- * Verktygsuppdelning för Andrea.
+ * Behörighetsmodell för Andreas verktyg.
  *
- * QUICK_TOOL_NAMES: det bantade set snabbfilen (Gemini Flash) får se. Färre
- * verktyg = snabbare svar och färre felaktiga verktygsval.
- * SAFE_TOOL_NAMES: åtgärder som är ofarliga och lätta att ångra – de körs utan
- * manuellt godkännande i chatten.
+ * Utgångsläge: Andrea får göra allt direkt – utom att radera. Radering (och
+ * utgående mejl) kräver fortfarande ett manuellt ja i chatten.
  */
 
-export const QUICK_TOOL_NAMES = [
-  "goto",
-  "find_item",
-  "find_free_time",
-  "create_event",
-  "update_event",
-  "create_todo",
-  "update_todo",
-  "complete_todo",
-  "create_reminder",
-  "update_reminder",
-  "update_case_task",
-  "add_shopping_items",
-  "add_spend",
-  "finance_overview",
-  "lookup_prices",
-  "suggest_category",
-  "remember_about_me",
+/** Verktyg som alltid kräver Patricks godkännande innan de körs. */
+export const APPROVAL_TOOL_NAMES = [
+  "delete_event",
+  "delete_todo",
+  "delete_reminder",
+  "delete_place",
+  "delete_visit",
+  "vault_delete",
+  "send_mail",
 ] as const;
 
-export const SAFE_TOOL_NAMES = [
-  "goto",
-  "find_item",
-  "find_free_time",
-  "suggest_category",
-  "finance_overview",
-  "lookup_prices",
-  "create_todo",
-  "update_todo",
-  "complete_todo",
-  "create_reminder",
-  "update_reminder",
-  "update_case_task",
-  "add_shopping_items",
-  "add_pantry_items",
-  "create_event",
-  "remember_about_me",
-] as const;
+const APPROVAL_TOOLS = new Set<string>(APPROVAL_TOOL_NAMES);
 
-export const QUICK_TOOLS = new Set<string>(QUICK_TOOL_NAMES);
-export const SAFE_TOOLS = new Set<string>(SAFE_TOOL_NAMES);
+/** Sant om verktyget får köras utan godkännande. */
+export function isSafeTool(name: string) {
+  return !APPROVAL_TOOLS.has(name) && !name.startsWith("delete_");
+}
