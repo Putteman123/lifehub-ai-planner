@@ -27,6 +27,8 @@ import ReactMarkdown from "react-markdown";
 import andreaAvatar from "@/assets/andrea-avatar.png";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { getAiCreditStatus } from "@/lib/ai-credits.functions";
+import type { AiCreditStatus } from "@/lib/ai-credits.server";
 import { useVoice } from "@/lib/voice";
 
 const STORAGE_KEY = "andrea_lifehub_v1";
@@ -359,7 +361,29 @@ function parseError(error: Error): AndreaError {
 
 const CREDITS_URL = "https://lovable.dev/settings/workspace?tab=billing";
 
-/** Kreditstatus med steg-för-steg-flöde för påfyllning och återstart. */
+function formatSv(iso: string) {
+  return new Date(iso).toLocaleString("sv-SE", {
+    timeZone: "Europe/Stockholm",
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function countdown(iso: string, now: number) {
+  const ms = new Date(iso).getTime() - now;
+  if (ms <= 0) return "när som helst nu";
+  const h = Math.floor(ms / 3_600_000);
+  const d = Math.floor(h / 24);
+  const rest = h % 24;
+  const m = Math.floor((ms % 3_600_000) / 60_000);
+  if (d > 0) return `om ${d} d ${rest} h`;
+  if (h > 0) return `om ${h} h ${m} min`;
+  return `om ${m} min`;
+}
+
+/** Kreditstatus med exakt saldo, spärrtid och flöde för påfyllning. */
 function CreditStatus({
   info,
   checking,
@@ -372,17 +396,80 @@ function CreditStatus({
   voiceNote?: string | null;
 }) {
   const [openedTopUp, setOpenedTopUp] = useState(false);
+  const [status, setStatus] = useState<AiCreditStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [now, setNow] = useState(() => Date.now());
+
+  const refresh = useCallback(() => {
+    setLoading(true);
+    getAiCreditStatus()
+      .then((s) => setStatus(s))
+      .catch(() => setStatus(null))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const limitReached = status?.type === "credit_limit_reached";
 
   return (
     <div className="space-y-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs">
       <div className="space-y-1">
-        <p className="text-sm font-semibold text-destructive">AI-krediterna är slut</p>
+        <p className="text-sm font-semibold text-destructive">
+          {status && !status.blocked ? "Krediterna är tillgängliga igen" : "AI-krediterna är slut"}
+        </p>
         <p className="text-destructive/90">
-          Alla AI-anrop blockeras just nu av arbetsytan (HTTP {info.status}{" "}
-          <span className="font-mono">{info.reason}</span>). Det är inget fel i appen – varken
-          snabbfilen eller djupfilen får köra förrän krediterna fylls på eller kreditgränsen höjs.
+          Alla AI-anrop blockeras just nu av arbetsytan (HTTP {status?.status ?? info.status}{" "}
+          <span className="font-mono">{status?.type ?? info.reason}</span>). Det är inget fel i
+          appen – varken snabbfilen eller djupfilen får köra förrän krediterna fylls på eller
+          kreditgränsen höjs.
         </p>
       </div>
+
+      <dl className="grid grid-cols-1 gap-1.5 rounded-lg border border-destructive/30 bg-background/40 p-2.5 text-destructive/90 sm:grid-cols-2">
+        <div className="flex items-center justify-between gap-2 sm:col-span-2">
+          <dt className="font-medium">Krediter kvar</dt>
+          <dd className="tabular-nums font-semibold">
+            {loading
+              ? "kontrollerar…"
+              : status
+                ? status.blocked
+                  ? `${status.remaining ?? 0} krediter (spärr aktiv)`
+                  : "tillgängliga"
+                : "okänt"}
+          </dd>
+        </div>
+        <div className="flex items-center justify-between gap-2 sm:col-span-2">
+          <dt className="font-medium">Spärren släpper</dt>
+          <dd className="text-right tabular-nums font-semibold">
+            {loading
+              ? "…"
+              : status?.resetsAt
+                ? `${formatSv(status.resetsAt)} (${countdown(status.resetsAt, now)})`
+                : status && !status.blocked
+                  ? "redan släppt"
+                  : status?.requires === "top_up"
+                    ? "direkt efter påfyllning"
+                    : "när gränsen höjs"}
+          </dd>
+        </div>
+        {status?.details ? (
+          <p className="sm:col-span-2 text-destructive/80">{status.details}</p>
+        ) : null}
+        {limitReached ? (
+          <p className="sm:col-span-2 text-destructive/80">
+            Månadsgränsen för AI räknas per kalendermånad och nollställs vid månadsskiftet – höj
+            gränsen för att komma igång tidigare.
+          </p>
+        ) : null}
+      </dl>
 
       <ol className="list-decimal space-y-1 pl-4 text-destructive/90">
         <li>Öppna arbetsytans krediter och fyll på (eller höj den satta gränsen).</li>
@@ -402,14 +489,22 @@ function CreditStatus({
         </a>
         <button
           type="button"
-          onClick={onRetry}
-          disabled={checking}
+          onClick={() => {
+            refresh();
+            onRetry();
+          }}
+          disabled={checking || loading}
           className="rounded-md border border-destructive/40 px-3 py-1.5 font-medium text-destructive disabled:opacity-60"
         >
-          {checking ? "Kontrollerar…" : "Kontrollera och återuppta"}
+          {checking || loading ? "Kontrollerar…" : "Kontrollera och återuppta"}
         </button>
       </div>
 
+      {status ? (
+        <p className="text-destructive/70">
+          Senast kontrollerat {formatSv(status.checkedAt)}.
+        </p>
+      ) : null}
       {openedTopUp ? (
         <p className="text-destructive/80">
           När påfyllningen är klar återupptar jag automatiskt så snart du växlar tillbaka hit.
@@ -419,6 +514,7 @@ function CreditStatus({
     </div>
   );
 }
+
 
 function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: boolean }) {
   const navigate = useNavigate();
