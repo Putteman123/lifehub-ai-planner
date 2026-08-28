@@ -873,6 +873,7 @@ export const Route = createFileRoute("/api/chat")({
         return result.toUIMessageStreamResponse({
           originalMessages: uiMessages,
           sendReasoning: true,
+          onError: (error) => gatewayMessage(error),
         });
       },
 
