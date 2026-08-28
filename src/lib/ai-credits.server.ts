@@ -1,3 +1,6 @@
+const GATEWAY_ENDPOINT = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const PROBE_MODEL = "google/gemini-3.1-flash-lite";
+
 export type AiCreditStatus = {
   /** true = alla AI-anrop nekas just nu */
   blocked: boolean;
@@ -16,6 +19,16 @@ export type AiCreditStatus = {
   /** Sekunder att vänta vid 429. */
   retryAfterSeconds: number | null;
   checkedAt: string;
+  /** Vilken AI-tjänst som kontrollerades. */
+  service: string;
+  /** Endpoint som kontrollen anropade. */
+  endpoint: string;
+  /** Modell som användes för kontrollanropet. */
+  model: string;
+  /** Svarstid i millisekunder för kontrollanropet. */
+  latencyMs: number;
+  /** Gatewayens spårnings-id för kontrollen. */
+  requestId: string | null;
 };
 
 function nextMonthStartIso(now = new Date()): string {
@@ -26,13 +39,20 @@ function nextMonthStartIso(now = new Date()): string {
 
 /**
  * Gör ett minimalt anrop mot AI-gatewayen för att läsa av om krediterna är
- * spärrade, varför, och när spärren släpper.
+ * spärrade, varför, när spärren släpper och hur snabbt tjänsten svarar.
  */
 export async function probeAiCredits(): Promise<AiCreditStatus> {
   const checkedAt = new Date().toISOString();
+  const base = {
+    checkedAt,
+    service: "Lovable AI Gateway",
+    endpoint: GATEWAY_ENDPOINT,
+    model: PROBE_MODEL,
+  };
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) {
     return {
+      ...base,
       blocked: true,
       status: 401,
       type: "missing_api_key",
@@ -43,11 +63,13 @@ export async function probeAiCredits(): Promise<AiCreditStatus> {
       remaining: null,
       resetsAt: null,
       retryAfterSeconds: null,
-      checkedAt,
+      latencyMs: 0,
+      requestId: null,
     };
   }
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const started = Date.now();
+  const res = await fetch(GATEWAY_ENDPOINT, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -55,15 +77,18 @@ export async function probeAiCredits(): Promise<AiCreditStatus> {
       "X-Lovable-AIG-SDK": "fetch",
     },
     body: JSON.stringify({
-      model: "google/gemini-3.1-flash-lite",
+      model: PROBE_MODEL,
       messages: [{ role: "user", content: "ping" }],
       max_tokens: 1,
       stream: false,
     }),
   });
+  const latencyMs = Date.now() - started;
+  const requestId = res.headers.get("x-lovable-aig-log-id") ?? res.headers.get("x-request-id");
 
   if (res.ok) {
     return {
+      ...base,
       blocked: false,
       status: res.status,
       type: null,
@@ -74,7 +99,8 @@ export async function probeAiCredits(): Promise<AiCreditStatus> {
       remaining: null,
       resetsAt: null,
       retryAfterSeconds: null,
-      checkedAt,
+      latencyMs,
+      requestId,
     };
   }
 
@@ -90,6 +116,7 @@ export async function probeAiCredits(): Promise<AiCreditStatus> {
   const isLimit = res.status === 402 || res.status === 403;
 
   return {
+    ...base,
     blocked: true,
     status: res.status,
     type,
@@ -102,6 +129,7 @@ export async function probeAiCredits(): Promise<AiCreditStatus> {
     // Gränser räknas per kalendermånad (UTC) och nollställs vid månadsskiftet.
     resetsAt: isLimit && type !== "insufficient_credits" ? nextMonthStartIso() : null,
     retryAfterSeconds: Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : null,
-    checkedAt,
+    latencyMs,
+    requestId,
   };
 }
