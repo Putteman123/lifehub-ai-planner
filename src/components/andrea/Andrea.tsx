@@ -324,6 +324,17 @@ export function Andrea() {
   );
 }
 
+/** Läsbar text för fel från chatt-API:t. */
+function errorText(error: Error) {
+  const msg = error.message ?? "";
+  if (/40[23]/.test(msg) || /krediter|credit/i.test(msg))
+    return "AI-krediterna är slut eller spärrade – fyll på så svarar jag igen.";
+  if (msg.includes("429")) return "För många frågor just nu – vänta en stund.";
+  if (msg.includes("401")) return "Inloggningen gick ut. Ladda om appen.";
+  if (/failed to fetch|network/i.test(msg)) return "Ingen kontakt med AI-tjänsten.";
+  return msg.trim() || "Något gick fel. Försök igen.";
+}
+
 function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: boolean }) {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
