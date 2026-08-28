@@ -732,14 +732,18 @@ function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: 
             </div>
           ) : null}
           {error ? (
-            <p className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-              {error.message.includes("402")
-                ? "AI-krediterna är slut. Fyll på i arbetsytans inställningar."
-                : error.message.includes("429")
-                  ? "AI:n är överbelastad just nu – försök igen strax."
-                  : "Något gick fel. Försök igen."}
-            </p>
+            <div className="space-y-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+              <p>{errorText(error)}</p>
+              <button
+                type="button"
+                onClick={() => regenerate()}
+                className="rounded-md border border-destructive/40 px-2 py-1 font-medium"
+              >
+                Försök igen
+              </button>
+            </div>
           ) : null}
+
           <div ref={endRef} />
         </div>
 
