@@ -87,8 +87,8 @@ export const Route = createFileRoute("/api/chat")({
           return new Response("messages required", { status: 400 });
         }
 
-        const key = process.env["LOVABLE_API_KEY"];
-        if (!key) return new Response("AI är inte konfigurerad.", { status: 500 });
+        const geminiKey = process.env["GEMINI_API_KEY"];
+        if (!geminiKey) return new Response("Google AI Studio är inte konfigurerat.", { status: 500 });
 
         const authHeader = request.headers.get("authorization");
         const bearer = authHeader?.toLowerCase().startsWith("bearer ")
@@ -104,13 +104,12 @@ export const Route = createFileRoute("/api/chat")({
         const { ANDREA_SYSTEM, buildAndreaContext, buildAndreaQuickContext } = await import(
           "@/lib/andrea.server",
         );
-        const { createOpenAI } = await import("@ai-sdk/openai");
         const { createOpenAICompatible } = await import("@ai-sdk/openai-compatible");
         const agent = await import("@/lib/agent.server");
         const { routeAndreaTurn } = await import("@/lib/andrea-router.server");
         const { isSafeTool } = await import("@/lib/agent-tools");
 
-        // Vilken fil ska turen gå? Snabbfilen (Gemini) eller djupfilen (ChatGPT).
+        // Både snabb- och djupfilen använder användarens betalda Google AI Studio-konto.
         const uiMessages = body.messages as UIMessage[];
         const lastUser = [...uiMessages].reverse().find((m) => m.role === "user");
         const lastUserText = (lastUser?.parts ?? [])
@@ -120,29 +119,17 @@ export const Route = createFileRoute("/api/chat")({
         const lane =
           uiMessages.length > 24
             ? "deep"
-            : await routeAndreaTurn({ apiKey: key, lastUserText, hasAttachments });
+            : await routeAndreaTurn({ apiKey: geminiKey, lastUserText, hasAttachments });
 
         const context =
           lane === "quick"
             ? await buildAndreaQuickContext(userId)
             : await buildAndreaContext(userId);
-        // ChatGPT-modellerna körs via Lovable AI Gateways Responses API.
-        const openai = createOpenAI({
-          baseURL: "https://ai.gateway.lovable.dev/v1",
-          apiKey: key,
-          headers: {
-            "Lovable-API-Key": key,
-            "X-Lovable-AIG-SDK": "vercel-ai-sdk",
-          },
-        });
-        // Gemini-modellerna körs via chat completions på samma gateway.
+        // Googles officiella OpenAI-kompatibla API ger AI SDK streaming och verktygsanrop.
         const gemini = createOpenAICompatible({
-          name: "lovable",
-          baseURL: "https://ai.gateway.lovable.dev/v1",
-          headers: {
-            "Lovable-API-Key": key,
-            "X-Lovable-AIG-SDK": "vercel-ai-sdk",
-          },
+          name: "google-ai-studio",
+          baseURL: "https://generativelanguage.googleapis.com/v1beta/openai",
+          apiKey: geminiKey,
         });
 
         const allTools = {
@@ -869,28 +856,11 @@ export const Route = createFileRoute("/api/chat")({
         ) as typeof allTools;
 
         const result = streamText({
-          model: lane === "quick" ? gemini(ANDREA_QUICK_MODEL) : openai.responses(ANDREA_MODEL),
+          model: gemini(lane === "quick" ? ANDREA_QUICK_MODEL : ANDREA_MODEL),
           system: `${ANDREA_SYSTEM}\n\n${UPLOAD_RULES}\n\n${LANE_RULES}\n\n${pageRules(body.page ?? null)}\n\nAKTUELLT UNDERLAG FRÅN KALENDERN:\n${context}`,
           messages: await convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(lane === "quick" ? 20 : 80),
           tools,
-          ...(lane === "deep"
-            ? {
-                providerOptions: {
-                  openai: {
-                    // Gateway-modell-id känns inte igen som resonemangsmodell utan detta.
-                    forceReasoning: true,
-                    reasoningEffort: "medium",
-                    reasoningSummary: "auto",
-                    // Gateway är tillståndslös: historiken skickas med varje gång.
-                    store: false,
-                    include: ["reasoning.encrypted_content"],
-                    // Verktygsschemana använder valfria fält – kör inte strikt läge.
-                    strictJsonSchema: false,
-                  },
-                },
-              }
-            : {}),
         });
 
         return result.toUIMessageStreamResponse({

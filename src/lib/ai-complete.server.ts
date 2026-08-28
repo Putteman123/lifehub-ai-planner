@@ -3,22 +3,23 @@ import { ANDREA_FAST_MODEL } from "@/lib/ai-models";
 type JsonSchema = { name: string; schema: Record<string, unknown> };
 
 /**
- * Kör ett strömmande textanrop mot Lovable AI Gateway (chat completions).
- * Gemini-modeller använder /v1/chat/completions, inte Responses-API:t.
+ * Kör ett strömmande textanrop direkt mot användarens betalda Google AI Studio-konto.
  */
 export async function completeText(opts: {
-  apiKey: string;
+  apiKey?: string;
   system: string;
   input: string;
   jsonSchema?: JsonSchema;
   model?: string;
 }): Promise<string> {
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const apiKey = opts.apiKey ?? process.env["GEMINI_API_KEY"];
+  if (!apiKey) throw new Error("Google AI Studio API-nyckel saknas.");
+
+  const res = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Lovable-API-Key": opts.apiKey,
-      "X-Lovable-AIG-SDK": "fetch",
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: opts.model ?? ANDREA_FAST_MODEL,
@@ -43,9 +44,9 @@ export async function completeText(opts: {
   });
 
   if (!res.ok || !res.body) {
-    if (res.status === 429) throw new Error("För många AI-förfrågningar, försök snart igen.");
-    if (res.status === 402) throw new Error("AI-krediterna är slut.");
-    throw new Error(`AI-fel (${res.status})`);
+    const detail = await res.text().catch(() => "");
+    if (res.status === 429) throw new Error("Google AI-kvoten är tillfälligt nådd. Försök snart igen.");
+    throw new Error(`Google AI Studio-fel (${res.status}): ${detail}`);
   }
 
   const reader = res.body.getReader();

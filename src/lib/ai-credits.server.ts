@@ -1,5 +1,7 @@
-const GATEWAY_ENDPOINT = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const PROBE_MODEL = "google/gemini-3.1-flash-lite";
+import { ANDREA_MODEL } from "@/lib/ai-models";
+
+const GATEWAY_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+const PROBE_MODEL = ANDREA_MODEL;
 
 export type AiCreditStatus = {
   /** true = alla AI-anrop nekas just nu */
@@ -49,12 +51,12 @@ export async function probeAiCredits(): Promise<AiCreditStatus> {
   const checkedAt = new Date().toISOString();
   const base = {
     checkedAt,
-    service: "Lovable AI Gateway",
+    service: "Google AI Studio (primär)",
     endpoint: GATEWAY_ENDPOINT,
     model: PROBE_MODEL,
     monthlyLimit: ANDREA_MONTHLY_AI_LIMIT,
   };
-  const key = process.env["LOVABLE_API_KEY"];
+  const key = process.env["GEMINI_API_KEY"];
   if (!key) {
     return {
       ...base,
@@ -62,7 +64,7 @@ export async function probeAiCredits(): Promise<AiCreditStatus> {
       status: 401,
       type: "missing_api_key",
       title: "AI-nyckel saknas",
-      details: "AI-tjänsten är inte konfigurerad för appen.",
+       details: "Google AI Studio API-nyckeln är inte konfigurerad för appen.",
       requires: "admin_action",
       scope: "workspace",
       remaining: null,
@@ -78,13 +80,12 @@ export async function probeAiCredits(): Promise<AiCreditStatus> {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Lovable-API-Key": key,
-      "X-Lovable-AIG-SDK": "fetch",
+      Authorization: `Bearer ${key}`,
     },
     body: JSON.stringify({
       model: PROBE_MODEL,
       messages: [{ role: "user", content: "ping" }],
-      max_tokens: 1,
+      max_tokens: 4,
       stream: false,
     }),
   });
