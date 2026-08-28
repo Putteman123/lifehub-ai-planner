@@ -21,7 +21,7 @@ import {
   VolumeX,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 
 import andreaAvatar from "@/assets/andrea-avatar.png";
@@ -894,17 +894,28 @@ function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: 
               </div>
             </div>
           ) : null}
-          {error ? (
-            <div className="space-y-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-              <p>{errorText(error)}</p>
-              <button
-                type="button"
-                onClick={() => regenerate()}
-                className="rounded-md border border-destructive/40 px-2 py-1 font-medium"
-              >
-                Försök igen
-              </button>
-            </div>
+          {errorInfo ? (
+            errorInfo.code === "credits" ? (
+              <CreditStatus
+                info={errorInfo}
+                checking={checking}
+                onRetry={retry}
+                voiceNote={voiceNote}
+              />
+            ) : (
+              <div className="space-y-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+                <p>{errorInfo.text}</p>
+                {voiceNote ? <p className="text-destructive/80">{voiceNote}</p> : null}
+                <button
+                  type="button"
+                  onClick={retry}
+                  disabled={checking}
+                  className="rounded-md border border-destructive/40 px-2 py-1 font-medium disabled:opacity-60"
+                >
+                  {checking ? "Försöker…" : "Försök igen"}
+                </button>
+              </div>
+            )
           ) : null}
 
           <div ref={endRef} />
