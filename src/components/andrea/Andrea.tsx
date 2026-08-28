@@ -27,6 +27,12 @@ import ReactMarkdown from "react-markdown";
 import andreaAvatar from "@/assets/andrea-avatar.png";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  COMMAND_COSTS,
+  PRIORITY_LABEL,
+  commandsPerCredit,
+  formatCredits,
+} from "@/lib/ai-cost";
 import { getAiCreditStatus } from "@/lib/ai-credits.functions";
 import type { AiCreditStatus } from "@/lib/ai-credits.server";
 import { useVoice } from "@/lib/voice";
