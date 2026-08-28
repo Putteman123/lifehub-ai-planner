@@ -47,13 +47,58 @@ const SUGGESTIONS = [
   "Vad har barnen denna vecka?",
 ];
 
-function loadHistory(): UIMessage[] {
-  if (typeof window === "undefined") return [];
+type LoadedHistory = {
+  messages: UIMessage[];
+  repaired: boolean;
+};
+
+function repairStoredMessages(value: unknown): UIMessage[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((candidate, index) => {
+    if (!candidate || typeof candidate !== "object") return [];
+    const message = candidate as { id?: unknown; role?: unknown; parts?: unknown };
+    if (message.role !== "user" && message.role !== "assistant") return [];
+    if (!Array.isArray(message.parts)) return [];
+
+    // Sparad historik behöver bara texten. Äldre verktygs-, resonemangs- och
+    // fildelar kan vara ofullständiga efter en SDK-uppgradering och får därför
+    // inte skickas tillbaka till modellen efter en omladdning.
+    const parts = message.parts.flatMap((part) => {
+      if (!part || typeof part !== "object") return [];
+      const textPart = part as { type?: unknown; text?: unknown };
+      if (textPart.type !== "text" || typeof textPart.text !== "string") return [];
+      const text = textPart.text.trim();
+      return text ? [{ type: "text" as const, text }] : [];
+    });
+
+    if (parts.length === 0) return [];
+    return [
+      {
+        id: typeof message.id === "string" && message.id ? message.id : `history-${index}`,
+        role: message.role,
+        parts,
+      } satisfies UIMessage,
+    ];
+  });
+}
+
+function loadHistory(): LoadedHistory {
+  if (typeof window === "undefined") return { messages: [], repaired: false };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as UIMessage[]) : [];
+    if (!raw) return { messages: [], repaired: false };
+    const parsed = JSON.parse(raw) as unknown;
+    const messages = repairStoredMessages(parsed);
+    const repaired = JSON.stringify(parsed) !== JSON.stringify(messages);
+    if (repaired) {
+      if (messages.length > 0) localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      else localStorage.removeItem(STORAGE_KEY);
+    }
+    return { messages, repaired };
   } catch {
-    return [];
+    localStorage.removeItem(STORAGE_KEY);
+    return { messages: [], repaired: true };
   }
 }
 
@@ -660,7 +705,7 @@ function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: 
     addToolApprovalResponse,
   } = useChat({
     id: "andrea-lifehub",
-    messages: initial,
+    messages: initial.messages,
     transport,
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
     onFinish: () => {
@@ -918,6 +963,12 @@ function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: 
         </header>
 
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
+          {initial.repaired ? (
+            <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+              Jag reparerade en äldre del av chatthistoriken. Din senaste giltiga konversation är
+              kvar och Andrea kan svara igen.
+            </p>
+          ) : null}
           {voice.speaking ? (
             <div className="sticky top-0 z-10 flex justify-center">
               <button
