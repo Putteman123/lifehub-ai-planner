@@ -60,9 +60,17 @@ export function useScanMail() {
   });
 }
 
-export type ApproveInput = Parameters<typeof approveMailFinding>[0] extends { data: infer D }
-  ? D
-  : never;
+export type ApproveInput = {
+  id: string;
+  kind: "faktura" | "kvitto" | "prenumeration";
+  merchant: string;
+  amount: number;
+  category: string | null;
+  dueDate: string | null;
+  occurredAt: string | null;
+  accountId: string | null;
+  intervalMonths: number;
+};
 
 /** Godkänner ett fynd och lägger in det i systemet. */
 export function useApproveFinding() {

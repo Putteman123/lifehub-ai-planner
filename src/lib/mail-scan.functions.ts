@@ -54,7 +54,12 @@ export const approveMailFinding = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const patch: Record<string, unknown> = { status: "approved" };
+    const patch: {
+      status: string;
+      created_todo_id?: string;
+      created_spend_id?: string;
+      created_expense_id?: string;
+    } = { status: "approved" };
     let message = "";
 
     if (data.kind === "faktura") {
@@ -77,7 +82,7 @@ export const approveMailFinding = createServerFn({ method: "POST" })
         .select("id")
         .single();
       if (error) throw new Error(error.message);
-      patch["created_todo_id"] = todo.id;
+      patch.created_todo_id = todo.id;
       message = "Fakturan ligger nu som uppgift i Att göra.";
     }
 
@@ -96,7 +101,7 @@ export const approveMailFinding = createServerFn({ method: "POST" })
         .select("id")
         .single();
       if (error) throw new Error(error.message);
-      patch["created_spend_id"] = spend.id;
+      patch.created_spend_id = spend.id;
 
       if (data.accountId) {
         const { data: account } = await supabase
@@ -138,7 +143,7 @@ export const approveMailFinding = createServerFn({ method: "POST" })
         .select("*")
         .single();
       if (error) throw new Error(error.message);
-      patch["created_expense_id"] = expense.id;
+      patch.created_expense_id = expense.id;
 
       const { syncFixedEvents } = await import("@/lib/fixed-calendar.server");
       await syncFixedEvents(supabase, userId, expense, []);
