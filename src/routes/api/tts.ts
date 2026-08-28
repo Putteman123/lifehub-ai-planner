@@ -54,6 +54,11 @@ export const Route = createFileRoute("/api/tts")({
               headers: { "Content-Type": "audio/mpeg", "Cache-Control": "no-store" },
             });
           }
+          console.error(
+            "ElevenLabs TTS misslyckades:",
+            resp.status,
+            await resp.text().catch(() => ""),
+          );
           // Faller vidare till Lovable-rösten om ElevenLabs inte svarar.
         }
 
