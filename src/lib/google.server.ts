@@ -207,6 +207,54 @@ export async function gmailList(query: string, max = 8): Promise<MailSummary[]> 
   return details;
 }
 
+type GmailPart = {
+  mimeType?: string;
+  body?: { data?: string };
+  parts?: GmailPart[];
+};
+
+function decodeBase64Url(data: string) {
+  const normalized = data.replace(/-/g, "+").replace(/_/g, "/");
+  try {
+    const binary = atob(normalized);
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+    return new TextDecoder("utf-8").decode(bytes);
+  } catch {
+    return "";
+  }
+}
+
+function collectText(part: GmailPart | undefined, want: string): string {
+  if (!part) return "";
+  if (part.mimeType === want && part.body?.data) return decodeBase64Url(part.body.data);
+  for (const child of part.parts ?? []) {
+    const found = collectText(child, want);
+    if (found) return found;
+  }
+  return "";
+}
+
+/** Hämtar brödtexten (ren text) för ett mejl, max ~6000 tecken. */
+export async function gmailMessageBody(id: string): Promise<string> {
+  const msg = (await call("mail", `/gmail/v1/users/me/messages/${id}?format=full`)) as {
+    payload?: GmailPart;
+    snippet?: string;
+  };
+  const plain = collectText(msg.payload, "text/plain");
+  const html = plain ? "" : collectText(msg.payload, "text/html");
+  const text =
+    plain ||
+    html
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&") ||
+    msg.snippet ||
+    "";
+  return text.replace(/\s+\n/g, "\n").replace(/[ \t]{2,}/g, " ").trim().slice(0, 6000);
+}
+
 function base64Url(value: string) {
   return btoa(unescape(encodeURIComponent(value)))
     .replace(/\+/g, "-")
