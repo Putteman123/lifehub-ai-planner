@@ -538,9 +538,75 @@ function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: 
   }
 
 
-  const voice = useVoice((text) => submit(text));
+  const voiceModeRef = useRef(false);
+  const voice = useVoice((text) => {
+    voiceModeRef.current = true;
+    submit(text);
+  });
   const spokenRef = useRef<string | null>(null);
   const autoVoiceRef = useRef(false);
+
+  const errorInfo = error ? parseError(error) : null;
+  const [checking, setChecking] = useState(false);
+  const [voiceNote, setVoiceNote] = useState<string | null>(null);
+  const notifiedRef = useRef<string | null>(null);
+
+  const retry = useCallback(() => {
+    setChecking(true);
+    voice.stopSpeaking();
+    void regenerate();
+  }, [regenerate, voice]);
+
+  // Sluta "kontrollera" så snart ett nytt försök har gått igenom eller fallerat.
+  useEffect(() => {
+    if (status === "streaming" || status === "ready" || status === "error") setChecking(false);
+  }, [status]);
+
+  // Handsfree efter AI-fel: mikrofonen får aldrig dö, och Andrea säger till en gång.
+  useEffect(() => {
+    if (!errorInfo) {
+      setVoiceNote(null);
+      notifiedRef.current = null;
+      return;
+    }
+    voice.stopSpeaking();
+    if (!voiceModeRef.current) return;
+
+    if (voice.supported && !voice.listening) voice.startListening();
+    setVoiceNote(
+      'Mikrofonen är kvar på – säg "försök igen" när krediterna är påfyllda, eller "tyst" för att pausa.',
+    );
+    if (notifiedRef.current !== errorInfo.code) {
+      notifiedRef.current = errorInfo.code;
+      if (voice.ttsEnabled) {
+        voice.speak(
+          errorInfo.code === "credits"
+            ? "AI-krediterna är slut. Fyll på, säg sedan försök igen så fortsätter jag."
+            : errorInfo.text,
+        );
+      }
+    }
+  }, [errorInfo, voice]);
+
+  // Rösten kan starta om samtalet utan att du rör skärmen.
+  useEffect(() => {
+    if (!errorInfo) return;
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== "user") return;
+    const text = textOf(last).toLowerCase();
+    if (/(försök igen|forsok igen|prova igen|fortsätt|kör igen)/.test(text)) retry();
+  }, [messages, errorInfo, retry]);
+
+  // Tillbaka i appen efter påfyllning: prova automatiskt en gång.
+  useEffect(() => {
+    if (!errorInfo || errorInfo.code !== "credits") return;
+    const onVisible = () => {
+      if (document.visibilityState === "visible") retry();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [errorInfo, retry]);
+
 
   // Håll in Andrea-knappen: panelen öppnas direkt i röstläge.
   useEffect(() => {
