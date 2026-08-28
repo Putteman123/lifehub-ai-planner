@@ -1,6 +1,6 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import type { LanguageModel } from "ai";
+import type { LanguageModelV4 } from "@ai-sdk/provider";
 
 const RUN_ID_HEADER = "X-Lovable-AIG-Run-ID";
 
@@ -65,10 +65,10 @@ export function createLovableResponsesModel(apiKey: string, initialRunId?: strin
 }
 
 /** Byter leverantör om primärmodellen avvisar anropet innan streamen startar. */
-export function withModelFallback(primary: LanguageModel, fallback: LanguageModel): LanguageModel {
-  if (primary.specificationVersion !== "v4" || fallback.specificationVersion !== "v4") {
-    return primary;
-  }
+export function withModelFallback(
+  primary: LanguageModelV4,
+  fallback: LanguageModelV4,
+): LanguageModelV4 {
   return {
     specificationVersion: "v4",
     provider: `${primary.provider}+fallback`,
