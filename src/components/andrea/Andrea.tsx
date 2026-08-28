@@ -363,6 +363,7 @@ function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: 
     error,
     setMessages,
     stop,
+    regenerate,
     addToolApprovalResponse,
   } = useChat({
     id: "andrea-lifehub",
