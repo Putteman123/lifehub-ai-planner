@@ -437,6 +437,27 @@ export const Route = createFileRoute("/api/chat")({
                 return files.lookupPrices(userId, query, days ?? 30);
               },
             }),
+            scan_mail_for_bills: tool({
+              description:
+                "Sök igenom inkorgen efter fakturor att betala, kortkvitton och prenumerationer. Fynden hamnar i godkännandekön under Pengar – du lägger aldrig in dem själv.",
+              inputSchema: z.object({
+                max: z.number().nullable().describe("Antal mejl att gå igenom, standard 15"),
+              }),
+              execute: async ({ max }) => {
+                const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+                const { scanInbox } = await import("@/lib/mail-scan.server");
+                const res = await scanInbox(supabaseAdmin, userId, { max: max ?? 15 });
+                if (!res.connected) return { ok: false, message: "Gmail är inte kopplat." };
+                const { data: pending } = await supabaseAdmin
+                  .from("mail_findings")
+                  .select("kind, merchant, amount, due_date")
+                  .eq("user_id", userId)
+                  .eq("status", "pending")
+                  .order("created_at", { ascending: false })
+                  .limit(20);
+                return { ok: true, ...res, pending: pending ?? [] };
+              },
+            }),
             log_receipt_place: tool({
               description:
                 "Markera butiken från ett kvitto som besök på kartan och lägg in köpet i kalendern.",
