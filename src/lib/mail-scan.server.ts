@@ -118,3 +118,83 @@ export async function classifyMail(input: {
     summary: clean(parsed["summary"]),
   };
 }
+
+type ScanClient = {
+  from: (table: string) => any;
+};
+
+/**
+ * Går igenom inkorgen och köar nya ekonomifynd. Delas av serverfunktionen
+ * och Andreas verktyg.
+ */
+export async function scanInbox(
+  supabase: ScanClient,
+  userId: string,
+  opts?: { max?: number; query?: string },
+): Promise<{ connected: boolean; scanned: number; created: number }> {
+  const { gmailList, gmailMessageBody, hasGoogle, mailQueryWithRules } = await import(
+    "./google.server"
+  );
+  if (!hasGoogle("mail")) return { connected: false, scanned: 0, created: 0 };
+
+  const base =
+    opts?.query ??
+    "newer_than:30d (faktura OR räkning OR kvitto OR betalning OR prenumeration OR abonnemang OR invoice OR receipt)";
+  const query = await mailQueryWithRules(base);
+  const mails = await gmailList(query, Math.min(opts?.max ?? 15, 25));
+  if (!mails.length) return { connected: true, scanned: 0, created: 0 };
+
+  const { data: known } = await supabase
+    .from("mail_findings")
+    .select("message_id")
+    .eq("user_id", userId)
+    .in(
+      "message_id",
+      mails.map((m) => m.id),
+    );
+  const seen = new Set(((known ?? []) as { message_id: string }[]).map((row) => row.message_id));
+  const fresh = mails.filter((mail) => !seen.has(mail.id));
+  if (!fresh.length) return { connected: true, scanned: mails.length, created: 0 };
+
+  let created = 0;
+  for (const mail of fresh) {
+    try {
+      const body = await gmailMessageBody(mail.id);
+      const result = await classifyMail({
+        from: mail.from,
+        subject: mail.subject,
+        date: mail.date,
+        body,
+      });
+      if (!result) continue;
+
+      const occurred = result.occurred_at ?? (mail.date ? new Date(mail.date).toISOString() : null);
+      const occurredIso = occurred && !Number.isNaN(new Date(occurred).getTime())
+        ? new Date(occurred).toISOString()
+        : null;
+
+      const { error } = await supabase.from("mail_findings").insert({
+        user_id: userId,
+        message_id: mail.id,
+        kind: result.kind,
+        sender: mail.from,
+        subject: mail.subject,
+        merchant: result.merchant,
+        amount: result.amount,
+        currency: result.currency ?? "SEK",
+        due_date: result.due_date,
+        occurred_at: occurredIso,
+        reference: result.reference,
+        category: result.category,
+        summary: result.summary,
+        raw_ai: result,
+        status: "pending",
+      });
+      if (!error) created += 1;
+    } catch (error) {
+      console.error("mail-scan", mail.id, error);
+    }
+  }
+
+  return { connected: true, scanned: fresh.length, created };
+}
