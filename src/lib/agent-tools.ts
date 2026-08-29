@@ -14,6 +14,7 @@ export const APPROVAL_TOOL_NAMES = [
   "delete_visit",
   "vault_delete",
   "send_mail",
+  "send_sms",
 ] as const;
 
 const APPROVAL_TOOLS = new Set<string>(APPROVAL_TOOL_NAMES);
