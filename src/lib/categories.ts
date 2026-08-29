@@ -188,6 +188,7 @@ export function mergeCategories(custom: CustomCategoryRow[] = []): CategoryOptio
         dot: palette.dot,
         chip: palette.chip,
         bar: palette.bar,
+        group: guessGroup(row.label),
         custom: true,
       } satisfies CategoryOption;
     });
