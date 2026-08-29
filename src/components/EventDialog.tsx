@@ -66,6 +66,11 @@ export function EventDialog({
   const createCategory = useCreateCategory();
   const [adding, setAdding] = useState(false);
   const [newLabel, setNewLabel] = useState("");
+  const askAi = useServerFn(suggestCategoryAi);
+  const [aiReason, setAiReason] = useState<string | null>(null);
+  const categoryTouched = useRef(false);
+  const groups = useMemo(() => groupCategories(categoryOptions), [categoryOptions]);
+
 
 
 
