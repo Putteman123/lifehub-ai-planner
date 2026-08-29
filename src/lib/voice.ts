@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -254,15 +254,27 @@ export function useVoice(onTranscript: (text: string) => void) {
     [silence, fallbackSpeak],
   );
 
-  return {
-    supported,
-    listening,
-    startListening,
-    stopListening,
-    ttsEnabled,
-    setTtsEnabled,
-    speaking,
-    speak,
-    stopSpeaking: silence,
-  };
+  return useMemo(
+    () => ({
+      supported,
+      listening,
+      startListening,
+      stopListening,
+      ttsEnabled,
+      setTtsEnabled,
+      speaking,
+      speak,
+      stopSpeaking: silence,
+    }),
+    [
+      listening,
+      silence,
+      speak,
+      speaking,
+      startListening,
+      stopListening,
+      supported,
+      ttsEnabled,
+    ],
+  );
 }

@@ -906,8 +906,8 @@ function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: 
     if (!errorInfo) return;
     const last = messages[messages.length - 1];
     if (!last || last.role !== "user") return;
-    const text = textOf(last).toLowerCase();
-    if (!/(försök igen|forsok igen|prova igen|fortsätt|kör igen)/.test(text)) return;
+    const text = textOf(last).toLowerCase().trim().replace(/[.!?]+$/g, "");
+    if (!/^(försök igen|forsok igen|prova igen|fortsätt|kör igen)$/.test(text)) return;
     const retryKey = `${last.id}:${errorInfo.code}:${errorInfo.status}`;
     if (voiceRetryRef.current === retryKey) return;
     voiceRetryRef.current = retryKey;
