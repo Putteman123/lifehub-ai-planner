@@ -1,5 +1,6 @@
-import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Plus, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -14,14 +15,18 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { type Category, type EventRow } from "@/lib/categories";
+import { groupCategories, type Category, type EventRow } from "@/lib/categories";
 import { suggestCategory } from "@/lib/calendar";
+import { learnCategory, learnedCategory } from "@/lib/category-learn";
+import { suggestCategoryAi } from "@/lib/categorize.functions";
 import { useCalendars, useCases, useChildren, useDeleteRow, useUpsertRow } from "@/lib/db";
 import { useCategoryOptions, useCreateCategory } from "@/lib/event-categories";
 
