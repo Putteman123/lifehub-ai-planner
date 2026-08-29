@@ -76,8 +76,8 @@
   --color-nav-kalendrar: var(--nav-kalendrar);
   --color-nav-pengar: var(--nav-pengar);
 
-  --font-sans: "Figtree", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-display: "Outfit", "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Space Grotesk", "DM Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
