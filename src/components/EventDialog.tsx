@@ -284,6 +284,9 @@ export function EventDialog({
                     setAdding(true);
                     return;
                   }
+                  categoryTouched.current = true;
+                  setAiReason(null);
+                  if (form.title.trim().length >= 3) learnCategory(form.title, v);
                   setForm({ ...form, category: v as Category });
                 }}
               >
@@ -291,13 +294,18 @@ export function EventDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {categoryOptions.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      <span className="flex items-center gap-2">
-                        <span className={`size-2.5 rounded-full ${c.dot}`} />
-                        {c.label}
-                      </span>
-                    </SelectItem>
+                  {groups.map((group) => (
+                    <SelectGroup key={group.value}>
+                      <SelectLabel>{group.label}</SelectLabel>
+                      {group.items.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>
+                          <span className="flex items-center gap-2">
+                            <span className={`size-2.5 rounded-full ${c.dot}`} />
+                            {c.label}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   ))}
                   <SelectItem value={NEW_CATEGORY}>
                     <span className="flex items-center gap-2 text-primary">
@@ -305,6 +313,7 @@ export function EventDialog({
                     </span>
                   </SelectItem>
                 </SelectContent>
+
               </Select>
             )}
           </div>
