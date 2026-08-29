@@ -123,6 +123,36 @@ export function EventDialog({
     });
   }, [open, event, defaultDate, defaultCategory, defaultChildId, defaultCaseId]);
 
+  useEffect(() => {
+    if (!open) return;
+    categoryTouched.current = false;
+    setAiReason(null);
+  }, [open, event]);
+
+  // AI föreslår kategori kort efter att du slutat skriva – bara för nya händelser
+  // och bara om du inte redan valt kategori själv.
+  const title = form.title;
+  useEffect(() => {
+    if (event || categoryTouched.current || title.trim().length < 6) return;
+    const options = categoryOptions.map((c) => ({ value: String(c.value), label: c.label }));
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      void askAi({ data: { text: title, options } })
+        .then((res) => {
+          if (cancelled || !res.category || categoryTouched.current) return;
+          setForm((prev) => ({ ...prev, category: res.category as Category }));
+          setAiReason(res.reason || null);
+        })
+        .catch(() => undefined);
+    }, 700);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [title, event, categoryOptions, askAi]);
+
+
+
   function addCategory() {
     createCategory.mutate(newLabel, {
       onSuccess: (row) => {
