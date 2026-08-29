@@ -26,6 +26,7 @@ import { Route as AuthenticatedKalendrarRouteImport } from './routes/_authentica
 import { Route as AuthenticatedKassaskapRouteImport } from './routes/_authenticated/kassaskap'
 import { Route as AuthenticatedPengarRouteImport } from './routes/_authenticated/pengar'
 import { Route as AuthenticatedPlatserRouteImport } from './routes/_authenticated/platser'
+import { Route as AuthenticatedSmsRouteImport } from './routes/_authenticated/sms'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiTtsRouteImport } from './routes/api/tts'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
@@ -119,6 +120,11 @@ const AuthenticatedPlatserRoute = AuthenticatedPlatserRouteImport.update({
   path: '/platser',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSmsRoute = AuthenticatedSmsRouteImport.update({
+  id: '/sms',
+  path: '/sms',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
@@ -168,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/kassaskap': typeof AuthenticatedKassaskapRoute
   '/pengar': typeof AuthenticatedPengarRoute
   '/platser': typeof AuthenticatedPlatserRoute
+  '/sms': typeof AuthenticatedSmsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/tts': typeof ApiTtsRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -192,6 +199,7 @@ export interface FileRoutesByTo {
   '/kassaskap': typeof AuthenticatedKassaskapRoute
   '/pengar': typeof AuthenticatedPengarRoute
   '/platser': typeof AuthenticatedPlatserRoute
+  '/sms': typeof AuthenticatedSmsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/tts': typeof ApiTtsRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -218,6 +226,7 @@ export interface FileRoutesById {
   '/_authenticated/kassaskap': typeof AuthenticatedKassaskapRoute
   '/_authenticated/pengar': typeof AuthenticatedPengarRoute
   '/_authenticated/platser': typeof AuthenticatedPlatserRoute
+  '/_authenticated/sms': typeof AuthenticatedSmsRoute
   '/api/chat': typeof ApiChatRoute
   '/api/tts': typeof ApiTtsRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -244,6 +253,7 @@ export interface FileRouteTypes {
     | '/kassaskap'
     | '/pengar'
     | '/platser'
+    | '/sms'
     | '/api/chat'
     | '/api/tts'
     | '/.lovable/oauth/consent'
@@ -268,6 +278,7 @@ export interface FileRouteTypes {
     | '/kassaskap'
     | '/pengar'
     | '/platser'
+    | '/sms'
     | '/api/chat'
     | '/api/tts'
     | '/.lovable/oauth/consent'
@@ -293,6 +304,7 @@ export interface FileRouteTypes {
     | '/_authenticated/kassaskap'
     | '/_authenticated/pengar'
     | '/_authenticated/platser'
+    | '/_authenticated/sms'
     | '/api/chat'
     | '/api/tts'
     | '/.lovable/oauth/consent'
@@ -437,6 +449,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPlatserRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sms': {
+      id: '/_authenticated/sms'
+      path: '/sms'
+      fullPath: '/sms'
+      preLoaderRoute: typeof AuthenticatedSmsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/chat': {
       id: '/api/chat'
       path: '/api/chat'
@@ -494,6 +513,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedKassaskapRoute: typeof AuthenticatedKassaskapRoute
   AuthenticatedPengarRoute: typeof AuthenticatedPengarRoute
   AuthenticatedPlatserRoute: typeof AuthenticatedPlatserRoute
+  AuthenticatedSmsRoute: typeof AuthenticatedSmsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -508,6 +528,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedKassaskapRoute: AuthenticatedKassaskapRoute,
   AuthenticatedPengarRoute: AuthenticatedPengarRoute,
   AuthenticatedPlatserRoute: AuthenticatedPlatserRoute,
+  AuthenticatedSmsRoute: AuthenticatedSmsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
