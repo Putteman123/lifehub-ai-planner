@@ -325,6 +325,51 @@ export const Route = createFileRoute("/api/chat")({
                 return { ok: true, message: `Mejlet till ${to} är skickat.` };
               },
             }),
+
+            // --- SMS (synkas från iPhone via Genvägar) ---
+            sms_search: tool({
+              description:
+                "Sök i SMS-historiken på text, kontaktnamn eller telefonnummer. Returnerar de senaste meddelandena.",
+              inputSchema: z.object({
+                query: z.string().nullable(),
+                contact: z.string().nullable(),
+                limit: z.number().int().min(1).max(50).nullable(),
+              }),
+              execute: async ({ query, contact, limit }) => {
+                const { searchSms } = await import("@/lib/sms.server");
+                return searchSms(userId, { query, contact, limit: limit ?? 20 });
+              },
+            }),
+            sms_unread: tool({
+              description: "Visa olästa inkommande SMS.",
+              inputSchema: z.object({ limit: z.number().int().min(1).max(50).nullable() }),
+              execute: async ({ limit }) => {
+                const { unreadSms } = await import("@/lib/sms.server");
+                return unreadSms(userId, limit ?? 20);
+              },
+            }),
+            sms_mark_read: tool({
+              description: "Markera angivna inkommande SMS som lästa.",
+              inputSchema: z.object({ ids: z.array(z.string()) }),
+              execute: async ({ ids }) => {
+                const { markSmsRead } = await import("@/lib/sms.server");
+                return markSmsRead(userId, ids);
+              },
+            }),
+            send_sms: tool({
+              description:
+                "Lägg ett SMS i utkorgen. Kräver alltid Patricks godkännande. Meddelandet skickas från iPhone nästa gång genvägen körs.",
+              inputSchema: z.object({
+                phone: z.string(),
+                contact: z.string().nullable(),
+                body: z.string(),
+              }),
+              needsApproval: true,
+              execute: async ({ phone, contact, body }) => {
+                const { queueSms } = await import("@/lib/sms.server");
+                return queueSms(userId, { phone, contact, body });
+              },
+            }),
             create_google_doc: tool({
               description: "Skapa ett nytt Google-dokument med given titel och text.",
               inputSchema: z.object({ title: z.string(), text: z.string() }),
