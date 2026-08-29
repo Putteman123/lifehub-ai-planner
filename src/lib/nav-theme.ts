@@ -3,6 +3,7 @@ import {
   CalendarDays,
   LayoutDashboard,
   ListTodo,
+  MessageSquare,
   MapPin,
   Scale,
   Settings2,
