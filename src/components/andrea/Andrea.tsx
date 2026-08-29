@@ -23,7 +23,7 @@ import {
   VolumeX,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 
 import andreaAvatar from "@/assets/andrea-avatar.png";
@@ -832,63 +832,94 @@ function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: 
   const spokenRef = useRef<string | null>(null);
   const autoVoiceRef = useRef(false);
 
-  const errorInfo = error ? parseError(error) : null;
+  const errorInfo = useMemo(() => (error ? parseError(error) : null), [error]);
   const [checking, setChecking] = useState(false);
   const [voiceNote, setVoiceNote] = useState<string | null>(null);
   const notifiedRef = useRef<string | null>(null);
+  const retryInFlightRef = useRef(false);
+  const voiceRetryRef = useRef<string | null>(null);
+  const {
+    listening: voiceListening,
+    speak: speakVoice,
+    startListening: startVoiceListening,
+    stopSpeaking: stopVoiceSpeaking,
+    supported: voiceSupported,
+    ttsEnabled: voiceTtsEnabled,
+  } = voice;
 
   const retry = useCallback(() => {
+    if (retryInFlightRef.current) return;
+    retryInFlightRef.current = true;
     setChecking(true);
-    voice.stopSpeaking();
-    void regenerate();
-  }, [regenerate, voice]);
+    stopVoiceSpeaking();
+    void regenerate().catch(() => {
+      retryInFlightRef.current = false;
+      setChecking(false);
+    });
+  }, [regenerate, stopVoiceSpeaking]);
 
   // Sluta "kontrollera" så snart ett nytt försök har gått igenom eller fallerat.
   useEffect(() => {
-    if (status === "streaming" || status === "ready" || status === "error") setChecking(false);
+    if (status === "streaming" || status === "ready" || status === "error") {
+      retryInFlightRef.current = false;
+      setChecking(false);
+    }
   }, [status]);
 
   // Handsfree efter AI-fel: mikrofonen får aldrig dö, och Andrea säger till en gång.
   useEffect(() => {
     if (!errorInfo) {
-      setVoiceNote(null);
+      setVoiceNote((current) => (current === null ? current : null));
       notifiedRef.current = null;
+      voiceRetryRef.current = null;
       return;
     }
-    voice.stopSpeaking();
+    stopVoiceSpeaking();
     if (!voiceModeRef.current) return;
 
-    if (voice.supported && !voice.listening) voice.startListening();
-    setVoiceNote(
-      'Mikrofonen är kvar på – säg "försök igen" när krediterna är påfyllda, eller "tyst" för att pausa.',
-    );
+    if (voiceSupported && !voiceListening) startVoiceListening();
+    const nextVoiceNote =
+      'Mikrofonen är kvar på – säg "försök igen" när krediterna är påfyllda, eller "tyst" för att pausa.';
+    setVoiceNote((current) => (current === nextVoiceNote ? current : nextVoiceNote));
     if (notifiedRef.current !== errorInfo.code) {
       notifiedRef.current = errorInfo.code;
-      if (voice.ttsEnabled) {
-        voice.speak(
+      if (voiceTtsEnabled) {
+        speakVoice(
           errorInfo.code === "credits"
             ? "AI-krediterna är slut. Fyll på, säg sedan försök igen så fortsätter jag."
             : errorInfo.text,
         );
       }
     }
-  }, [errorInfo, voice]);
+  }, [
+    errorInfo,
+    speakVoice,
+    startVoiceListening,
+    stopVoiceSpeaking,
+    voiceListening,
+    voiceSupported,
+    voiceTtsEnabled,
+  ]);
 
   // Rösten kan starta om samtalet utan att du rör skärmen.
   useEffect(() => {
     if (!errorInfo) return;
     const last = messages[messages.length - 1];
     if (!last || last.role !== "user") return;
-    const text = textOf(last).toLowerCase();
-    if (/(försök igen|forsok igen|prova igen|fortsätt|kör igen)/.test(text)) retry();
+    const text = textOf(last).toLowerCase().trim().replace(/[.!?]+$/g, "");
+    if (!/^(försök igen|forsok igen|prova igen|fortsätt|kör igen)$/.test(text)) return;
+    const retryKey = `${last.id}:${errorInfo.code}:${errorInfo.status}`;
+    if (voiceRetryRef.current === retryKey) return;
+    voiceRetryRef.current = retryKey;
+    retry();
   }, [messages, errorInfo, retry]);
 
   // Håll in Andrea-knappen: panelen öppnas direkt i röstläge.
   useEffect(() => {
-    if (!autoVoice || autoVoiceRef.current || !voice.supported) return;
+    if (!autoVoice || autoVoiceRef.current || !voiceSupported) return;
     autoVoiceRef.current = true;
-    voice.startListening();
-  }, [autoVoice, voice]);
+    startVoiceListening();
+  }, [autoVoice, startVoiceListening, voiceSupported]);
 
   useEffect(() => {
     taRef.current?.focus();
@@ -911,14 +942,14 @@ function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: 
 
   // Läs upp Andreas senaste svar när uppläsning är på.
   useEffect(() => {
-    if (!voice.ttsEnabled || isLoading) return;
+    if (!voiceTtsEnabled || isLoading) return;
     const last = messages[messages.length - 1];
     if (!last || last.role !== "assistant") return;
     const text = textOf(last);
     if (!text || spokenRef.current === last.id) return;
     spokenRef.current = last.id;
-    voice.speak(text);
-  }, [messages, isLoading, voice]);
+    speakVoice(text);
+  }, [messages, isLoading, speakVoice, voiceTtsEnabled]);
 
   const statusLabel = isLoading
     ? "Tänker…"
