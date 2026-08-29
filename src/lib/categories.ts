@@ -10,12 +10,28 @@ export type ReminderRow = Tables<"reminders">;
 export type Category = EventRow["category"];
 export type CustomCategoryRow = Tables<"event_categories">;
 
+/** Övergripande grupper som håller ihop kategorier i hela appen. */
+export type CategoryGroup = "arbete" | "familj" | "ekonomi" | "juridik" | "privat";
+
+export const CATEGORY_GROUPS: { value: CategoryGroup; label: string; accent: string }[] = [
+  { value: "arbete", label: "Arbete", accent: "text-cat-jobb" },
+  { value: "familj", label: "Familj", accent: "text-cat-barn" },
+  { value: "ekonomi", label: "Ekonomi", accent: "text-cat-ekonomi" },
+  { value: "juridik", label: "Juridik", accent: "text-cat-jurist" },
+  { value: "privat", label: "Privat", accent: "text-cat-privat" },
+];
+
+export function groupLabel(group: CategoryGroup) {
+  return CATEGORY_GROUPS.find((g) => g.value === group)?.label ?? "Privat";
+}
+
 export type CategoryOption = {
   value: Category;
   label: string;
   dot: string;
   chip: string;
   bar: string;
+  group?: CategoryGroup;
   custom?: boolean;
 };
 
@@ -100,10 +116,10 @@ export function nextPaletteToken(usedCount: number) {
 }
 
 export const CATEGORIES: CategoryOption[] = [
-
   {
     value: "jobb",
     label: "Heltidsjobb",
+    group: "arbete",
     dot: "bg-cat-jobb",
     chip: "bg-cat-jobb/12 text-cat-jobb",
     bar: "border-l-cat-jobb",
@@ -111,6 +127,7 @@ export const CATEGORIES: CategoryOption[] = [
   {
     value: "ledig",
     label: "Ledig",
+    group: "privat",
     dot: "bg-cat-ledig",
     chip: "bg-cat-ledig/12 text-cat-ledig",
     bar: "border-l-cat-ledig",
@@ -118,6 +135,7 @@ export const CATEGORIES: CategoryOption[] = [
   {
     value: "jurist",
     label: "Jurist",
+    group: "juridik",
     dot: "bg-cat-jurist",
     chip: "bg-cat-jurist/12 text-cat-jurist",
     bar: "border-l-cat-jurist",
@@ -125,6 +143,7 @@ export const CATEGORIES: CategoryOption[] = [
   {
     value: "barn",
     label: "Barn",
+    group: "familj",
     dot: "bg-cat-barn",
     chip: "bg-cat-barn/15 text-cat-barn",
     bar: "border-l-cat-barn",
@@ -132,6 +151,7 @@ export const CATEGORIES: CategoryOption[] = [
   {
     value: "privat",
     label: "Privat",
+    group: "privat",
     dot: "bg-cat-privat",
     chip: "bg-cat-privat/12 text-cat-privat",
     bar: "border-l-cat-privat",
@@ -139,11 +159,31 @@ export const CATEGORIES: CategoryOption[] = [
   {
     value: "viktigt",
     label: "Viktigt",
+    group: "privat",
     dot: "bg-cat-viktigt",
     chip: "bg-cat-viktigt/12 text-cat-viktigt",
     bar: "border-l-cat-viktigt",
   },
 ];
+
+/** Grupperar kategorier för väljare, med "senast använda" först. */
+export function groupCategories(options: CategoryOption[]) {
+  return CATEGORY_GROUPS.map((group) => ({
+    ...group,
+    items: options.filter((o) => (o.group ?? "privat") === group.value),
+  })).filter((g) => g.items.length > 0);
+}
+
+
+/** Placerar en egen kategori i rätt grupp utifrån namnet. */
+export function guessGroup(label: string): CategoryGroup {
+  const t = label.toLowerCase();
+  if (/(jobb|arbet|skift|pass|möte|kontor|uppdrag)/.test(t)) return "arbete";
+  if (/(barn|familj|skola|förskola|hämt|lämn)/.test(t)) return "familj";
+  if (/(pengar|utgift|faktur|köp|lån|spar|ekonomi|abonnemang|prenumer)/.test(t)) return "ekonomi";
+  if (/(jurist|advokat|domstol|rätteg|juridik)/.test(t)) return "juridik";
+  return "privat";
+}
 
 /** Slår ihop inbyggda kategorier med användarens egna. */
 export function mergeCategories(custom: CustomCategoryRow[] = []): CategoryOption[] {
@@ -158,6 +198,7 @@ export function mergeCategories(custom: CustomCategoryRow[] = []): CategoryOptio
         dot: palette.dot,
         chip: palette.chip,
         bar: palette.bar,
+        group: guessGroup(row.label),
         custom: true,
       } satisfies CategoryOption;
     });

@@ -1,5 +1,6 @@
-import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Plus, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -14,14 +15,18 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { type Category, type EventRow } from "@/lib/categories";
+import { groupCategories, type Category, type EventRow } from "@/lib/categories";
 import { suggestCategory } from "@/lib/calendar";
+import { learnCategory, learnedCategory } from "@/lib/category-learn";
+import { suggestCategoryAi } from "@/lib/categorize.functions";
 import { useCalendars, useCases, useChildren, useDeleteRow, useUpsertRow } from "@/lib/db";
 import { useCategoryOptions, useCreateCategory } from "@/lib/event-categories";
 
@@ -61,6 +66,11 @@ export function EventDialog({
   const createCategory = useCreateCategory();
   const [adding, setAdding] = useState(false);
   const [newLabel, setNewLabel] = useState("");
+  const askAi = useServerFn(suggestCategoryAi);
+  const [aiReason, setAiReason] = useState<string | null>(null);
+  const categoryTouched = useRef(false);
+  const groups = useMemo(() => groupCategories(categoryOptions), [categoryOptions]);
+
 
 
 
@@ -113,6 +123,36 @@ export function EventDialog({
     });
   }, [open, event, defaultDate, defaultCategory, defaultChildId, defaultCaseId]);
 
+  useEffect(() => {
+    if (!open) return;
+    categoryTouched.current = false;
+    setAiReason(null);
+  }, [open, event]);
+
+  // AI föreslår kategori kort efter att du slutat skriva – bara för nya händelser
+  // och bara om du inte redan valt kategori själv.
+  const title = form.title;
+  useEffect(() => {
+    if (event || categoryTouched.current || title.trim().length < 6) return;
+    const options = categoryOptions.map((c) => ({ value: String(c.value), label: c.label }));
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      void askAi({ data: { text: title, options } })
+        .then((res) => {
+          if (cancelled || !res.category || categoryTouched.current) return;
+          setForm((prev) => ({ ...prev, category: res.category as Category }));
+          setAiReason(res.reason || null);
+        })
+        .catch(() => undefined);
+    }, 700);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [title, event, categoryOptions, askAi]);
+
+
+
   function addCategory() {
     createCategory.mutate(newLabel, {
       onSuccess: (row) => {
@@ -159,18 +199,23 @@ export function EventDialog({
               value={form.title}
               placeholder="T.ex. Juristmöte"
               onChange={(e) => {
-                const title = e.target.value;
-                const next = { ...form, title };
-                if (!event && title.length >= 3) {
-                  next.category = suggestCategory(title);
+                const value = e.target.value;
+                const next = { ...form, title: value };
+                if (!event && !categoryTouched.current && value.length >= 3) {
+                  const learned = learnedCategory(value);
+                  next.category = (learned ?? suggestCategory(value)) as Category;
                 }
                 setForm(next);
               }}
             />
             {!event && form.title.length >= 3 ? (
-              <p className="text-xs text-muted-foreground">
-                Kategori föreslås automatiskt: {" "}
-                {categoryOptions.find((c) => c.value === form.category)?.label}
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Sparkles className="size-3.5 text-primary" />
+                Föreslagen kategori:{" "}
+                <span className="font-medium text-foreground">
+                  {categoryOptions.find((c) => c.value === form.category)?.label}
+                </span>
+                {aiReason ? <span className="truncate">– {aiReason}</span> : null}
               </p>
             ) : null}
           </div>
@@ -239,6 +284,9 @@ export function EventDialog({
                     setAdding(true);
                     return;
                   }
+                  categoryTouched.current = true;
+                  setAiReason(null);
+                  if (form.title.trim().length >= 3) learnCategory(form.title, v);
                   setForm({ ...form, category: v as Category });
                 }}
               >
@@ -246,13 +294,18 @@ export function EventDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {categoryOptions.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      <span className="flex items-center gap-2">
-                        <span className={`size-2.5 rounded-full ${c.dot}`} />
-                        {c.label}
-                      </span>
-                    </SelectItem>
+                  {groups.map((group) => (
+                    <SelectGroup key={group.value}>
+                      <SelectLabel>{group.label}</SelectLabel>
+                      {group.items.map((c) => (
+                        <SelectItem key={c.value} value={c.value}>
+                          <span className="flex items-center gap-2">
+                            <span className={`size-2.5 rounded-full ${c.dot}`} />
+                            {c.label}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   ))}
                   <SelectItem value={NEW_CATEGORY}>
                     <span className="flex items-center gap-2 text-primary">
@@ -260,6 +313,7 @@ export function EventDialog({
                     </span>
                   </SelectItem>
                 </SelectContent>
+
               </Select>
             )}
           </div>
