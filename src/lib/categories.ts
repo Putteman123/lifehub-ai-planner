@@ -175,6 +175,16 @@ export function groupCategories(options: CategoryOption[]) {
 }
 
 
+/** Placerar en egen kategori i rätt grupp utifrån namnet. */
+export function guessGroup(label: string): CategoryGroup {
+  const t = label.toLowerCase();
+  if (/(jobb|arbet|skift|pass|möte|kontor|uppdrag)/.test(t)) return "arbete";
+  if (/(barn|familj|skola|förskola|hämt|lämn)/.test(t)) return "familj";
+  if (/(pengar|utgift|faktur|köp|lån|spar|ekonomi|abonnemang|prenumer)/.test(t)) return "ekonomi";
+  if (/(jurist|advokat|domstol|rätteg|juridik)/.test(t)) return "juridik";
+  return "privat";
+}
+
 /** Slår ihop inbyggda kategorier med användarens egna. */
 export function mergeCategories(custom: CustomCategoryRow[] = []): CategoryOption[] {
   const extra = [...custom]
