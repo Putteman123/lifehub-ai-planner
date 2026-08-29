@@ -125,12 +125,9 @@ function SmsPage() {
   }
 
   return (
-    <AppShell title="SMS" icon={MessageSquare}>
+    <AppShell title="SMS" subtitle="Läs, förbered och godkänn SMS – synkas via iOS Genvägar.">
       <div className="grid gap-4 lg:grid-cols-2">
-        <SectionCard
-          title="Utkorg"
-          description="Meddelanden du godkänt. De skickas när genvägen på iPhone körs."
-        >
+        <SectionCard title="Utkorg" icon={ArrowUpRight} count={outbox.length}>
           {outbox.length === 0 ? (
             <p className="text-sm text-muted-foreground">Inget väntar på att skickas.</p>
           ) : (
@@ -165,10 +162,7 @@ function SmsPage() {
           )}
         </SectionCard>
 
-        <SectionCard
-          title="Koppla iPhone"
-          description="Två genvägar: en automation som skickar in nya SMS, en som skickar det du godkänt."
-        >
+        <SectionCard title="Koppla iPhone" icon={Smartphone}>
           <div className="space-y-3 text-sm">
             <div className="rounded-2xl border border-border/70 bg-muted/40 p-3">
               <p className="mb-2 font-medium">Webhook-adress</p>
@@ -209,7 +203,8 @@ function SmsPage() {
 
       <SectionCard
         title="Historik"
-        description={unread.length > 0 ? `${unread.length} olästa` : "Alla meddelanden är lästa"}
+        icon={MessageSquare}
+        count={unread.length}
         action={
           unread.length > 0 ? (
             <Button size="sm" variant="secondary" onClick={markAllRead}>
@@ -218,7 +213,12 @@ function SmsPage() {
           ) : undefined
         }
       >
-        <DataGate query={messagesQ} empty="Inga SMS ännu – koppla genvägen på iPhone.">
+        <DataGate queries={[messagesQ]}>
+          {messages.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Inga SMS ännu – koppla genvägen på iPhone.
+            </p>
+          ) : null}
           <ul className="space-y-2">
             {messages.map((m) => (
               <li
