@@ -10,12 +10,28 @@ export type ReminderRow = Tables<"reminders">;
 export type Category = EventRow["category"];
 export type CustomCategoryRow = Tables<"event_categories">;
 
+/** Övergripande grupper som håller ihop kategorier i hela appen. */
+export type CategoryGroup = "arbete" | "familj" | "ekonomi" | "juridik" | "privat";
+
+export const CATEGORY_GROUPS: { value: CategoryGroup; label: string; accent: string }[] = [
+  { value: "arbete", label: "Arbete", accent: "text-cat-jobb" },
+  { value: "familj", label: "Familj", accent: "text-cat-barn" },
+  { value: "ekonomi", label: "Ekonomi", accent: "text-cat-ekonomi" },
+  { value: "juridik", label: "Juridik", accent: "text-cat-jurist" },
+  { value: "privat", label: "Privat", accent: "text-cat-privat" },
+];
+
+export function groupLabel(group: CategoryGroup) {
+  return CATEGORY_GROUPS.find((g) => g.value === group)?.label ?? "Privat";
+}
+
 export type CategoryOption = {
   value: Category;
   label: string;
   dot: string;
   chip: string;
   bar: string;
+  group?: CategoryGroup;
   custom?: boolean;
 };
 
