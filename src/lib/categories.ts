@@ -116,10 +116,10 @@ export function nextPaletteToken(usedCount: number) {
 }
 
 export const CATEGORIES: CategoryOption[] = [
-
   {
     value: "jobb",
     label: "Heltidsjobb",
+    group: "arbete",
     dot: "bg-cat-jobb",
     chip: "bg-cat-jobb/12 text-cat-jobb",
     bar: "border-l-cat-jobb",
@@ -127,6 +127,7 @@ export const CATEGORIES: CategoryOption[] = [
   {
     value: "ledig",
     label: "Ledig",
+    group: "privat",
     dot: "bg-cat-ledig",
     chip: "bg-cat-ledig/12 text-cat-ledig",
     bar: "border-l-cat-ledig",
@@ -134,6 +135,7 @@ export const CATEGORIES: CategoryOption[] = [
   {
     value: "jurist",
     label: "Jurist",
+    group: "juridik",
     dot: "bg-cat-jurist",
     chip: "bg-cat-jurist/12 text-cat-jurist",
     bar: "border-l-cat-jurist",
@@ -141,6 +143,7 @@ export const CATEGORIES: CategoryOption[] = [
   {
     value: "barn",
     label: "Barn",
+    group: "familj",
     dot: "bg-cat-barn",
     chip: "bg-cat-barn/15 text-cat-barn",
     bar: "border-l-cat-barn",
@@ -148,6 +151,7 @@ export const CATEGORIES: CategoryOption[] = [
   {
     value: "privat",
     label: "Privat",
+    group: "privat",
     dot: "bg-cat-privat",
     chip: "bg-cat-privat/12 text-cat-privat",
     bar: "border-l-cat-privat",
@@ -155,11 +159,21 @@ export const CATEGORIES: CategoryOption[] = [
   {
     value: "viktigt",
     label: "Viktigt",
+    group: "privat",
     dot: "bg-cat-viktigt",
     chip: "bg-cat-viktigt/12 text-cat-viktigt",
     bar: "border-l-cat-viktigt",
   },
 ];
+
+/** Grupperar kategorier för väljare, med "senast använda" först. */
+export function groupCategories(options: CategoryOption[]) {
+  return CATEGORY_GROUPS.map((group) => ({
+    ...group,
+    items: options.filter((o) => (o.group ?? "privat") === group.value),
+  })).filter((g) => g.items.length > 0);
+}
+
 
 /** Slår ihop inbyggda kategorier med användarens egna. */
 export function mergeCategories(custom: CustomCategoryRow[] = []): CategoryOption[] {
