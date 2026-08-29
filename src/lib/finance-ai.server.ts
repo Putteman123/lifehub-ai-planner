@@ -1,4 +1,4 @@
-import { ANDREA_QUICK_MODEL, ANDREA_FAST_MODEL } from "@/lib/ai-models";
+import { ANDREA_GATEWAY_MODEL } from "@/lib/ai-models";
 import { tobaccoCategory } from "@/lib/spend-categories";
 
 export type ReceiptRead = {
@@ -172,7 +172,7 @@ Rabatter: varje rabatt- eller kupongrad (t.ex. "Lidl Plus-rabatt -10,00", "Bonus
       "X-Lovable-AIG-SDK": "fetch",
     },
     body: JSON.stringify({
-      model: ANDREA_QUICK_MODEL,
+      model: ANDREA_GATEWAY_MODEL,
       messages: [
         {
           role: "system",
@@ -353,7 +353,7 @@ export async function readBetSlip(opts: {
       "X-Lovable-AIG-SDK": "fetch",
     },
     body: JSON.stringify({
-      model: ANDREA_FAST_MODEL,
+      model: ANDREA_GATEWAY_MODEL,
       messages: [
         {
           role: "system",

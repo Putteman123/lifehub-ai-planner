@@ -15,3 +15,6 @@ export const ANDREA_ROUTER_MODEL = ANDREA_MODEL;
 
 /** Reservmodell via Lovable AI om Google har ett tillfälligt driftfel. */
 export const ANDREA_FALLBACK_MODEL = "google/gemini-3.7-flash";
+
+/** Modell-id som gäller när anropet går via Lovable AI-gatewayen. */
+export const ANDREA_GATEWAY_MODEL = ANDREA_FALLBACK_MODEL;
