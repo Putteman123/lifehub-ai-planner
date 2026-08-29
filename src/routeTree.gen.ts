@@ -31,6 +31,7 @@ import { Route as ApiTtsRouteImport } from './routes/api/tts'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as ApiPublicPlatsRouteImport } from './routes/api/public/plats'
+import { Route as ApiPublicSmsRouteImport } from './routes/api/public/sms'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -144,6 +145,11 @@ const ApiPublicPlatsRoute = ApiPublicPlatsRouteImport.update({
   path: '/api/public/plats',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSmsRoute = ApiPublicSmsRouteImport.update({
+  id: '/api/public/sms',
+  path: '/api/public/sms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/plats': typeof ApiPublicPlatsRoute
+  '/api/public/sms': typeof ApiPublicSmsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -190,6 +197,7 @@ export interface FileRoutesByTo {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/plats': typeof ApiPublicPlatsRoute
+  '/api/public/sms': typeof ApiPublicSmsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -215,6 +223,7 @@ export interface FileRoutesById {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/plats': typeof ApiPublicPlatsRoute
+  '/api/public/sms': typeof ApiPublicSmsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -240,6 +249,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/public/plats'
+    | '/api/public/sms'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -263,6 +273,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/public/plats'
+    | '/api/public/sms'
   id:
     | '__root__'
     | '/'
@@ -287,6 +298,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/public/plats'
+    | '/api/public/sms'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -301,6 +313,7 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicPlatsRoute: typeof ApiPublicPlatsRoute
+  ApiPublicSmsRoute: typeof ApiPublicSmsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -459,6 +472,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPlatsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/sms': {
+      id: '/api/public/sms'
+      path: '/api/public/sms'
+      fullPath: '/api/public/sms'
+      preLoaderRoute: typeof ApiPublicSmsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -506,6 +526,7 @@ const rootRouteChildren: RootRouteChildren = {
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicPlatsRoute: ApiPublicPlatsRoute,
+  ApiPublicSmsRoute: ApiPublicSmsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
