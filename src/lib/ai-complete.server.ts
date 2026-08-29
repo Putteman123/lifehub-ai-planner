@@ -1,9 +1,9 @@
-import { ANDREA_FAST_MODEL } from "@/lib/ai-models";
+import { ANDREA_FAST_MODEL, ANDREA_GATEWAY_MODEL } from "@/lib/ai-models";
 import { createGoogleAiStudioFetch } from "@/lib/google-ai.server";
 
 type JsonSchema = { name: string; schema: Record<string, unknown> };
 
-const LOVABLE_FALLBACK_MODEL = "google/gemini-3.7-flash";
+const LOVABLE_FALLBACK_MODEL = ANDREA_GATEWAY_MODEL;
 
 type Message = { role: "system" | "user"; content: string };
 
