@@ -199,18 +199,23 @@ export function EventDialog({
               value={form.title}
               placeholder="T.ex. Juristmöte"
               onChange={(e) => {
-                const title = e.target.value;
-                const next = { ...form, title };
-                if (!event && title.length >= 3) {
-                  next.category = suggestCategory(title);
+                const value = e.target.value;
+                const next = { ...form, title: value };
+                if (!event && !categoryTouched.current && value.length >= 3) {
+                  const learned = learnedCategory(value);
+                  next.category = (learned ?? suggestCategory(value)) as Category;
                 }
                 setForm(next);
               }}
             />
             {!event && form.title.length >= 3 ? (
-              <p className="text-xs text-muted-foreground">
-                Kategori föreslås automatiskt: {" "}
-                {categoryOptions.find((c) => c.value === form.category)?.label}
+              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Sparkles className="size-3.5 text-primary" />
+                Föreslagen kategori:{" "}
+                <span className="font-medium text-foreground">
+                  {categoryOptions.find((c) => c.value === form.category)?.label}
+                </span>
+                {aiReason ? <span className="truncate">– {aiReason}</span> : null}
               </p>
             ) : null}
           </div>
