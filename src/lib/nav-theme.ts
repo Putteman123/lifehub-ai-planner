@@ -31,7 +31,6 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { to: "/pengar", label: "Pengar", icon: Wallet, color: "text-nav-pengar" },
   { to: "/barn", label: "Barn", icon: Baby, color: "text-nav-barn" },
   { to: "/jurist", label: "Jurist", icon: Scale, color: "text-nav-jurist" },
-  { to: "/sms", label: "SMS", icon: MessageSquare, color: "text-nav-barn" },
   { to: "/iptv", label: "IPTV", icon: Tv, color: "text-nav-iptv" },
   { to: "/platser", label: "Platser", icon: MapPin, color: "text-nav-platser" },
   { to: "/kassaskap", label: "Kassaskåp", icon: ShieldCheck, color: "text-nav-kassaskap" },
