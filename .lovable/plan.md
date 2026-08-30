@@ -1,37 +1,55 @@
-# Ta bort SMS – och nästa steg för LifeHub
+# Ta bort SMS + fem nya funktioner
 
 ## Del 1: Rensa bort SMS-funktionen
-
-SMS-flödet via iOS Genvägar plockas bort helt, så att appen blir enklare och Andrea inte längre har verktyg hon inte kan använda.
 
 Detta tas bort:
 - Sidan **SMS** och dess post i den flytande menyn.
 - Webhooken som iPhone skickade in meddelanden till.
 - Andreas fyra SMS-verktyg (sök, olästa, markera läst, skicka) samt SMS-avsnittet i hennes instruktioner.
-- Godkännandekravet för `send_sms` (verktyget finns inte kvar).
 - Hjälpfilerna för SMS-logik och serverfunktioner.
-
-Databasen: tabellerna `sms_messages` och `sms_outbox` tas bort i en migration, och hemligheten `SMS_INGEST_TOKEN` kan raderas. Säg till om du hellre vill behålla tabellerna som arkiv – då lämnar jag dem orörda.
+- Tabellerna `sms_messages` och `sms_outbox` samt hemligheten `SMS_INGEST_TOKEN`.
 
 ### Tekniskt
 - Radera `src/routes/_authenticated/sms.tsx`, `src/routes/api/public/sms.ts`, `src/lib/sms.server.ts`, `src/lib/sms.functions.ts`.
-- Ta bort SMS-posten i `src/lib/nav-theme.ts`, `send_sms` ur `APPROVAL_TOOL_NAMES` i `src/lib/agent-tools.ts`, verktygsblocket i `src/routes/api/chat.ts` (rad ~329-372) och punkt 7b i `src/lib/andrea.server.ts`.
-- `src/routeTree.gen.ts` regenereras automatiskt.
+- Ta bort SMS-posten i `src/lib/nav-theme.ts`, `send_sms` ur `APPROVAL_TOOL_NAMES` i `src/lib/agent-tools.ts`, verktygsblocket i `src/routes/api/chat.ts` och punkt 7b i `src/lib/andrea.server.ts`.
 - Migration: `DROP TABLE public.sms_outbox, public.sms_messages;`.
 
-## Del 2: Förslag på förbättringar
+## Del 2: Fem nya funktioner
 
-Rangordnat efter nytta i din vardag. Välj de du vill ha, så bygger jag dem i tur och ordning.
+### 1. Veckoavstämning (söndagar)
+Nytt kort på startsidan som varje söndag sammanfattar veckan: spenderat mot dagsbudget, största kategorier, avvikelser mot normalt, obetalda fasta utgifter och vad nästa vecka kräver (fakturor, barnveckor, juristdeadlines). Andrea skriver sammanfattningen; du kan göra om punkter till todos med ett klick.
 
-1. **Andreas morgonbrief** – ett kort överst på startsidan där hon varje morgon sammanfattar dagen: schema, avresetider, dagsbudget, förfallande fakturor och vad som behöver beslutas. Ett klick för att göra om förslagen till todos.
-2. **Veckoavstämning på söndagar** – ekonomi mot budget, vad som drog iväg, vilka fasta utgifter som är obetalda och vad nästa vecka kräver. Bygger på data du redan har.
-3. **Proaktiva notiser** – push från appen när en faktura förfaller inom 3 dagar, när ett IPTV-konto går ut eller när dagsbudgeten spräckts. Idag måste du själv öppna rätt sida.
-4. **Barn- och umgängesvy** – tydlig översikt över veckorna med barnen, aktiviteter och kostnader kopplade till dem, med automatisk hämtning från skol- och sportkalendrar.
-5. **Juristärenden med tidslinje** – varje ärende får en tidslinje med händelser, deadlines och dokument från Kassaskåpet/Drive, plus Andreas påminnelser om nästa steg.
-6. **Skafferi som föreslår handlingslista** – utifrån förbrukningstakt och prisbok: "det här tar slut i veckan, och det är kampanj på ICA nu".
-7. **Kvitto- och dokumentarkiv med sökning** – allt inläst material sökbart i fritext ("hitta bilbesiktningen från i våras") istället för utspritt per modul.
-8. **Snabbåtgärder på hemskärmen** – genvägar för de tre vanligaste sakerna (registrera utlägg, lägg till på inköpslistan, prata med Andrea) direkt från iOS.
+### 2. Proaktiva notiser
+Push-notiser från appen (webbpush via PWA på iPhone) när:
+- en faktura eller fast utgift förfaller inom 3 dagar,
+- ett IPTV-abonnemang går ut inom 7 dagar,
+- dagsbudgeten spräcks,
+- en kalenderhändelse kräver avresa snart.
+
+Inställningssida där du slår på/av varje typ och väljer tid på dygnet för dagliga påminnelser.
+
+### 3. Barn- och umgängesvy
+Bygger ut sidan Barn: veckoschema som visar vilka dagar barnen är hos dig, aktiviteter från deras kalendrar, kostnader kopplade till respektive barn (från utgiftskategorier) och kommande viktiga datum. Enkel växling mellan barn.
+
+### 4. Skafferi som föreslår handlingslista
+På Handla: kort som utifrån hur ofta en vara köps räknar ut när den tar slut och föreslår "lägg till nu". Kombineras med prisboken så förslaget visar var det är billigast just nu och flaggar kampanjpris. Ett klick lägger hela förslaget i listan.
+
+### 5. Sökbart dokumentarkiv
+Ny sida "Arkiv" som samlar allt inläst material – kvitton, fakturor från mejl, filer i Kassaskåpet och Ekonomi – med fritextsökning ("bilbesiktningen i våras"). Andrea får ett verktyg för att söka i arkivet åt dig i chatten.
+
+## Tekniskt (del 2)
+
+- **Veckoavstämning:** ny serverfunktion som samlar in vecko-data (spend_entries, fixed_expenses/payments, events, case_tasks) och kör en AI-sammanfattning via befintlig `ai-complete.server.ts`. Nytt kort i `dashboard.tsx`, cachas per vecka.
+- **Notiser:** ny tabell `notification_prefs` + `notification_log`. Web Push via VAPID-nycklar (lagras som hemligheter), service worker i `public/`, samt en publik cron-route `/api/public/notify` som pg_cron anropar och som beräknar vilka aviseringar som ska ut.
+- **Barn:** utökar `children` med schema (varannan vecka/anpassat) i en ny tabell `child_schedule`; ny vy i `barn.tsx` som kombinerar schema, events och spend per barn.
+- **Skafferi:** förbrukningstakt räknas ur `pantry_items.times_added` + `last_purchased_at`; nytt kort `RestockCard.tsx` som joinar mot `pantry_prices` för billigaste butik.
+- **Arkiv:** ny route `src/routes/_authenticated/arkiv.tsx` som slår ihop `finance_files`, `vault_files` och `mail_findings` i en sökbar vy; sökning på filnamn/caption/summary, samt verktyget `search_archive` för Andrea.
 
 ## Ordning
 
-Först städningen av SMS. Sedan säger du vilket eller vilka nummer ovan du vill börja med.
+1. SMS-städning (kod + migration).
+2. Veckoavstämning.
+3. Skafferiets påfyllningsförslag.
+4. Barnvyn.
+5. Dokumentarkivet.
+6. Proaktiva notiser (störst rigg, sist).
