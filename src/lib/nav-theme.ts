@@ -1,4 +1,5 @@
 import {
+  Archive,
   Baby,
   CalendarDays,
   LayoutDashboard,
@@ -32,6 +33,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { to: "/jurist", label: "Jurist", icon: Scale, color: "text-nav-jurist" },
   { to: "/iptv", label: "IPTV", icon: Tv, color: "text-nav-iptv" },
   { to: "/platser", label: "Platser", icon: MapPin, color: "text-nav-platser" },
+  { to: "/arkiv", label: "Arkiv", icon: Archive, color: "text-nav-kalendrar" },
   { to: "/kassaskap", label: "Kassaskåp", icon: ShieldCheck, color: "text-nav-kassaskap" },
   { to: "/kalendrar", label: "Kalendrar", icon: Settings2, color: "text-nav-kalendrar" },
 ] as const;

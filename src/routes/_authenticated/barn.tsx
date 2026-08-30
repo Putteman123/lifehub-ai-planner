@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 
 import { AppShell } from "@/components/AppShell";
+import { ChildWeekCards } from "@/components/barn/ChildWeekCards";
 import { DataGate } from "@/components/DataGate";
 import { EventDialog } from "@/components/EventDialog";
 import { Button } from "@/components/ui/button";
@@ -134,6 +135,8 @@ function ChildrenPage() {
           </div>
         </div>
       ) : null}
+
+      <ChildWeekCards children={children} events={events} />
 
       <div className="mt-5 space-y-4">
         {upcoming.length === 0 ? (

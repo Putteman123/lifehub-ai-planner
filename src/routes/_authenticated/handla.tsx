@@ -11,6 +11,7 @@ import { DataGate } from "@/components/DataGate";
 import { DoneOverlay } from "@/components/handla/DoneOverlay";
 import { PantryTopCard } from "@/components/handla/PantryTopCard";
 import { PriceBookCard } from "@/components/handla/PriceBookCard";
+import { RestockCard } from "@/components/handla/RestockCard";
 import { ShoppingRow } from "@/components/handla/ShoppingRow";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -239,6 +240,11 @@ function ShoppingPage() {
               </div>
             ) : null}
           </section>
+
+          <RestockCard
+            pantry={pantryQ.data ?? []}
+            onAdd={(names) => addItems.mutate({ names })}
+          />
 
           <PantryTopCard
             pantry={pantryQ.data ?? []}
