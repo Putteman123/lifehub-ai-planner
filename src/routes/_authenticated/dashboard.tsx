@@ -14,6 +14,7 @@ import {
 import { AppShell } from "@/components/AppShell";
 import { SectionCard } from "@/components/SectionCard";
 import { MoneyWidget } from "@/components/dashboard/MoneyWidget";
+import { WeeklyReviewCard } from "@/components/dashboard/WeeklyReviewCard";
 import { ShoppingTaskCard, TodoListCard } from "@/components/dashboard/ShoppingTaskCard";
 import { LiveLocationCard } from "@/components/LiveLocationCard";
 import { DataGate } from "@/components/DataGate";
@@ -280,6 +281,7 @@ function Dashboard() {
       </SectionCard>
 
       <MoneyWidget />
+      <WeeklyReviewCard />
       <ShoppingTaskCard />
       <TodoListCard />
 

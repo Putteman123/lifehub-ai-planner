@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as AuthenticatedArkivRouteImport } from './routes/_authenticated/arkiv'
 import { Route as AuthenticatedAttgoraRouteImport } from './routes/_authenticated/attgora'
 import { Route as AuthenticatedBarnRouteImport } from './routes/_authenticated/barn'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -63,6 +64,11 @@ const Char91DotwellKnownChar93OauthProtectedResourceRoute =
     path: '/.well-known/oauth-protected-resource',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedArkivRoute = AuthenticatedArkivRouteImport.update({
+  id: '/arkiv',
+  path: '/arkiv',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAttgoraRoute = AuthenticatedAttgoraRouteImport.update({
   id: '/attgora',
   path: '/attgora',
@@ -151,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/mcp': typeof McpRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/arkiv': typeof AuthenticatedArkivRoute
   '/attgora': typeof AuthenticatedAttgoraRoute
   '/barn': typeof AuthenticatedBarnRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -174,6 +181,7 @@ export interface FileRoutesByTo {
   '/mcp': typeof McpRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/arkiv': typeof AuthenticatedArkivRoute
   '/attgora': typeof AuthenticatedAttgoraRoute
   '/barn': typeof AuthenticatedBarnRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -199,6 +207,7 @@ export interface FileRoutesById {
   '/mcp': typeof McpRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/_authenticated/arkiv': typeof AuthenticatedArkivRoute
   '/_authenticated/attgora': typeof AuthenticatedAttgoraRoute
   '/_authenticated/barn': typeof AuthenticatedBarnRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -224,6 +233,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/arkiv'
     | '/attgora'
     | '/barn'
     | '/dashboard'
@@ -247,6 +257,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/arkiv'
     | '/attgora'
     | '/barn'
     | '/dashboard'
@@ -271,6 +282,7 @@ export interface FileRouteTypes {
     | '/mcp'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/_authenticated/arkiv'
     | '/_authenticated/attgora'
     | '/_authenticated/barn'
     | '/_authenticated/dashboard'
@@ -346,6 +358,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/.well-known/oauth-protected-resource'
       preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/arkiv': {
+      id: '/_authenticated/arkiv'
+      path: '/arkiv'
+      fullPath: '/arkiv'
+      preLoaderRoute: typeof AuthenticatedArkivRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/attgora': {
       id: '/_authenticated/attgora'
@@ -463,6 +482,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedArkivRoute: typeof AuthenticatedArkivRoute
   AuthenticatedAttgoraRoute: typeof AuthenticatedAttgoraRoute
   AuthenticatedBarnRoute: typeof AuthenticatedBarnRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -477,6 +497,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedArkivRoute: AuthenticatedArkivRoute,
   AuthenticatedAttgoraRoute: AuthenticatedAttgoraRoute,
   AuthenticatedBarnRoute: AuthenticatedBarnRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
