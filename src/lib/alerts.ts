@@ -157,7 +157,7 @@ export function useAlertNotifications(alerts: Alert[]) {
     let changed = false;
     for (const a of alerts) {
       if (a.urgency > 1 || seen[a.id] === today) continue;
-      new Notification(a.title, { body: a.detail, icon: "/icons/icon-192.png", tag: a.id });
+      new Notification(a.title, { body: a.detail, icon: "/icon-192.png", tag: a.id });
       seen[a.id] = today;
       changed = true;
     }
