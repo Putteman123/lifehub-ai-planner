@@ -452,3 +452,92 @@ export function useDailyResult() {
     };
   }, [accounts, incomes, fixed, spends, payments, today]);
 }
+
+export type IncomeInput = {
+  id?: string;
+  label: string;
+  amount: number;
+  expected_on: string;
+  kind: string;
+  is_received: boolean;
+  received_on?: string | null;
+  account_id?: string | null;
+  category?: string | null;
+  note?: string | null;
+};
+
+/**
+ * Sparar en inbetalning på samma sätt som en utgift: när den är markerad som
+ * inkommen läggs beloppet till på valt konto. Vid ändring återförs först det
+ * gamla beloppet så saldot alltid stämmer.
+ */
+export function useSaveIncome(message = "Inbetalning sparad") {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      values,
+      previous,
+    }: {
+      values: IncomeInput;
+      previous?: IncomeRow | null;
+    }) => {
+      const user_id = await currentUserId();
+      const { error } = await supabase.from("finance_incomes").upsert({ ...values, user_id });
+      if (error) throw new Error(error.message);
+
+      if (previous?.is_received) {
+        await adjustBalance(previous.account_id, -Number(previous.amount));
+      }
+      if (values.is_received) {
+        await adjustBalance(values.account_id ?? null, values.amount);
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["finance_incomes"] });
+      qc.invalidateQueries({ queryKey: ["finance_accounts"] });
+      toast.success(message);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+/** Tar bort en inbetalning och backar saldot om den var inkommen. */
+export function useDeleteIncome(message = "Inbetalning borttagen") {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (row: IncomeRow) => {
+      const { error } = await supabase.from("finance_incomes").delete().eq("id", row.id);
+      if (error) throw new Error(error.message);
+      if (row.is_received) await adjustBalance(row.account_id, -Number(row.amount));
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["finance_incomes"] });
+      qc.invalidateQueries({ queryKey: ["finance_accounts"] });
+      toast.success(message);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+/** Markerar en inbetalning som inkommen (eller ångrar den) och justerar saldot. */
+export function useSetIncomeReceived() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ row, received }: { row: IncomeRow; received: boolean }) => {
+      if (row.is_received === received) return;
+      const receivedOn = received ? new Date().toISOString().slice(0, 10) : null;
+      const { error } = await supabase
+        .from("finance_incomes")
+        .update({ is_received: received, received_on: receivedOn })
+        .eq("id", row.id);
+      if (error) throw new Error(error.message);
+      await adjustBalance(row.account_id, received ? Number(row.amount) : -Number(row.amount));
+    },
+    onSuccess: (_res, vars) => {
+      qc.invalidateQueries({ queryKey: ["finance_incomes"] });
+      qc.invalidateQueries({ queryKey: ["finance_accounts"] });
+      toast.success(vars.received ? "Inbetalning bokförd" : "Inbetalning ångrad");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
