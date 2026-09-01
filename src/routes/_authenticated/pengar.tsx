@@ -160,34 +160,66 @@ function MoneyPage() {
   }, [fixed.length, qc]);
 
   return (
-    <AppShell title="Pengar" subtitle="Saldo, inbetalningar, fasta utgifter och kvitton">
+    <AppShell title="Pengar" subtitle="Inkomster, utgifter och månadens netto">
       <DataGate queries={[accountsQ, incomesQ, fixedQ, spendsQ, filesQ]}>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <BudgetCard
-            perDay={budget.perDay}
-            days={budget.days}
-            income={budget.income}
-            balance={budget.balance}
-            fixedLeft={budget.fixedLeft}
-            spent={budget.spentThisPeriod}
-          />
-          <SpendCard accounts={accounts} spends={spends} />
-          <ReceiptScanner accounts={accounts} spends={spends} />
-          <MailFindingsCard accounts={accounts} className="lg:col-span-2" />
-          <SpendPieCard spends={spends} fixed={fixed} />
-          <BetsCard accounts={accounts} />
-          <TransferCard accounts={accounts} />
-          <InsightCard perDay={budget.perDay} days={budget.days} />
+        <div className="space-y-4">
+          <MoneyHeader budget={budget} />
 
-          <AccountsCard accounts={accounts} />
-          <IncomesCard incomes={incomes} />
-          <FixedCard expenses={fixed} payments={payments} spends={spends} />
-          <LoansCard accounts={accounts} fixed={fixed} payments={payments} />
-          <SpendListCard accounts={accounts} spends={spends} />
-          <FilesCard files={files} className="lg:col-span-2" />
+          <Tabs defaultValue="oversikt">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="oversikt">Översikt</TabsTrigger>
+              <TabsTrigger value="in">Inkomster</TabsTrigger>
+              <TabsTrigger value="ut">Utgifter</TabsTrigger>
+              <TabsTrigger value="fasta">Fasta</TabsTrigger>
+              <TabsTrigger value="mer">Mer</TabsTrigger>
+            </TabsList>
 
+            <TabsContent value="oversikt" className="mt-4 grid gap-4 lg:grid-cols-2">
+              <MonthOverviewCard
+                spends={spends}
+                incomes={incomes}
+                payments={payments}
+                className="lg:col-span-2"
+              />
+              <BudgetCard
+                perDay={budget.perDay}
+                days={budget.days}
+                income={budget.income}
+                balance={budget.balance}
+                fixedLeft={budget.fixedLeft}
+                spent={budget.spentThisPeriod}
+              />
+              <AccountsCard accounts={accounts} />
+              <InsightCard perDay={budget.perDay} days={budget.days} />
+              <SpendPieCard spends={spends} fixed={fixed} />
+            </TabsContent>
+
+            <TabsContent value="in" className="mt-4 grid gap-4 lg:grid-cols-2">
+              <IncomesCard incomes={incomes} accounts={accounts} className="lg:col-span-2" />
+              <FilesCard files={files} className="lg:col-span-2" />
+            </TabsContent>
+
+            <TabsContent value="ut" className="mt-4 grid gap-4 lg:grid-cols-2">
+              <SpendCard accounts={accounts} spends={spends} />
+              <ReceiptScanner accounts={accounts} spends={spends} />
+              <SpendListCard accounts={accounts} spends={spends} />
+              <SpendPieCard spends={spends} fixed={fixed} />
+            </TabsContent>
+
+            <TabsContent value="fasta" className="mt-4 grid gap-4 lg:grid-cols-2">
+              <FixedCard expenses={fixed} payments={payments} spends={spends} />
+              <LoansCard accounts={accounts} fixed={fixed} payments={payments} />
+            </TabsContent>
+
+            <TabsContent value="mer" className="mt-4 grid gap-4 lg:grid-cols-2">
+              <MailFindingsCard accounts={accounts} className="lg:col-span-2" />
+              <TransferCard accounts={accounts} />
+              <BetsCard accounts={accounts} />
+            </TabsContent>
+          </Tabs>
         </div>
       </DataGate>
+
     </AppShell>
   );
 }
