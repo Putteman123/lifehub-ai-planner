@@ -256,7 +256,9 @@ export function ReceiptScanner({
       setFixedPaidDone(true);
       void queryClient.invalidateQueries({ queryKey: ["fixed_expense_payments"] });
       void queryClient.invalidateQueries({ queryKey: ["todos"] });
-      toast.success(`${fixedMatch.name} är markerad som betald.`);
+      void queryClient.invalidateQueries({ queryKey: ["finance_accounts"] });
+      toast.success(`${fixedMatch.name} är markerad som betald och draget från saldot.`);
+
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Kunde inte markera som betald.");
     }
