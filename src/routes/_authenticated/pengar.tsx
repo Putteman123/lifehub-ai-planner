@@ -52,11 +52,14 @@ import { BetsCard } from "@/components/pengar/BetsCard";
 import { TransferCard } from "@/components/pengar/TransferCard";
 import { LoansCard } from "@/components/pengar/LoansCard";
 import { MailFindingsCard } from "@/components/pengar/MailFindingsCard";
+import { IncomesCard } from "@/components/pengar/IncomesCard";
+import { MonthOverviewCard } from "@/components/pengar/MonthOverviewCard";
+import { MoneyHeader } from "@/components/pengar/MoneyHeader";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   buildBudget,
   financeSignedUrl,
   FILE_KINDS,
-  INCOME_KINDS,
   kr,
   useAccounts,
   useDeleteFinance,
