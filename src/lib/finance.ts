@@ -75,7 +75,17 @@ export type Budget = {
   available: number;
   perDay: number;
   todayLeft: number;
+  /** Mottagna inbetalningar sedan månadsskiftet. */
+  incomeThisPeriod: number;
+  /** Inbetalt minus spenderat sedan månadsskiftet. */
+  netThisPeriod: number;
 };
+
+/** Datumet en inbetalning räknas på: faktiskt mottaget, annars förväntat. */
+export function incomeDate(row: IncomeRow) {
+  return (row.received_on ?? row.expected_on).slice(0, 10);
+}
+
 
 /** Summerar utgifter per svensk kalenderdag. */
 export function spendByDay(spends: SpendRow[]): Record<string, number> {
