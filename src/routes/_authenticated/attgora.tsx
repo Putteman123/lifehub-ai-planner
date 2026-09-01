@@ -115,8 +115,10 @@ function TodoPage() {
         .then(() => {
           void qc.invalidateQueries({ queryKey: ["todos"] });
           void qc.invalidateQueries({ queryKey: ["fixed_expense_payments"] });
-          toast.success("Markerad som betald");
+          void qc.invalidateQueries({ queryKey: ["finance_accounts"] });
+          toast.success("Markerad som betald – beloppet är draget från saldot");
         })
+
         .catch((e: Error) => toast.error(e.message));
       return;
     }

@@ -254,11 +254,27 @@ export const setFixedPaid = createServerFn({ method: "POST" })
         amount: z.number().optional(),
         paidOn: z.string().optional(),
         source: z.string().optional(),
+        accountId: z.string().uuid().optional(),
       })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+
+    /** Justerar saldot på ett konto med angiven förändring. */
+    const adjust = async (accountId: string | null, delta: number) => {
+      if (!accountId || !delta) return;
+      const { data: account } = await supabase
+        .from("finance_accounts")
+        .select("balance")
+        .eq("id", accountId)
+        .maybeSingle();
+      if (!account) return;
+      await supabase
+        .from("finance_accounts")
+        .update({ balance: Number(account.balance) + delta })
+        .eq("id", accountId);
+    };
 
     // Uppdaterar kalendertitlarna (bock framför betalda månader).
     const refreshCalendar = async () => {
@@ -276,6 +292,14 @@ export const setFixedPaid = createServerFn({ method: "POST" })
       await syncFixedEvents(supabase, userId, expense, (paid ?? []).map((p) => p.period));
     };
 
+    // Befintlig betalning för månaden avgör om saldot redan är justerat.
+    const { data: existing } = await supabase
+      .from("fixed_expense_payments")
+      .select("id, amount, account_id")
+      .eq("expense_id", data.expenseId)
+      .eq("period", data.period)
+      .maybeSingle();
+
     if (!data.paid) {
       const { error } = await supabase
         .from("fixed_expense_payments")
@@ -283,8 +307,15 @@ export const setFixedPaid = createServerFn({ method: "POST" })
         .eq("expense_id", data.expenseId)
         .eq("period", data.period);
       if (error) throw new Error(error.message);
+      // Återför beloppet till kontot det drogs ifrån.
+      if (existing) await adjust(existing.account_id, Number(existing.amount));
       await refreshCalendar();
-      return { ok: true as const, paid: false };
+      return {
+        ok: true as const,
+        paid: false,
+        amount: existing ? Number(existing.amount) : 0,
+        accountId: existing?.account_id ?? null,
+      };
     }
 
     const { data: expense } = await supabase
@@ -293,18 +324,46 @@ export const setFixedPaid = createServerFn({ method: "POST" })
       .eq("id", data.expenseId)
       .maybeSingle();
 
+    const amount = data.amount ?? Number(expense?.amount ?? 0);
+
+    // Huvudkontot = kontot med lägst sort_order, om inget konto angetts.
+    let accountId = data.accountId ?? existing?.account_id ?? null;
+    if (!accountId) {
+      const { data: account } = await supabase
+        .from("finance_accounts")
+        .select("id")
+        .order("sort_order", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      accountId = account?.id ?? null;
+    }
+
     const { error } = await supabase.from("fixed_expense_payments").upsert(
       {
         user_id: userId,
         expense_id: data.expenseId,
         period: data.period,
-        amount: data.amount ?? Number(expense?.amount ?? 0),
+        amount,
         paid_on: (data.paidOn ?? new Date().toISOString()).slice(0, 10),
         source: data.source ?? "manuell",
+        account_id: accountId,
       },
       { onConflict: "expense_id,period" },
     );
     if (error) throw new Error(error.message);
+
+    // Saldot justeras bara en gång per post och månad.
+    if (existing) {
+      const diff = Number(existing.amount) - amount;
+      if (existing.account_id !== accountId) {
+        await adjust(existing.account_id, Number(existing.amount));
+        await adjust(accountId, -amount);
+      } else if (diff) {
+        await adjust(accountId, diff);
+      }
+    } else {
+      await adjust(accountId, -amount);
+    }
 
     // Städa bort ev. restskuldsuppgift för samma månad.
     await supabase
@@ -314,7 +373,7 @@ export const setFixedPaid = createServerFn({ method: "POST" })
       .like("notes", `%fixed:${data.expenseId}:${data.period}%`);
 
     await refreshCalendar();
-    return { ok: true as const, paid: true };
+    return { ok: true as const, paid: true, amount, accountId };
   });
 
 

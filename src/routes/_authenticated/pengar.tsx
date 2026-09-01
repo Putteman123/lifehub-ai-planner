@@ -676,11 +676,17 @@ function FixedCard({
   const setPaid = useMutation({
     mutationFn: (vars: { expenseId: string; period: string; paid: boolean }) =>
       setFixedPaid({ data: vars }),
-    onSuccess: (_res, vars) => {
+    onSuccess: (res, vars) => {
       void qc.invalidateQueries({ queryKey: ["fixed_expense_payments"] });
       void qc.invalidateQueries({ queryKey: ["todos"] });
-      toast.success(vars.paid ? "Markerad som betald" : "Betalning ångrad");
+      void qc.invalidateQueries({ queryKey: ["finance_accounts"] });
+      toast.success(
+        vars.paid
+          ? `Markerad som betald · ${kr(res.amount)} draget från saldot`
+          : `Betalning ångrad · ${kr(res.amount)} tillbaka på saldot`,
+      );
     },
+
     onError: (e: Error) => toast.error(e.message),
   });
   const period = periodKey();

@@ -748,6 +748,7 @@ export type Database = {
       }
       fixed_expense_payments: {
         Row: {
+          account_id: string | null
           amount: number
           created_at: string
           expense_id: string
@@ -761,6 +762,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           amount?: number
           created_at?: string
           expense_id: string
@@ -774,6 +776,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           amount?: number
           created_at?: string
           expense_id?: string
@@ -787,6 +790,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fixed_expense_payments_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fixed_expense_payments_expense_id_fkey"
             columns: ["expense_id"]
