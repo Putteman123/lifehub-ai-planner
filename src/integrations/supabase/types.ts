@@ -682,7 +682,9 @@ export type Database = {
       }
       finance_incomes: {
         Row: {
+          account_id: string | null
           amount: number
+          category: string | null
           created_at: string
           expected_on: string
           id: string
@@ -690,11 +692,15 @@ export type Database = {
           kind: string
           label: string
           loan_id: string | null
+          note: string | null
+          received_on: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           amount?: number
+          category?: string | null
           created_at?: string
           expected_on: string
           id?: string
@@ -702,11 +708,15 @@ export type Database = {
           kind?: string
           label: string
           loan_id?: string | null
+          note?: string | null
+          received_on?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          account_id?: string | null
           amount?: number
+          category?: string | null
           created_at?: string
           expected_on?: string
           id?: string
@@ -714,10 +724,19 @@ export type Database = {
           kind?: string
           label?: string
           loan_id?: string | null
+          note?: string | null
+          received_on?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "finance_incomes_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "finance_incomes_loan_id_fkey"
             columns: ["loan_id"]

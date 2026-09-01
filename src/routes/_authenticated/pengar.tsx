@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  CalendarClock,
+
   Check,
   Cigarette,
 
@@ -52,11 +52,14 @@ import { BetsCard } from "@/components/pengar/BetsCard";
 import { TransferCard } from "@/components/pengar/TransferCard";
 import { LoansCard } from "@/components/pengar/LoansCard";
 import { MailFindingsCard } from "@/components/pengar/MailFindingsCard";
+import { IncomesCard } from "@/components/pengar/IncomesCard";
+import { MonthOverviewCard } from "@/components/pengar/MonthOverviewCard";
+import { MoneyHeader } from "@/components/pengar/MoneyHeader";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   buildBudget,
   financeSignedUrl,
   FILE_KINDS,
-  INCOME_KINDS,
   kr,
   useAccounts,
   useDeleteFinance,
@@ -157,34 +160,66 @@ function MoneyPage() {
   }, [fixed.length, qc]);
 
   return (
-    <AppShell title="Pengar" subtitle="Saldo, inbetalningar, fasta utgifter och kvitton">
+    <AppShell title="Pengar" subtitle="Inkomster, utgifter och månadens netto">
       <DataGate queries={[accountsQ, incomesQ, fixedQ, spendsQ, filesQ]}>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <BudgetCard
-            perDay={budget.perDay}
-            days={budget.days}
-            income={budget.income}
-            balance={budget.balance}
-            fixedLeft={budget.fixedLeft}
-            spent={budget.spentThisPeriod}
-          />
-          <SpendCard accounts={accounts} spends={spends} />
-          <ReceiptScanner accounts={accounts} spends={spends} />
-          <MailFindingsCard accounts={accounts} className="lg:col-span-2" />
-          <SpendPieCard spends={spends} fixed={fixed} />
-          <BetsCard accounts={accounts} />
-          <TransferCard accounts={accounts} />
-          <InsightCard perDay={budget.perDay} days={budget.days} />
+        <div className="space-y-4">
+          <MoneyHeader budget={budget} />
 
-          <AccountsCard accounts={accounts} />
-          <IncomesCard incomes={incomes} />
-          <FixedCard expenses={fixed} payments={payments} spends={spends} />
-          <LoansCard accounts={accounts} fixed={fixed} payments={payments} />
-          <SpendListCard accounts={accounts} spends={spends} />
-          <FilesCard files={files} className="lg:col-span-2" />
+          <Tabs defaultValue="oversikt">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="oversikt">Översikt</TabsTrigger>
+              <TabsTrigger value="in">Inkomster</TabsTrigger>
+              <TabsTrigger value="ut">Utgifter</TabsTrigger>
+              <TabsTrigger value="fasta">Fasta</TabsTrigger>
+              <TabsTrigger value="mer">Mer</TabsTrigger>
+            </TabsList>
 
+            <TabsContent value="oversikt" className="mt-4 grid gap-4 lg:grid-cols-2">
+              <MonthOverviewCard
+                spends={spends}
+                incomes={incomes}
+                payments={payments}
+                className="lg:col-span-2"
+              />
+              <BudgetCard
+                perDay={budget.perDay}
+                days={budget.days}
+                income={budget.income}
+                balance={budget.balance}
+                fixedLeft={budget.fixedLeft}
+                spent={budget.spentThisPeriod}
+              />
+              <AccountsCard accounts={accounts} />
+              <InsightCard perDay={budget.perDay} days={budget.days} />
+              <SpendPieCard spends={spends} fixed={fixed} />
+            </TabsContent>
+
+            <TabsContent value="in" className="mt-4 grid gap-4 lg:grid-cols-2">
+              <IncomesCard incomes={incomes} accounts={accounts} className="lg:col-span-2" />
+              <FilesCard files={files} className="lg:col-span-2" />
+            </TabsContent>
+
+            <TabsContent value="ut" className="mt-4 grid gap-4 lg:grid-cols-2">
+              <SpendCard accounts={accounts} spends={spends} />
+              <ReceiptScanner accounts={accounts} spends={spends} />
+              <SpendListCard accounts={accounts} spends={spends} />
+              <SpendPieCard spends={spends} fixed={fixed} />
+            </TabsContent>
+
+            <TabsContent value="fasta" className="mt-4 grid gap-4 lg:grid-cols-2">
+              <FixedCard expenses={fixed} payments={payments} spends={spends} />
+              <LoansCard accounts={accounts} fixed={fixed} payments={payments} />
+            </TabsContent>
+
+            <TabsContent value="mer" className="mt-4 grid gap-4 lg:grid-cols-2">
+              <MailFindingsCard accounts={accounts} className="lg:col-span-2" />
+              <TransferCard accounts={accounts} />
+              <BetsCard accounts={accounts} />
+            </TabsContent>
+          </Tabs>
         </div>
       </DataGate>
+
     </AppShell>
   );
 }
@@ -614,138 +649,6 @@ function AccountsCard({ accounts }: { accounts: AccountRow[] }) {
                 value={balance}
                 onChange={(e) => setBalance(e.target.value)}
               />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={submit} disabled={save.isPending}>
-              Spara
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </SectionCard>
-  );
-}
-
-function IncomesCard({ incomes }: { incomes: IncomeRow[] }) {
-  const save = useSaveFinance("finance_incomes", "Inbetalning sparad");
-  const remove = useDeleteFinance("finance_incomes", "Inbetalning borttagen");
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<IncomeRow | null>(null);
-  const [label, setLabel] = useState("");
-  const [amount, setAmount] = useState("");
-  const [date, setDate] = useState("");
-  const [kind, setKind] = useState("lon");
-
-  function openNew() {
-    setEditing(null);
-    setLabel("");
-    setAmount("");
-    setDate("");
-    setKind("lon");
-    setOpen(true);
-  }
-
-  function openEdit(row: IncomeRow) {
-    setEditing(row);
-    setLabel(row.label);
-    setAmount(String(row.amount));
-    setDate(row.expected_on);
-    setKind(row.kind);
-    setOpen(true);
-  }
-
-  function submit() {
-    if (!label.trim() || !date) return;
-    save.mutate(
-      {
-        ...(editing ? { id: editing.id } : {}),
-        label: label.trim(),
-        amount: num(amount),
-        expected_on: date,
-        kind,
-        is_received: editing?.is_received ?? false,
-      },
-      { onSuccess: () => setOpen(false) },
-    );
-  }
-
-  return (
-    <SectionCard
-      title="Inbetalningar"
-      icon={CalendarClock}
-      accent="text-nav-handla"
-      tint="bg-nav-handla/12"
-      count={incomes.length}
-      action={
-        <Button size="sm" variant="outline" onClick={openNew}>
-          <Plus className="size-4" /> Ny
-        </Button>
-      }
-    >
-      {incomes.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Lägg in när nästa lön eller ersättning kommer.
-        </p>
-      ) : (
-        <ul className="space-y-2">
-          {incomes.map((row) => (
-            <Row
-              key={row.id}
-              title={row.label}
-              subtitle={`${row.expected_on}${row.is_received ? " · inkommen" : ""}`}
-              value={kr(Number(row.amount))}
-              onEdit={() => openEdit(row)}
-              onDelete={() => remove.mutate(row.id)}
-            />
-          ))}
-        </ul>
-      )}
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editing ? "Ändra inbetalning" : "Ny inbetalning"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor="inc-label">Namn</Label>
-              <Input id="inc-label" value={label} onChange={(e) => setLabel(e.target.value)} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="inc-amount">Belopp</Label>
-                <Input
-                  id="inc-amount"
-                  inputMode="decimal"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="inc-date">Datum</Label>
-                <Input
-                  id="inc-date"
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                />
-              </div>
-            </div>
-            <div>
-              <Label>Typ</Label>
-              <Select value={kind} onValueChange={setKind}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {INCOME_KINDS.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
           </div>
           <DialogFooter>
