@@ -148,6 +148,11 @@ export function buildBudget(
     .filter((s) => dayKey(s.spent_at) === todayKey)
     .reduce((sum, s) => sum + Number(s.amount), 0);
 
+  const monthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+  const incomeThisPeriod = incomes
+    .filter((i) => i.is_received && incomeDate(i).startsWith(monthKey))
+    .reduce((sum, i) => sum + Number(i.amount), 0);
+
   const available = balance - fixedLeft;
   const perDay = available / days;
   return {
@@ -160,6 +165,8 @@ export function buildBudget(
     available,
     perDay,
     todayLeft: perDay - spentToday,
+    incomeThisPeriod,
+    netThisPeriod: incomeThisPeriod - spentThisPeriod,
   };
 }
 
