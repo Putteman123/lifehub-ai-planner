@@ -1080,6 +1080,7 @@ export type Database = {
         Row: {
           account_id: string | null
           amount: number | null
+          attachment_names: string[] | null
           category: string | null
           created_at: string
           created_expense_id: string | null
@@ -1097,6 +1098,7 @@ export type Database = {
           sender: string | null
           status: string
           subject: string | null
+          suggested_slots: Json | null
           summary: string | null
           thread_id: string | null
           updated_at: string
@@ -1105,6 +1107,7 @@ export type Database = {
         Insert: {
           account_id?: string | null
           amount?: number | null
+          attachment_names?: string[] | null
           category?: string | null
           created_at?: string
           created_expense_id?: string | null
@@ -1122,6 +1125,7 @@ export type Database = {
           sender?: string | null
           status?: string
           subject?: string | null
+          suggested_slots?: Json | null
           summary?: string | null
           thread_id?: string | null
           updated_at?: string
@@ -1130,6 +1134,7 @@ export type Database = {
         Update: {
           account_id?: string | null
           amount?: number | null
+          attachment_names?: string[] | null
           category?: string | null
           created_at?: string
           created_expense_id?: string | null
@@ -1147,6 +1152,7 @@ export type Database = {
           sender?: string | null
           status?: string
           subject?: string | null
+          suggested_slots?: Json | null
           summary?: string | null
           thread_id?: string | null
           updated_at?: string
@@ -1213,6 +1219,33 @@ export type Database = {
           updated_at?: string
           user_id?: string
           value?: string
+        }
+        Relationships: []
+      }
+      mail_seen: {
+        Row: {
+          created_at: string
+          had_finding: boolean
+          id: string
+          message_id: string
+          scanned_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          had_finding?: boolean
+          id?: string
+          message_id: string
+          scanned_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          had_finding?: boolean
+          id?: string
+          message_id?: string
+          scanned_at?: string
+          user_id?: string
         }
         Relationships: []
       }
