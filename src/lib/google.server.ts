@@ -255,6 +255,145 @@ export async function gmailMessageBody(id: string): Promise<string> {
   return text.replace(/\s+\n/g, "\n").replace(/[ \t]{2,}/g, " ").trim().slice(0, 6000);
 }
 
+/** Hämtar mejl-id sidvis så att fler än 25 mejl kan gås igenom per svep. */
+export async function gmailListPaged(query: string, max = 120): Promise<MailSummary[]> {
+  const ids: string[] = [];
+  let pageToken: string | undefined;
+  while (ids.length < max) {
+    const page = Math.min(100, max - ids.length);
+    const list = (await call(
+      "mail",
+      `/gmail/v1/users/me/messages?maxResults=${page}&q=${encodeURIComponent(query)}` +
+        (pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ""),
+    )) as { messages?: Array<{ id: string }>; nextPageToken?: string };
+    for (const m of list.messages ?? []) ids.push(m.id);
+    if (!list.nextPageToken || !(list.messages ?? []).length) break;
+    pageToken = list.nextPageToken;
+  }
+
+  const out: MailSummary[] = [];
+  const chunk = 10;
+  for (let i = 0; i < ids.length; i += chunk) {
+    const part = await Promise.all(
+      ids.slice(i, i + chunk).map(async (id) => {
+        try {
+          const msg = (await call(
+            "mail",
+            `/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
+          )) as {
+            id: string;
+            snippet?: string;
+            labelIds?: string[];
+            payload?: { headers?: Array<{ name?: string; value?: string }> };
+          };
+          const headers = msg.payload?.headers ?? [];
+          const summary: MailSummary = {
+            id: msg.id,
+            from: header(headers, "From"),
+            subject: header(headers, "Subject") || "(utan ämne)",
+            snippet: msg.snippet ?? "",
+            date: header(headers, "Date") || null,
+            unread: (msg.labelIds ?? []).includes("UNREAD"),
+          };
+          return summary;
+        } catch {
+          return null;
+        }
+      }),
+    );
+    for (const item of part) if (item) out.push(item);
+  }
+  return out;
+}
+
+export type MailAttachment = {
+  filename: string;
+  mimeType: string;
+  /** base64 (standard, inte url-säker) */
+  data: string;
+  bytes: number;
+};
+
+const ATTACHMENT_TYPES = /^(application\/pdf|image\/(jpeg|jpg|png|webp|heic|heif))$/i;
+
+function collectAttachmentParts(
+  part: GmailPart | undefined,
+  out: Array<{ filename: string; mimeType: string; attachmentId: string; size: number }>,
+) {
+  if (!part) return;
+  const p = part as GmailPart & {
+    filename?: string;
+    body?: { data?: string; attachmentId?: string; size?: number };
+  };
+  if (p.filename && p.body?.attachmentId && ATTACHMENT_TYPES.test(p.mimeType ?? "")) {
+    out.push({
+      filename: p.filename,
+      mimeType: (p.mimeType ?? "").toLowerCase(),
+      attachmentId: p.body.attachmentId,
+      size: p.body.size ?? 0,
+    });
+  }
+  for (const child of part.parts ?? []) collectAttachmentParts(child, out);
+}
+
+/**
+ * Hämtar både brödtext och (valfritt) bilagor som PDF/bild för ett mejl.
+ * Bilagor större än `maxBytes` hoppas över.
+ */
+export async function gmailMessageContent(
+  id: string,
+  opts?: { attachments?: boolean; maxAttachments?: number; maxBytes?: number },
+): Promise<{ text: string; attachments: MailAttachment[] }> {
+  const msg = (await call("mail", `/gmail/v1/users/me/messages/${id}?format=full`)) as {
+    payload?: GmailPart;
+    snippet?: string;
+  };
+  const plain = collectText(msg.payload, "text/plain");
+  const html = plain ? "" : collectText(msg.payload, "text/html");
+  const raw =
+    plain ||
+    html
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&") ||
+    msg.snippet ||
+    "";
+  const text = raw.replace(/\s+\n/g, "\n").replace(/[ \t]{2,}/g, " ").trim().slice(0, 6000);
+
+  if (!opts?.attachments) return { text, attachments: [] };
+
+  const maxBytes = opts.maxBytes ?? 4_000_000;
+  const found: Array<{ filename: string; mimeType: string; attachmentId: string; size: number }> = [];
+  collectAttachmentParts(msg.payload, found);
+  const wanted = found
+    .filter((a) => a.size > 0 && a.size <= maxBytes)
+    .slice(0, opts.maxAttachments ?? 3);
+
+  const attachments: MailAttachment[] = [];
+  for (const item of wanted) {
+    try {
+      const data = (await call(
+        "mail",
+        `/gmail/v1/users/me/messages/${id}/attachments/${item.attachmentId}`,
+      )) as { data?: string; size?: number };
+      if (!data.data) continue;
+      attachments.push({
+        filename: item.filename,
+        mimeType: item.mimeType === "image/jpg" ? "image/jpeg" : item.mimeType,
+        data: data.data.replace(/-/g, "+").replace(/_/g, "/"),
+        bytes: data.size ?? item.size,
+      });
+    } catch (error) {
+      console.warn("gmail attachment", item.filename, error);
+    }
+  }
+  return { text, attachments };
+}
+
+
+
 function base64Url(value: string) {
   return btoa(unescape(encodeURIComponent(value)))
     .replace(/\+/g, "-")
