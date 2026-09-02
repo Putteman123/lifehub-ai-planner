@@ -9,12 +9,16 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  */
 export const scanMailForFinance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input?: { max?: number; query?: string }) => input ?? {})
+  .inputValidator(
+    (input?: { max?: number; query?: string; days?: number; attachments?: boolean }) => input ?? {},
+  )
   .handler(async ({ data, context }) => {
     const { scanInbox } = await import("./mail-scan.server");
-    const opts: { max?: number; query?: string } = {};
+    const opts: { max?: number; query?: string; days?: number; attachments?: boolean } = {};
     if (data.max !== undefined) opts.max = data.max;
     if (data.query !== undefined) opts.query = data.query;
+    if (data.days !== undefined) opts.days = data.days;
+    if (data.attachments !== undefined) opts.attachments = data.attachments;
     return scanInbox(context.supabase, context.userId, opts);
   });
 
