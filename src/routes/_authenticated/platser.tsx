@@ -22,6 +22,7 @@ import { DayMap } from "@/components/platser/DayMap";
 import { PositionHistory } from "@/components/platser/PositionHistory";
 
 import { VisitLogList } from "@/components/platser/VisitLogList";
+import { PlacesStatusCard } from "@/components/platser/PlacesStatusCard";
 
 import { NameVisitDialog, type NameVisitTarget } from "@/components/platser/NameVisitDialog";
 
@@ -29,6 +30,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import {
   Dialog,
   DialogContent,
