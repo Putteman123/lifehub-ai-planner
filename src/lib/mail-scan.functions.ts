@@ -45,14 +45,16 @@ export const approveMailFinding = createServerFn({ method: "POST" })
     z
       .object({
         id: z.string().uuid(),
-        kind: z.enum(["faktura", "kvitto", "prenumeration"]),
+        kind: z.enum(["faktura", "kvitto", "prenumeration", "mote"]),
         merchant: z.string().trim().min(1),
-        amount: z.number().positive(),
+        amount: z.number().min(0),
         category: z.string().trim().nullable().default(null),
         dueDate: z.string().nullable().default(null),
         occurredAt: z.string().nullable().default(null),
         accountId: z.string().uuid().nullable().default(null),
         intervalMonths: z.number().int().min(1).max(12).default(1),
+        slotStart: z.string().nullable().default(null),
+        slotEnd: z.string().nullable().default(null),
       })
       .parse(input),
   )
