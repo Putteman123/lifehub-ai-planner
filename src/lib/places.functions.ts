@@ -84,7 +84,6 @@ export const placesStatus = createServerFn({ method: "POST" })
     };
   });
 
-
 /** Ger den privata webhook-adressen som telefonen ska posta till. */
 export const getIngestInfo = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -283,7 +282,11 @@ export const mergeVisits = createServerFn({ method: "POST" })
     const first = rows[0]!;
     const last = rows[rows.length - 1]!;
     const meters = rows.reduce((sum, r) => sum + (r.distance_m ?? 0), 0);
-    const note = rows.map((r) => r.note?.trim()).filter(Boolean).join(" · ") || null;
+    const note =
+      rows
+        .map((r) => r.note?.trim())
+        .filter(Boolean)
+        .join(" · ") || null;
 
     const { error: updateError } = await supabase
       .from("visits")
@@ -304,5 +307,3 @@ export const mergeVisits = createServerFn({ method: "POST" })
 
     return { id: first.id, removed: removeIds.length };
   });
-
-

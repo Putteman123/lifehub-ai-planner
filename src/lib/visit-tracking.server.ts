@@ -76,9 +76,7 @@ export async function recordPosition(userId: string, input: PositionInput) {
     .limit(1)
     .maybeSingle();
 
-  let open = latest && !latest.left_at ? latest : null;
-
-
+  const open = latest && !latest.left_at ? latest : null;
 
   if (open && open.entry_kind === "resa") {
     if (moving) {
@@ -128,7 +126,8 @@ export async function recordPosition(userId: string, input: PositionInput) {
   }
 
   const startLabel = open
-    ? (open.place_id ? (places ?? []).find((p) => p.id === open.place_id)?.name : open.label) ?? null
+    ? ((open.place_id ? (places ?? []).find((p) => p.id === open.place_id)?.name : open.label) ??
+      null)
     : null;
 
   const { data: created } = await supabaseAdmin
@@ -227,7 +226,11 @@ export async function closeStaleVisits(userId: string, now: Date = new Date()) {
     const ageMs = now.getTime() - new Date(row.arrived_at).getTime();
 
     // Resor utan sträcka är skräp – de ska aldrig ligga kvar.
-    if (row.entry_kind === "resa" && (row.distance_m ?? 0) < MIN_TRAVEL_METERS && ageMs > 30 * 60000) {
+    if (
+      row.entry_kind === "resa" &&
+      (row.distance_m ?? 0) < MIN_TRAVEL_METERS &&
+      ageMs > 30 * 60000
+    ) {
       await supabaseAdmin.from("visits").delete().eq("id", row.id);
       removed++;
       continue;
@@ -246,13 +249,9 @@ export async function closeStaleVisits(userId: string, now: Date = new Date()) {
   return { closed, removed };
 }
 
-
 /** Slår upp ägarens användar-id: i första hand kontot som äger appens data. */
 export async function ownerUserId(): Promise<string | null> {
-  const { data: owner } = await supabaseAdmin
-    .from("app_owner")
-    .select("user_id")
-    .maybeSingle();
+  const { data: owner } = await supabaseAdmin.from("app_owner").select("user_id").maybeSingle();
   if (owner?.user_id) return owner.user_id;
 
   const email = process.env["APP_OWNER_EMAIL"];

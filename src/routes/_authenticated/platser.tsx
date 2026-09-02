@@ -581,7 +581,6 @@ function PlacesPage() {
         </Tabs>
       </DataGate>
 
-
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
