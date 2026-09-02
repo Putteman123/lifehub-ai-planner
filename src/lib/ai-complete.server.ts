@@ -135,3 +135,59 @@ export async function completeText(opts: {
   if (!text) return completeViaLovable(messages, opts.jsonSchema);
   return text;
 }
+
+export type AiAttachment = { filename: string; mimeType: string; data: string };
+
+type Block =
+  | { type: "text"; text: string }
+  | { type: "image_url"; image_url: { url: string } }
+  | { type: "file"; file: { filename: string; file_data: string } };
+
+/**
+ * Multimodalt anrop (PDF och bilder) via Lovable AI-gatewayen. Används när ett
+ * mejl har bilagor – där ligger oftast kvittot eller fakturan.
+ */
+export async function completeVision(opts: {
+  system: string;
+  input: string;
+  attachments: AiAttachment[];
+  jsonSchema?: JsonSchema;
+}): Promise<string> {
+  const key = process.env["LOVABLE_API_KEY"];
+  if (!key) throw new Error("AI-tjänsten är inte tillgänglig just nu. Försök igen om en stund.");
+
+  const blocks: Block[] = [{ type: "text", text: opts.input }];
+  for (const file of opts.attachments) {
+    const url = `data:${file.mimeType};base64,${file.data}`;
+    if (file.mimeType.startsWith("image/")) blocks.push({ type: "image_url", image_url: { url } });
+    else blocks.push({ type: "file", file: { filename: file.filename, file_data: url } });
+  }
+
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Lovable-API-Key": key,
+      "X-Lovable-AIG-SDK": "fetch",
+    },
+    body: JSON.stringify({
+      model: LOVABLE_FALLBACK_MODEL,
+      stream: true,
+      messages: [
+        { role: "system", content: opts.system },
+        { role: "user", content: blocks },
+      ],
+      ...jsonFormat(opts.jsonSchema),
+    }),
+  });
+
+  if (!res.ok || !res.body) {
+    const detail = await res.text().catch(() => "");
+    console.warn(`Lovable AI (bilaga) svarade ${res.status}: ${detail.slice(0, 300)}`);
+    if (res.status === 402 || res.status === 403)
+      throw new Error("AI-krediterna är slut – fyll på för att fortsätta använda Andrea.");
+    throw new Error("AI-tjänsten kunde inte läsa bilagan just nu.");
+  }
+
+  return readStream(res.body);
+}
