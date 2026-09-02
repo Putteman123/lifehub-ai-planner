@@ -156,6 +156,28 @@ export const approveMailFinding = createServerFn({ method: "POST" })
       message = "Prenumerationen är tillagd bland fasta utgifter.";
     }
 
+    if (data.kind === "mote") {
+      const start = data.slotStart ? new Date(data.slotStart) : null;
+      const end = data.slotEnd ? new Date(data.slotEnd) : null;
+      if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+        throw new Error("Välj en tid innan du godkänner mötet.");
+      }
+      const { suggestCategory } = await import("@/lib/calendar");
+      const { error } = await supabase.from("events").insert({
+        user_id: userId,
+        title: `Möte: ${data.merchant}`,
+        description: "Bokat från inkorgen.",
+        starts_at: start.toISOString(),
+        ends_at: end.toISOString(),
+        all_day: false,
+        category: suggestCategory(data.merchant),
+      });
+      if (error) throw new Error(error.message);
+      message = "Mötet är inlagt i kalendern.";
+    }
+
+
+
     const { error: updateError } = await supabase
       .from("mail_findings")
       .update(patch)
