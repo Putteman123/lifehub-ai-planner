@@ -34,6 +34,56 @@ export const endMyVisit = createServerFn({ method: "POST" })
     return { closed };
   });
 
+/**
+ * Städar loggen och svarar på "funkar det?": senaste position, källa och om
+ * något besök pågår just nu.
+ */
+export const placesStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { closeStaleVisits } = await import("@/lib/visit-tracking.server");
+    const cleaned = await closeStaleVisits(context.userId);
+
+    const supabase = context.supabase;
+    const { data: ping } = await supabase
+      .from("location_pings")
+      .select("recorded_at, source")
+      .order("recorded_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const { data: open } = await supabase
+      .from("visits")
+      .select("id, label, arrived_at, entry_kind, place_id")
+      .is("left_at", null)
+      .order("arrived_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+    const { count: phoneToday } = await supabase
+      .from("location_pings")
+      .select("id", { count: "exact", head: true })
+      .eq("source", "telefon")
+      .gte("recorded_at", since);
+
+    return {
+      lastPingAt: ping?.recorded_at ?? null,
+      lastPingSource: ping?.source ?? null,
+      phonePings24h: phoneToday ?? 0,
+      openVisit: open
+        ? {
+            id: open.id,
+            label: open.label,
+            arrivedAt: open.arrived_at,
+            isTravel: open.entry_kind === "resa",
+            placeId: open.place_id,
+          }
+        : null,
+      cleaned,
+    };
+  });
+
 /** Ger den privata webhook-adressen som telefonen ska posta till. */
 export const getIngestInfo = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -232,7 +282,11 @@ export const mergeVisits = createServerFn({ method: "POST" })
     const first = rows[0]!;
     const last = rows[rows.length - 1]!;
     const meters = rows.reduce((sum, r) => sum + (r.distance_m ?? 0), 0);
-    const note = rows.map((r) => r.note?.trim()).filter(Boolean).join(" · ") || null;
+    const note =
+      rows
+        .map((r) => r.note?.trim())
+        .filter(Boolean)
+        .join(" · ") || null;
 
     const { error: updateError } = await supabase
       .from("visits")
@@ -253,5 +307,3 @@ export const mergeVisits = createServerFn({ method: "POST" })
 
     return { id: first.id, removed: removeIds.length };
   });
-
-

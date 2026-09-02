@@ -1,0 +1,92 @@
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { AlertTriangle, CheckCircle2, MapPin, Radio } from "lucide-react";
+
+import { placesStatus } from "@/lib/places.functions";
+import { timeLocal } from "@/lib/tz";
+
+function agoLabel(iso: string) {
+  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (mins < 60) return `${mins} min sedan`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours} h sedan`;
+  return `${Math.round(hours / 24)} dygn sedan`;
+}
+
+const SOURCE_LABEL: Record<string, string> = {
+  telefon: "telefonen",
+  app: "appen",
+  live: "live-läget",
+  manual: "manuellt",
+};
+
+/** Svarar direkt på "funkar loggningen?" och städar hängande besök vid laddning. */
+export function PlacesStatusCard({ onOpenSettings }: { onOpenSettings?: () => void }) {
+  const status = useServerFn(placesStatus);
+  const q = useQuery({
+    queryKey: ["places_status"],
+    queryFn: () => status({}),
+    refetchInterval: 5 * 60000,
+  });
+
+  const data = q.data;
+  const lastPing = data?.lastPingAt ?? null;
+  const silentHours = lastPing ? (Date.now() - new Date(lastPing).getTime()) / 3600000 : Infinity;
+  const silent = silentHours > 6;
+
+  return (
+    <section className="rounded-[18px] border bg-card p-4 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="flex items-center gap-2 text-sm font-semibold">
+            <Radio className="size-4 text-primary" /> Loggningens status
+          </h2>
+          {q.isLoading ? (
+            <p className="mt-1 text-sm text-muted-foreground">Kontrollerar…</p>
+          ) : lastPing ? (
+            <p className="mt-1 text-sm text-muted-foreground">
+              Senaste position {timeLocal(lastPing)} ({agoLabel(lastPing)}) från{" "}
+              {SOURCE_LABEL[data?.lastPingSource ?? ""] ?? data?.lastPingSource ?? "okänd källa"}.
+            </p>
+          ) : (
+            <p className="mt-1 text-sm text-muted-foreground">Ingen position registrerad än.</p>
+          )}
+
+          {data?.openVisit ? (
+            <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+              <MapPin className="size-3.5" />
+              {data.openVisit.isTravel ? "Resa" : "Besök"} pågår sedan{" "}
+              {timeLocal(data.openVisit.arrivedAt)}
+              {data.openVisit.label ? ` · ${data.openVisit.label}` : ""}
+            </p>
+          ) : null}
+        </div>
+
+        <span
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
+            silent ? "bg-destructive/10 text-destructive" : "bg-emerald-500/10 text-emerald-600"
+          }`}
+        >
+          {silent ? <AlertTriangle className="size-3.5" /> : <CheckCircle2 className="size-3.5" />}
+          {silent ? "Inget inflöde" : "Igång"}
+        </span>
+      </div>
+
+      {silent && !q.isLoading ? (
+        <div className="mt-3 rounded-2xl bg-destructive/5 p-3 text-xs text-muted-foreground">
+          Telefonen har inte skickat någon position på länge ({data?.phonePings24h ?? 0} senaste
+          dygnet). Kontrollera att OwnTracks är igång i HTTP-läge med rätt adress.
+          {onOpenSettings ? (
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              className="ml-1 font-medium text-foreground underline"
+            >
+              Öppna guiden
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
+  );
+}

@@ -65,6 +65,9 @@ export async function recordPosition(userId: string, input: PositionInput) {
   const place = matchPlace(places ?? [], input.lat, input.lng);
   const moving = !place && speedMs >= TRAVEL_SPEED_MS;
 
+  // Städa bort gamla hängande poster innan vi tittar på det aktuella besöket.
+  await closeStaleVisits(userId, recordedAt);
+
   const { data: latest } = await supabaseAdmin
     .from("visits")
     .select("*")
@@ -73,18 +76,7 @@ export async function recordPosition(userId: string, input: PositionInput) {
     .limit(1)
     .maybeSingle();
 
-  let open = latest && !latest.left_at ? latest : null;
-
-  // Ett besök som aldrig stängts (t.ex. telefonen slutade skicka) ska inte
-  // ligga kvar som "pågår" i loggen – stäng det med två timmars marginal.
-  if (open && recordedAt.getTime() - new Date(open.arrived_at).getTime() > STALE_GAP_MS * 12) {
-    await closeVisit(
-      open.id,
-      new Date(new Date(open.arrived_at).getTime() + 2 * 60 * 60 * 1000).toISOString(),
-    );
-    open = null;
-  }
-
+  const open = latest && !latest.left_at ? latest : null;
 
   if (open && open.entry_kind === "resa") {
     if (moving) {
@@ -134,7 +126,8 @@ export async function recordPosition(userId: string, input: PositionInput) {
   }
 
   const startLabel = open
-    ? (open.place_id ? (places ?? []).find((p) => p.id === open.place_id)?.name : open.label) ?? null
+    ? ((open.place_id ? (places ?? []).find((p) => p.id === open.place_id)?.name : open.label) ??
+      null)
     : null;
 
   const { data: created } = await supabaseAdmin
@@ -200,27 +193,65 @@ export async function closeVisit(visitId: string, atIso: string) {
   await supabaseAdmin.from("visits").update({ left_at: atIso }).eq("id", visitId);
 }
 
-/** Stänger det öppna besöket för användaren, om något finns. */
+/** Stänger alla öppna besök för användaren, inte bara det senaste. */
 export async function closeOpenVisit(userId: string, atIso = new Date().toISOString()) {
   const { data: open } = await supabaseAdmin
     .from("visits")
     .select("id")
     .eq("user_id", userId)
     .is("left_at", null)
-    .order("arrived_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (!open) return false;
-  await closeVisit(open.id, atIso);
+    .order("arrived_at", { ascending: false });
+  if (!open?.length) return false;
+  for (const row of open) await closeVisit(row.id, atIso);
   return true;
+}
+
+/**
+ * Städar loggen: nollresor tas bort, äldre öppna poster stängs och bara det
+ * allra senaste besöket får ligga kvar som "pågår".
+ */
+export async function closeStaleVisits(userId: string, now: Date = new Date()) {
+  const { data: open } = await supabaseAdmin
+    .from("visits")
+    .select("id, arrived_at, entry_kind, distance_m, lat, lng, end_lat, end_lng")
+    .eq("user_id", userId)
+    .is("left_at", null)
+    .order("arrived_at", { ascending: false });
+  if (!open?.length) return { closed: 0, removed: 0 };
+
+  let closed = 0;
+  let removed = 0;
+
+  for (const [index, row] of open.entries()) {
+    const ageMs = now.getTime() - new Date(row.arrived_at).getTime();
+
+    // Resor utan sträcka är skräp – de ska aldrig ligga kvar.
+    if (
+      row.entry_kind === "resa" &&
+      (row.distance_m ?? 0) < MIN_TRAVEL_METERS &&
+      ageMs > 30 * 60000
+    ) {
+      await supabaseAdmin.from("visits").delete().eq("id", row.id);
+      removed++;
+      continue;
+    }
+
+    // Bara det senaste besöket får vara öppet. Äldre stängs med rimlig marginal.
+    if (index === 0 && ageMs <= STALE_GAP_MS * 6) continue;
+
+    const closeAt = new Date(
+      Math.min(now.getTime(), new Date(row.arrived_at).getTime() + STALE_GAP_MS),
+    ).toISOString();
+    await closeVisit(row.id, closeAt);
+    closed++;
+  }
+
+  return { closed, removed };
 }
 
 /** Slår upp ägarens användar-id: i första hand kontot som äger appens data. */
 export async function ownerUserId(): Promise<string | null> {
-  const { data: owner } = await supabaseAdmin
-    .from("app_owner")
-    .select("user_id")
-    .maybeSingle();
+  const { data: owner } = await supabaseAdmin.from("app_owner").select("user_id").maybeSingle();
   if (owner?.user_id) return owner.user_id;
 
   const email = process.env["APP_OWNER_EMAIL"];
