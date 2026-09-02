@@ -159,7 +159,9 @@ function PlacesPage() {
     }
   }
 
+  const [tab, setTab] = useState("idag");
   const [live, setLive] = useState(false);
+
   const [ingestUrl, setIngestUrl] = useState<string | null>(null);
   const [ingestError, setIngestError] = useState<string | null>(null);
   const watchRef = useRef<number | null>(null);
