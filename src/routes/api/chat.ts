@@ -459,6 +459,39 @@ export const Route = createFileRoute("/api/chat")({
                 return { ok: true, ...res, pending: pending ?? [] };
               },
             }),
+            suggest_meeting_times: tool({
+              description:
+                "Föreslå lediga mötestider utifrån kalendern. Bokar inget – Patrick väljer själv.",
+              inputSchema: z.object({
+                minutes: z.number().nullable().describe("Möteslängd i minuter, standard 60"),
+                count: z.number().nullable().describe("Antal förslag, standard 3"),
+                days: z.number().nullable().describe("Hur många dagar framåt, standard 14"),
+              }),
+              execute: async ({ minutes, count, days }) => {
+                const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+                const { suggestMeetingSlots, slotLabel } = await import("@/lib/meeting-slots");
+                const { data } = await supabaseAdmin
+                  .from("events")
+                  .select("*")
+                  .eq("user_id", userId)
+                  .gte("starts_at", new Date().toISOString())
+                  .order("starts_at", { ascending: true })
+                  .limit(500);
+                const slots = suggestMeetingSlots((data ?? []) as never, {
+                  durationMinutes: minutes ?? 60,
+                  count: count ?? 3,
+                  days: days ?? 14,
+                });
+                return {
+                  ok: true,
+                  slots: slots.map((s) => ({
+                    label: slotLabel(s),
+                    start: s.start.toISOString(),
+                    end: s.end.toISOString(),
+                  })),
+                };
+              },
+            }),
             log_receipt_place: tool({
               description:
                 "Markera butiken från ett kvitto som besök på kartan och lägg in köpet i kalendern.",

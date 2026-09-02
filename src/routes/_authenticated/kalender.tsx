@@ -8,6 +8,7 @@ import { EventDialog } from "@/components/EventDialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ShiftLegend } from "@/components/calendar/ShiftLegend";
+import { MeetingSlotsCard } from "@/components/calendar/MeetingSlotsCard";
 import { SHIFT_STYLES, type Category, type EventRow } from "@/lib/categories";
 import { useCategoryOptions } from "@/lib/event-categories";
 import {
@@ -184,6 +185,10 @@ function CalendarPage() {
         {view === "ar" ? <YearView events={events} day={cursor} onPick={openDay} /> : null}
         {view === "agenda" ? <AgendaView events={events} day={cursor} onSelect={open} piggy={piggy} /> : null}
 
+      </div>
+
+      <div className="mt-5">
+        <MeetingSlotsCard events={events} />
       </div>
 
       <EventDialog

@@ -15,7 +15,20 @@ export const MAIL_FINDING_LABEL: Record<string, string> = {
   faktura: "Att betala",
   kvitto: "Betalt med kort",
   prenumeration: "Prenumeration",
+  mote: "Mötesförfrågan",
 };
+
+export type MeetingSlotJson = { start: string; end: string };
+
+/** Läser ut föreslagna mötestider ur ett fynd. */
+export function findingSlots(row: MailFindingRow): MeetingSlotJson[] {
+  const raw = (row as { suggested_slots?: unknown }).suggested_slots;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (s): s is MeetingSlotJson =>
+      Boolean(s) && typeof (s as MeetingSlotJson).start === "string" && typeof (s as MeetingSlotJson).end === "string",
+  );
+}
 
 /** Fynd som väntar på godkännande. */
 export function useMailFindings() {
@@ -42,6 +55,7 @@ function useRefresh() {
     qc.invalidateQueries({ queryKey: ["spend_entries"] });
     qc.invalidateQueries({ queryKey: ["fixed_expenses"] });
     qc.invalidateQueries({ queryKey: ["finance_accounts"] });
+    qc.invalidateQueries({ queryKey: ["events"] });
   };
 }
 
@@ -49,12 +63,14 @@ function useRefresh() {
 export function useScanMail() {
   const refresh = useRefresh();
   return useMutation({
-    mutationFn: () => scanMailForFinance({ data: {} }),
+    mutationFn: (opts?: { days?: number }) =>
+      scanMailForFinance({ data: { days: opts?.days ?? 30 } }),
     onSuccess: (res) => {
       refresh();
       if (!res.connected) toast.error("Gmail är inte kopplat.");
-      else if (res.created) toast.success(`${res.created} nya fynd att godkänna.`);
-      else toast.info("Inget nytt att godkänna i inkorgen.");
+      else if (res.created)
+        toast.success(`${res.created} nya fynd att godkänna (${res.scanned} mejl lästa).`);
+      else toast.info(`Inget nytt att godkänna – ${res.scanned} mejl lästa.`);
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -62,7 +78,7 @@ export function useScanMail() {
 
 export type ApproveInput = {
   id: string;
-  kind: "faktura" | "kvitto" | "prenumeration";
+  kind: "faktura" | "kvitto" | "prenumeration" | "mote";
   merchant: string;
   amount: number;
   category: string | null;
@@ -70,6 +86,8 @@ export type ApproveInput = {
   occurredAt: string | null;
   accountId: string | null;
   intervalMonths: number;
+  slotStart?: string | null;
+  slotEnd?: string | null;
 };
 
 /** Godkänner ett fynd och lägger in det i systemet. */

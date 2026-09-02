@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Mailbox, RefreshCw, X } from "lucide-react";
+import { Check, Mailbox, Paperclip, RefreshCw, X } from "lucide-react";
 
 import { SectionCard } from "@/components/SectionCard";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,9 @@ import {
 } from "@/components/ui/select";
 import { kr, type AccountRow } from "@/lib/finance";
 import { DEFAULT_SPEND_CATEGORIES } from "@/lib/spend-categories";
+import { slotLabel } from "@/lib/meeting-slots";
 import {
+  findingSlots,
   MAIL_FINDING_LABEL,
   useApproveFinding,
   useDismissFinding,
@@ -40,6 +42,7 @@ function FindingRow({ row, accounts }: { row: MailFindingRow; accounts: AccountR
   const approve = useApproveFinding();
   const dismiss = useDismissFinding();
 
+  const slots = findingSlots(row);
   const [kind, setKind] = useState<string>(row.kind);
   const [merchant, setMerchant] = useState(row.merchant ?? row.subject ?? "");
   const [amount, setAmount] = useState(String(Math.round(Number(row.amount ?? 0))));
@@ -47,13 +50,16 @@ function FindingRow({ row, accounts }: { row: MailFindingRow; accounts: AccountR
   const [due, setDue] = useState(dateInput(row.due_date));
   const [occurred, setOccurred] = useState(dateInput(row.occurred_at));
   const [accountId, setAccountId] = useState(row.account_id ?? "");
+  const [slot, setSlot] = useState(slots[0]?.start ?? "");
 
   const categories = DEFAULT_SPEND_CATEGORIES;
+  const files = (row as { attachment_names?: string[] | null }).attachment_names ?? [];
 
   function submit() {
+    const chosen = slots.find((s) => s.start === slot) ?? null;
     approve.mutate({
       id: row.id,
-      kind: kind as "faktura" | "kvitto" | "prenumeration",
+      kind: kind as "faktura" | "kvitto" | "prenumeration" | "mote",
       merchant: merchant.trim() || "Okänd mottagare",
       amount: num(amount),
       category: category || null,
@@ -61,6 +67,8 @@ function FindingRow({ row, accounts }: { row: MailFindingRow; accounts: AccountR
       occurredAt: occurred || null,
       accountId: accountId || null,
       intervalMonths: 1,
+      slotStart: chosen?.start ?? null,
+      slotEnd: chosen?.end ?? null,
     });
   }
 
@@ -73,9 +81,15 @@ function FindingRow({ row, accounts }: { row: MailFindingRow; accounts: AccountR
           {row.summary ? (
             <p className="mt-1 text-xs text-muted-foreground">{row.summary}</p>
           ) : null}
+          {files.length ? (
+            <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+              <Paperclip className="size-3" /> {files.join(", ")}
+            </p>
+          ) : null}
         </div>
         <span className="shrink-0 rounded-full bg-nav-pengar/12 px-2 py-1 text-xs text-nav-pengar">
-          {MAIL_FINDING_LABEL[row.kind] ?? row.kind} · {kr(Number(row.amount ?? 0))}
+          {MAIL_FINDING_LABEL[row.kind] ?? row.kind}
+          {row.kind === "mote" ? "" : ` · ${kr(Number(row.amount ?? 0))}`}
         </span>
       </div>
 
@@ -90,33 +104,69 @@ function FindingRow({ row, accounts }: { row: MailFindingRow; accounts: AccountR
               <SelectItem value="faktura">Att betala</SelectItem>
               <SelectItem value="kvitto">Betalt med kort</SelectItem>
               <SelectItem value="prenumeration">Prenumeration</SelectItem>
+              <SelectItem value="mote">Mötesförfrågan</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">Mottagare</Label>
+          <Label className="text-xs">{kind === "mote" ? "Vem" : "Mottagare"}</Label>
           <Input value={merchant} onChange={(e) => setMerchant(e.target.value)} />
         </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Belopp (kr)</Label>
-          <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Kategori</Label>
-          <Select value={category || "none"} onValueChange={(v) => setCategory(v === "none" ? "" : v)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Välj" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Ingen</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {cat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+
+        {kind === "mote" ? (
+          <div className="space-y-1 sm:col-span-2">
+            <Label className="text-xs">Föreslagen tid</Label>
+            {slots.length ? (
+              <Select value={slot} onValueChange={setSlot}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Välj tid" />
+                </SelectTrigger>
+                <SelectContent>
+                  {slots.map((s) => (
+                    <SelectItem key={s.start} value={s.start}>
+                      {slotLabel({ start: new Date(s.start), end: new Date(s.end) })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Ingen ledig tid hittades – lägg in mötet manuellt i kalendern.
+              </p>
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="space-y-1">
+              <Label className="text-xs">Belopp (kr)</Label>
+              <Input
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Kategori</Label>
+              <Select
+                value={category || "none"}
+                onValueChange={(v) => setCategory(v === "none" ? "" : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Välj" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Ingen</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        )}
+
         {kind === "kvitto" ? (
           <>
             <div className="space-y-1">
@@ -143,19 +193,25 @@ function FindingRow({ row, accounts }: { row: MailFindingRow; accounts: AccountR
               </Select>
             </div>
           </>
-        ) : (
+        ) : null}
+
+        {kind === "faktura" || kind === "prenumeration" ? (
           <div className="space-y-1">
             <Label className="text-xs">
               {kind === "faktura" ? "Förfaller" : "Nästa dragning"}
             </Label>
             <Input type="date" value={due} onChange={(e) => setDue(e.target.value)} />
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="flex gap-2">
-        <Button size="sm" onClick={submit} disabled={approve.isPending}>
-          <Check className="mr-1 size-4" /> Godkänn
+        <Button
+          size="sm"
+          onClick={submit}
+          disabled={approve.isPending || (kind === "mote" && !slot)}
+        >
+          <Check className="mr-1 size-4" /> {kind === "mote" ? "Boka" : "Godkänn"}
         </Button>
         <Button
           size="sm"
@@ -181,19 +237,29 @@ export function MailFindingsCard({
   const findingsQ = useMailFindings();
   const scan = useScanMail();
   const autoRef = useRef(false);
+  const [lastScan, setLastScan] = useState<number>(0);
 
   // Skanna automatiskt, men högst en gång i timmen.
   useEffect(() => {
+    const last = Number(window.localStorage.getItem(SCAN_KEY) ?? 0);
+    setLastScan(last);
     if (autoRef.current) return;
     autoRef.current = true;
-    const last = Number(window.localStorage.getItem(SCAN_KEY) ?? 0);
     if (Date.now() - last < 3_600_000) return;
     window.localStorage.setItem(SCAN_KEY, String(Date.now()));
-    scan.mutate();
+    setLastScan(Date.now());
+    scan.mutate(undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function run(days: number) {
+    window.localStorage.setItem(SCAN_KEY, String(Date.now()));
+    setLastScan(Date.now());
+    scan.mutate({ days });
+  }
+
   const findings = findingsQ.data ?? [];
+  const result = scan.data;
 
   return (
     <SectionCard
@@ -203,16 +269,37 @@ export function MailFindingsCard({
       tint="bg-nav-pengar/12"
       {...(className ? { className } : {})}
       action={
-        <Button size="sm" variant="ghost" onClick={() => scan.mutate()} disabled={scan.isPending}>
+        <Button size="sm" variant="ghost" onClick={() => run(30)} disabled={scan.isPending}>
           <RefreshCw className={`mr-1 size-4 ${scan.isPending ? "animate-spin" : ""}`} />
           Sök i inkorgen
         </Button>
       }
     >
+      <p className="mb-3 text-xs text-muted-foreground">
+        {scan.isPending
+          ? "Andrea läser inkorgen, även bilagor …"
+          : result
+            ? `Senaste svepet: ${result.scanned} mejl lästa, ${result.created} nya fynd.`
+            : lastScan
+              ? `Senaste svepet ${new Date(lastScan).toLocaleString("sv-SE", {
+                  dateStyle: "short",
+                  timeStyle: "short",
+                })}.`
+              : "Inget svep gjort ännu."}{" "}
+        <button
+          type="button"
+          className="underline underline-offset-2 disabled:opacity-50"
+          onClick={() => run(90)}
+          disabled={scan.isPending}
+        >
+          Sök längre bakåt (90 dagar)
+        </button>
+      </p>
+
       {findings.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          Inga fynd väntar. Andrea letar efter fakturor, kortkvitton och prenumerationer i mejlen –
-          allt behöver ditt godkännande innan det läggs in.
+          Inga fynd väntar. Andrea letar efter fakturor, kortkvitton, prenumerationer och
+          mötesförfrågningar i mejlen – allt behöver ditt godkännande innan det läggs in.
         </p>
       ) : (
         <ul className="space-y-3">

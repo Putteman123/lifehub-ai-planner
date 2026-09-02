@@ -9,12 +9,16 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  */
 export const scanMailForFinance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input?: { max?: number; query?: string }) => input ?? {})
+  .inputValidator(
+    (input?: { max?: number; query?: string; days?: number; attachments?: boolean }) => input ?? {},
+  )
   .handler(async ({ data, context }) => {
     const { scanInbox } = await import("./mail-scan.server");
-    const opts: { max?: number; query?: string } = {};
+    const opts: { max?: number; query?: string; days?: number; attachments?: boolean } = {};
     if (data.max !== undefined) opts.max = data.max;
     if (data.query !== undefined) opts.query = data.query;
+    if (data.days !== undefined) opts.days = data.days;
+    if (data.attachments !== undefined) opts.attachments = data.attachments;
     return scanInbox(context.supabase, context.userId, opts);
   });
 
@@ -41,14 +45,16 @@ export const approveMailFinding = createServerFn({ method: "POST" })
     z
       .object({
         id: z.string().uuid(),
-        kind: z.enum(["faktura", "kvitto", "prenumeration"]),
+        kind: z.enum(["faktura", "kvitto", "prenumeration", "mote"]),
         merchant: z.string().trim().min(1),
-        amount: z.number().positive(),
+        amount: z.number().min(0),
         category: z.string().trim().nullable().default(null),
         dueDate: z.string().nullable().default(null),
         occurredAt: z.string().nullable().default(null),
         accountId: z.string().uuid().nullable().default(null),
         intervalMonths: z.number().int().min(1).max(12).default(1),
+        slotStart: z.string().nullable().default(null),
+        slotEnd: z.string().nullable().default(null),
       })
       .parse(input),
   )
@@ -149,6 +155,28 @@ export const approveMailFinding = createServerFn({ method: "POST" })
       await syncFixedEvents(supabase, userId, expense, []);
       message = "Prenumerationen är tillagd bland fasta utgifter.";
     }
+
+    if (data.kind === "mote") {
+      const start = data.slotStart ? new Date(data.slotStart) : null;
+      const end = data.slotEnd ? new Date(data.slotEnd) : null;
+      if (!start || !end || Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+        throw new Error("Välj en tid innan du godkänner mötet.");
+      }
+      const { suggestCategory } = await import("@/lib/calendar");
+      const { error } = await supabase.from("events").insert({
+        user_id: userId,
+        title: `Möte: ${data.merchant}`,
+        description: "Bokat från inkorgen.",
+        starts_at: start.toISOString(),
+        ends_at: end.toISOString(),
+        all_day: false,
+        category: suggestCategory(data.merchant),
+      });
+      if (error) throw new Error(error.message);
+      message = "Mötet är inlagt i kalendern.";
+    }
+
+
 
     const { error: updateError } = await supabase
       .from("mail_findings")
