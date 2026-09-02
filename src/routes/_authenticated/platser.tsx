@@ -379,65 +379,166 @@ function PlacesPage() {
       }
     >
       <DataGate queries={[placesQ, visitsQ, eventsQ]}>
-        <div className="grid gap-4 lg:grid-cols-3">
-          <DayLogCard places={places} />
+        <Tabs value={tab} onValueChange={setTab}>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="idag">I dag</TabsTrigger>
+            <TabsTrigger value="statistik">Statistik</TabsTrigger>
+            <TabsTrigger value="platser">Platser</TabsTrigger>
+            <TabsTrigger value="installningar">Inställningar</TabsTrigger>
+          </TabsList>
 
-          <section className="space-y-4">
-            <div className="rounded-2xl border border-border bg-card p-4">
-              <h2 className="text-sm font-semibold">Tid i dag</h2>
-              <ul className="mt-3 space-y-1.5">
-                {PLACE_KINDS.map((k) => (
-                  <li key={k.value} className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-2">
-                      <span className="size-2 rounded-full" style={{ backgroundColor: k.color }} />
-                      {k.label}
-                    </span>
-                    <span className="tabular-nums text-muted-foreground">
-                      {formatDuration(today[k.value])}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-3 flex items-center justify-between rounded-xl bg-muted/40 px-3 py-2 text-sm">
-                <span className="flex items-center gap-2">
-                  <Car className="size-3.5 text-muted-foreground" />
-                  Resor i dag
-                </span>
-                <span className="tabular-nums text-muted-foreground">
-                  {todayTravel.count} st · {formatDistance(todayTravel.meters)} ·{" "}
-                  {formatDuration(todayTravel.minutes)}
-                </span>
+          <TabsContent value="idag" className="mt-4 space-y-4">
+            <PlacesStatusCard onOpenSettings={() => setTab("installningar")} />
+
+            <div className="grid gap-4 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <DayMap />
               </div>
 
-              <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Denna vecka
-              </h3>
-              <ul className="mt-2 space-y-1.5">
-                {PLACE_KINDS.filter((k) => week[k.value] > 0).map((k) => (
-                  <li key={k.value} className="flex items-center justify-between text-sm">
-                    <span>{k.label}</span>
-                    <span className="tabular-nums text-muted-foreground">
-                      {formatDuration(week[k.value])}
-                    </span>
-                  </li>
-                ))}
-                {PLACE_KINDS.every((k) => week[k.value] === 0) ? (
-                  <li className="text-sm text-muted-foreground">Inget registrerat än.</li>
-                ) : null}
-                {weekTravel.count > 0 ? (
-                  <li className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-2">
-                      <Car className="size-3.5 text-muted-foreground" /> Resor
-                    </span>
-                    <span className="tabular-nums text-muted-foreground">
-                      {weekTravel.count} st · {formatDistance(weekTravel.meters)}
-                    </span>
-                  </li>
-                ) : null}
-              </ul>
+              <div className="rounded-[18px] border bg-card p-4 shadow-sm">
+                <h2 className="text-sm font-semibold">Tid i dag</h2>
+                <ul className="mt-3 space-y-1.5">
+                  {PLACE_KINDS.map((k) => (
+                    <li key={k.value} className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="size-2 rounded-full"
+                          style={{ backgroundColor: k.color }}
+                        />
+                        {k.label}
+                      </span>
+                      <span className="tabular-nums text-muted-foreground">
+                        {formatDuration(today[k.value])}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-3 flex items-center justify-between rounded-xl bg-muted/40 px-3 py-2 text-sm">
+                  <span className="flex items-center gap-2">
+                    <Car className="size-3.5 text-muted-foreground" />
+                    Resor i dag
+                  </span>
+                  <span className="tabular-nums text-muted-foreground">
+                    {todayTravel.count} st · {formatDistance(todayTravel.meters)} ·{" "}
+                    {formatDuration(todayTravel.minutes)}
+                  </span>
+                </div>
+
+                <h3 className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Denna vecka
+                </h3>
+                <ul className="mt-2 space-y-1.5">
+                  {PLACE_KINDS.filter((k) => week[k.value] > 0).map((k) => (
+                    <li key={k.value} className="flex items-center justify-between text-sm">
+                      <span>{k.label}</span>
+                      <span className="tabular-nums text-muted-foreground">
+                        {formatDuration(week[k.value])}
+                      </span>
+                    </li>
+                  ))}
+                  {PLACE_KINDS.every((k) => week[k.value] === 0) ? (
+                    <li className="text-sm text-muted-foreground">Inget registrerat än.</li>
+                  ) : null}
+                  {weekTravel.count > 0 ? (
+                    <li className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <Car className="size-3.5 text-muted-foreground" /> Resor
+                      </span>
+                      <span className="tabular-nums text-muted-foreground">
+                        {weekTravel.count} st · {formatDistance(weekTravel.meters)}
+                      </span>
+                    </li>
+                  ) : null}
+                </ul>
+              </div>
             </div>
 
-            <div className="rounded-2xl border border-border bg-card p-4">
+            <DayLogCard places={places} />
+            <TravelTimeline places={places} />
+          </TabsContent>
+
+          <TabsContent value="statistik" className="mt-4 space-y-4">
+            <TravelModeStats />
+            <TravelTrendChart />
+            <FrequentRoutes places={places} />
+            <WeeklyTravelPlan />
+            <PreferredModes places={places} />
+          </TabsContent>
+
+          <TabsContent value="platser" className="mt-4 space-y-4">
+            <section className="rounded-[18px] border bg-card p-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold">Mina platser</h2>
+                <Button size="sm" variant="ghost" onClick={openNew}>
+                  <Plus className="size-4" /> Ny plats
+                </Button>
+              </div>
+              {places.length === 0 ? (
+                <p className="mt-3 text-sm text-muted-foreground">
+                  Lägg till Jobbet, Tingsrätten och Hemma så namnges besöken automatiskt.
+                </p>
+              ) : (
+                <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {places.map((place) => (
+                    <li
+                      key={place.id}
+                      className="flex items-center gap-3 rounded-xl border border-border/70 px-3 py-2"
+                    >
+                      <span
+                        className="size-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: place.color }}
+                      />
+                      <button
+                        type="button"
+                        className="flex-1 truncate text-left text-sm font-medium"
+                        aria-label={`Visa ${place.name} på karta`}
+                        onClick={() =>
+                          setMapTarget({
+                            title: place.name,
+                            subtitle: `${kindLabel(place.kind)} · radie ${place.radius_m} m`,
+                            lat: place.lat,
+                            lng: place.lng,
+                          })
+                        }
+                      >
+                        {place.name}
+                        <span className="ml-2 text-xs font-normal text-muted-foreground">
+                          {kindLabel(place.kind)} · {place.radius_m} m
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Redigera plats"
+                        className="text-muted-foreground hover:text-foreground"
+                        onClick={() => openEdit(place)}
+                      >
+                        <Pencil className="size-3.5" />
+                      </button>
+
+                      <button
+                        type="button"
+                        aria-label="Ta bort plats"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => {
+                          if (
+                            confirm(`Ta bort platsen "${place.name}"? Besöken finns kvar i loggen.`)
+                          )
+                            deletePlace.mutate(place.id);
+                        }}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <VisitLogList places={places} />
+          </TabsContent>
+
+          <TabsContent value="installningar" className="mt-4 space-y-4">
+            <div className="rounded-[18px] border bg-card p-4 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="flex items-center gap-2 text-sm font-semibold">
@@ -450,128 +551,31 @@ function PlacesPage() {
                 <Switch checked={live} onCheckedChange={setLive} aria-label="Live-läge" />
               </div>
             </div>
-          </section>
-        </div>
 
-        <div className="mt-4">
-          <DayMap />
-        </div>
+            <section className="rounded-[18px] border bg-card p-4 shadow-sm">
+              <h2 className="text-sm font-semibold">Automatisk loggning från telefonen</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                En webbapp kan inte spåra i bakgrunden. Låt telefonen skicka positionen till din
+                privata adress i stället – gratis, och den fungerar med låst skärm.
+              </p>
 
-        <div className="mt-4">
-          <PositionHistory />
-        </div>
+              <OwnTracksGuide ingestUrl={ingestUrl} error={ingestError} lastPingAt={lastPingAt} />
 
-        <div className="mt-4">
-          <TravelTimeline places={places} />
-        </div>
+              <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/70 pt-3">
+                <p className="text-xs text-muted-foreground">
+                  Platsdata ligger bara i din egen databas och delas aldrig vidare.
+                </p>
+                <Button size="sm" variant="ghost" className="text-destructive" onClick={wipe}>
+                  Radera all historik
+                </Button>
+              </div>
+            </section>
 
-        <div className="mt-4">
-          <WeeklyTravelPlan />
-        </div>
-
-        <div className="mt-4">
-          <TravelModeStats />
-        </div>
-
-        <div className="mt-4">
-          <TravelTrendChart />
-        </div>
-
-        <div className="mt-4">
-          <FrequentRoutes places={places} />
-        </div>
-
-        <div className="mt-4">
-          <PreferredModes places={places} />
-        </div>
-
-        <section className="mt-4 rounded-2xl border border-border bg-card p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">Mina platser</h2>
-            <Button size="sm" variant="ghost" onClick={openNew}>
-              <Plus className="size-4" /> Ny plats
-            </Button>
-          </div>
-          {places.length === 0 ? (
-            <p className="mt-3 text-sm text-muted-foreground">
-              Lägg till Jobbet, Tingsrätten och Hemma så namnges besöken automatiskt.
-            </p>
-          ) : (
-            <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-              {places.map((place) => (
-                <li
-                  key={place.id}
-                  className="flex items-center gap-3 rounded-xl border border-border/70 px-3 py-2"
-                >
-                  <span
-                    className="size-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: place.color }}
-                  />
-                  <button
-                    type="button"
-                    className="flex-1 truncate text-left text-sm font-medium"
-                    aria-label={`Visa ${place.name} på karta`}
-                    onClick={() =>
-                      setMapTarget({
-                        title: place.name,
-                        subtitle: `${kindLabel(place.kind)} · radie ${place.radius_m} m`,
-                        lat: place.lat,
-                        lng: place.lng,
-                      })
-                    }
-                  >
-                    {place.name}
-                    <span className="ml-2 text-xs font-normal text-muted-foreground">
-                      {kindLabel(place.kind)} · {place.radius_m} m
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Redigera plats"
-                    className="text-muted-foreground hover:text-foreground"
-                    onClick={() => openEdit(place)}
-                  >
-                    <Pencil className="size-3.5" />
-                  </button>
-
-                  <button
-                    type="button"
-                    aria-label="Ta bort plats"
-                    className="text-muted-foreground hover:text-destructive"
-                    onClick={() => {
-                      if (confirm(`Ta bort platsen "${place.name}"? Besöken finns kvar i loggen.`))
-                        deletePlace.mutate(place.id);
-                    }}
-                  >
-                    <Trash2 className="size-3.5" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <VisitLogList places={places} />
-
-        <section className="mt-4 rounded-2xl border border-border bg-card p-4">
-          <h2 className="text-sm font-semibold">Automatisk loggning från telefonen</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            En webbapp kan inte spåra i bakgrunden. Låt telefonen skicka positionen till din privata
-            adress i stället – gratis, och den fungerar med låst skärm.
-          </p>
-
-          <OwnTracksGuide ingestUrl={ingestUrl} error={ingestError} lastPingAt={lastPingAt} />
-
-          <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/70 pt-3">
-            <p className="text-xs text-muted-foreground">
-              Platsdata ligger bara i din egen databas och delas aldrig vidare.
-            </p>
-            <Button size="sm" variant="ghost" className="text-destructive" onClick={wipe}>
-              Radera all historik
-            </Button>
-          </div>
-        </section>
+            <PositionHistory />
+          </TabsContent>
+        </Tabs>
       </DataGate>
+
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
