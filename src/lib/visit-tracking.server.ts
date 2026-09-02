@@ -194,20 +194,58 @@ export async function closeVisit(visitId: string, atIso: string) {
   await supabaseAdmin.from("visits").update({ left_at: atIso }).eq("id", visitId);
 }
 
-/** Stänger det öppna besöket för användaren, om något finns. */
+/** Stänger alla öppna besök för användaren, inte bara det senaste. */
 export async function closeOpenVisit(userId: string, atIso = new Date().toISOString()) {
   const { data: open } = await supabaseAdmin
     .from("visits")
     .select("id")
     .eq("user_id", userId)
     .is("left_at", null)
-    .order("arrived_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (!open) return false;
-  await closeVisit(open.id, atIso);
+    .order("arrived_at", { ascending: false });
+  if (!open?.length) return false;
+  for (const row of open) await closeVisit(row.id, atIso);
   return true;
 }
+
+/**
+ * Städar loggen: nollresor tas bort, äldre öppna poster stängs och bara det
+ * allra senaste besöket får ligga kvar som "pågår".
+ */
+export async function closeStaleVisits(userId: string, now: Date = new Date()) {
+  const { data: open } = await supabaseAdmin
+    .from("visits")
+    .select("id, arrived_at, entry_kind, distance_m, lat, lng, end_lat, end_lng")
+    .eq("user_id", userId)
+    .is("left_at", null)
+    .order("arrived_at", { ascending: false });
+  if (!open?.length) return { closed: 0, removed: 0 };
+
+  let closed = 0;
+  let removed = 0;
+
+  for (const [index, row] of open.entries()) {
+    const ageMs = now.getTime() - new Date(row.arrived_at).getTime();
+
+    // Resor utan sträcka är skräp – de ska aldrig ligga kvar.
+    if (row.entry_kind === "resa" && (row.distance_m ?? 0) < MIN_TRAVEL_METERS && ageMs > 30 * 60000) {
+      await supabaseAdmin.from("visits").delete().eq("id", row.id);
+      removed++;
+      continue;
+    }
+
+    // Bara det senaste besöket får vara öppet. Äldre stängs med rimlig marginal.
+    if (index === 0 && ageMs <= STALE_GAP_MS * 6) continue;
+
+    const closeAt = new Date(
+      Math.min(now.getTime(), new Date(row.arrived_at).getTime() + STALE_GAP_MS),
+    ).toISOString();
+    await closeVisit(row.id, closeAt);
+    closed++;
+  }
+
+  return { closed, removed };
+}
+
 
 /** Slår upp ägarens användar-id: i första hand kontot som äger appens data. */
 export async function ownerUserId(): Promise<string | null> {
