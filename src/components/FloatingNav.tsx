@@ -81,23 +81,32 @@ export function MobileNav({
             <SheetTitle className="text-lg">LifeHub AI</SheetTitle>
           </SheetHeader>
 
-          <nav aria-label="Huvudmeny" className="flex-1 overflow-y-auto px-3 pb-3">
-            <ul className="space-y-1">
-              {NAV_ITEMS.map((item) => (
-                <li key={item.to}>
-                  <Link
-                    to={item.to}
-                    onClick={() => onOpenChange(false)}
-                    className="flex min-h-[52px] items-center gap-3 rounded-2xl px-3 text-[15px] font-medium transition-colors hover:bg-muted"
-                    activeProps={{
-                      className: "bg-primary/10 text-primary ring-1 ring-primary/25",
-                    }}
-                  >
-                    <item.icon className={`size-5 shrink-0 ${item.color}`} />
-                    <span className="truncate">{item.label}</span>
-                  </Link>
-                </li>
-              ))}
+          <nav aria-label="Huvudmeny" className="flex-1 space-y-4 overflow-y-auto px-3 pb-3">
+            {NAV_GROUPS.map((group) => (
+              <div key={group.title}>
+                <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {group.title}
+                </p>
+                <ul className="space-y-1">
+                  {group.items.map((item) => (
+                    <li key={item.to}>
+                      <Link
+                        to={item.to}
+                        onClick={() => onOpenChange(false)}
+                        className="flex min-h-[52px] items-center gap-3 rounded-2xl px-3 text-[15px] font-medium transition-colors hover:bg-muted"
+                        activeProps={{
+                          className: "bg-primary/10 text-primary ring-1 ring-primary/25",
+                        }}
+                      >
+                        <item.icon className={`size-5 shrink-0 ${item.color}`} />
+                        <span className="truncate">{item.label}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+
             </ul>
           </nav>
 
