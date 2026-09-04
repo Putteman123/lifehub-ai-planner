@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Lock } from "lucide-react";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { NAV_ITEMS } from "@/lib/nav-theme";
+import { NAV_GROUPS, NAV_ITEMS } from "@/lib/nav-theme";
 
 /** Flytande vertikal meny längs vänsterkanten – endast surfplatta och dator. */
 export function FloatingNav({ onLock }: { onLock: () => void }) {
