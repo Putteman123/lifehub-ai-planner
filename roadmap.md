@@ -7,3 +7,8 @@
 - [x] Reparera äldre Andrea-chatthistorik automatiskt och skydda nya modellanrop mot ogiltiga meddelanden
 - [x] Oberoende Lovable AI-reserv med openai/gpt-5.6-sol
 - [x] Andreas långtidsminne med automatisk inlärning och granskningsvy
+- [x] Anslutningskontroll för telefonens positioner (logg + test + publik adress)
+- [x] Automatisk dagskartläggning i Platser
+- [x] Grupperad meny (Vardag, Ekonomi, Familj & juridik, Verktyg)
+- [x] Daglig AI-briefing på Översikt
+- [x] Ekonomicoach på Pengar
