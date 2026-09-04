@@ -91,7 +91,18 @@ export function DayMap() {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  // Kör kartläggningen automatiskt när dagen är oanalyserad – slipper knapptryck.
+  const autoRan = useRef<Record<string, boolean>>({});
+  useEffect(() => {
+    if (!segmentsQ.isSuccess || segmentsQ.data.length > 0) return;
+    if (autoRan.current[day] || analyzeMutation.isPending) return;
+    autoRan.current[day] = true;
+    analyzeMutation.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [day, segmentsQ.isSuccess, segmentsQ.data]);
+
   const segments = (segmentsQ.data ?? []).filter((s) => s.status !== "ignored");
+
   const totalKm = segments.reduce((sum, s) => sum + (s.distance_m ?? 0), 0);
   const totalMinutes = segments
     .filter((s) => s.entry_kind === "besok")
