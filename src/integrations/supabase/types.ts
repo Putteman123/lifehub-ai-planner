@@ -1043,6 +1043,33 @@ export type Database = {
           },
         ]
       }
+      location_ingest_log: {
+        Row: {
+          detail: string | null
+          had_token: boolean
+          id: string
+          outcome: string
+          received_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          detail?: string | null
+          had_token?: boolean
+          id?: string
+          outcome: string
+          received_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          detail?: string | null
+          had_token?: boolean
+          id?: string
+          outcome?: string
+          received_at?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       location_pings: {
         Row: {
           accuracy_m: number | null

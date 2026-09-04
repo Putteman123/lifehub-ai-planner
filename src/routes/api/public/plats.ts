@@ -26,17 +26,47 @@ function timingSafeEqual(a: string, b: string) {
   return diff === 0;
 }
 
+/** Sparar spår av varje anrop så det går att felsöka telefonens koppling. */
+async function log(
+  outcome: string,
+  request: Request,
+  detail: string | null,
+  hadToken: boolean,
+) {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("location_ingest_log").insert({
+      outcome,
+      detail,
+      had_token: hadToken,
+      user_agent: (request.headers.get("user-agent") ?? "").slice(0, 200),
+    });
+  } catch {
+    // Loggning får aldrig stoppa mottagningen.
+  }
+}
+
 export const Route = createFileRoute("/api/public/plats")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env["LOCATION_INGEST_TOKEN"];
-        if (!expected) return new Response("Not configured", { status: 503 });
-
         const url = new URL(request.url);
         const header = request.headers.get("x-ingest-token");
         const provided = url.searchParams.get("token") ?? header ?? "";
+
+        const expected = process.env["LOCATION_INGEST_TOKEN"];
+        if (!expected) {
+          await log("saknar_nyckel_server", request, null, Boolean(provided));
+          return new Response("Not configured", { status: 503 });
+        }
+
         if (!timingSafeEqual(provided, expected)) {
+          await log(
+            provided ? "fel_nyckel" : "ingen_nyckel",
+            request,
+            provided ? "Token stämmer inte" : "Ingen token skickades med",
+            Boolean(provided),
+          );
           return new Response("Unauthorized", { status: 401 });
         }
 
@@ -44,18 +74,27 @@ export const Route = createFileRoute("/api/public/plats")({
         try {
           body = await request.json();
         } catch {
+          await log("ogiltig_json", request, null, true);
           return new Response("Invalid JSON", { status: 400 });
         }
 
         const parsed = payloadSchema.safeParse(body);
         if (!parsed.success) {
           // OwnTracks skickar även andra meddelandetyper – bekräfta tyst.
+          const type =
+            typeof body === "object" && body !== null && "_type" in body
+              ? String((body as Record<string, unknown>)["_type"])
+              : "okänd";
+          await log("annan_typ", request, `_type=${type}`, true);
           return Response.json({ ok: true, ignored: true });
         }
 
         const { recordPosition, ownerUserId } = await import("@/lib/visit-tracking.server");
         const userId = await ownerUserId();
-        if (!userId) return new Response("Owner not found", { status: 503 });
+        if (!userId) {
+          await log("ingen_agare", request, null, true);
+          return new Response("Owner not found", { status: 503 });
+        }
 
         const data = parsed.data;
         const recordedAt = data.recorded_at
@@ -72,8 +111,15 @@ export const Route = createFileRoute("/api/public/plats")({
           source: "telefon",
         });
 
+        await log("ok", request, null, true);
         return Response.json({ ok: true });
+      },
+      GET: async ({ request }) => {
+        // Enkel kontroll från telefonens webbläsare: bekräftar att adressen nås.
+        await log("get_test", request, null, Boolean(new URL(request.url).searchParams.get("token")));
+        return Response.json({ ok: true, hint: "Adressen fungerar. Positioner skickas med POST." });
       },
     },
   },
 });
+

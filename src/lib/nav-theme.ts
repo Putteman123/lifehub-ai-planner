@@ -38,6 +38,31 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { to: "/kalendrar", label: "Kalendrar", icon: Settings2, color: "text-nav-kalendrar" },
 ] as const;
 
+/** Menyn grupperad så att mobilvyn blir lugnare att skumma. */
+export const NAV_GROUPS: readonly { title: string; items: readonly NavItem[] }[] = [
+  {
+    title: "Vardag",
+    items: NAV_ITEMS.filter((i) =>
+      ["/dashboard", "/kalender", "/attgora", "/handla"].includes(i.to),
+    ),
+  },
+  {
+    title: "Ekonomi",
+    items: NAV_ITEMS.filter((i) => ["/pengar"].includes(i.to)),
+  },
+  {
+    title: "Familj & juridik",
+    items: NAV_ITEMS.filter((i) => ["/barn", "/jurist"].includes(i.to)),
+  },
+  {
+    title: "Verktyg",
+    items: NAV_ITEMS.filter((i) =>
+      ["/platser", "/iptv", "/arkiv", "/kassaskap", "/kalendrar"].includes(i.to),
+    ),
+  },
+] as const;
+
+
 
 /** Appens version, visas i inställningar. */
 export const APP_VERSION = "2.0";

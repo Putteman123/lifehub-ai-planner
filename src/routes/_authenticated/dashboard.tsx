@@ -14,6 +14,7 @@ import {
 import { AppShell } from "@/components/AppShell";
 import { SectionCard } from "@/components/SectionCard";
 import { AlertsCard } from "@/components/dashboard/AlertsCard";
+import { DailyBriefingCard } from "@/components/dashboard/DailyBriefingCard";
 import { MoneyWidget } from "@/components/dashboard/MoneyWidget";
 import { WeeklyReviewCard } from "@/components/dashboard/WeeklyReviewCard";
 import { ShoppingTaskCard, TodoListCard } from "@/components/dashboard/ShoppingTaskCard";
@@ -522,7 +523,11 @@ function Dashboard() {
       }
     >
       <DataGate queries={[eventsQ, tasksQ, remindersQ, todosQ]}>
+        <div className="mb-4">
+          <DailyBriefingCard />
+        </div>
         {/* Mobil: flikar så varje vy får full bredd och läsbar text. */}
+
         <Tabs value={tab} onValueChange={setTab} className="min-w-0 lg:hidden">
           <TabsList className="grid w-full grid-cols-3" aria-label="Vy för översikten">
             <TabsTrigger

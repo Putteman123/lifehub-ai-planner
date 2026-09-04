@@ -84,6 +84,9 @@ export const placesStatus = createServerFn({ method: "POST" })
     };
   });
 
+/** Publik adress som telefonen alltid når – aldrig förhandsvisningen. */
+const PUBLIC_ORIGIN = "https://lifehub-ai-planner.lovable.app";
+
 /** Ger den privata webhook-adressen som telefonen ska posta till. */
 export const getIngestInfo = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -92,11 +95,72 @@ export const getIngestInfo = createServerFn({ method: "GET" })
     const { getRequest } = await import("@tanstack/react-start/server");
     const request = getRequest();
     const origin = new URL(request.url).origin;
+    // Förhandsvisningens adress fungerar inte från telefonen – använd den publika.
+    const stable = /-preview--|localhost|127\.0\.0\.1/.test(origin) ? PUBLIC_ORIGIN : origin;
     return {
-      url: `${origin}/api/public/plats?token=${encodeURIComponent(token)}`,
+      url: `${stable}/api/public/plats?token=${encodeURIComponent(token)}`,
       configured: Boolean(token),
     };
   });
+
+/** Visar om telefonen överhuvudtaget når fram, och vad som i så fall händer. */
+export const ingestDiagnostics = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: rows } = await context.supabase
+      .from("location_ingest_log")
+      .select("received_at, outcome, detail, had_token, user_agent")
+      .order("received_at", { ascending: false })
+      .limit(20);
+
+    const list = rows ?? [];
+    const last = list[0] ?? null;
+    const lastOk = list.find((r) => r.outcome === "ok") ?? null;
+
+    let verdict: "ingen_kontakt" | "fel_nyckel" | "fel_format" | "ok" = "ingen_kontakt";
+    if (lastOk) verdict = "ok";
+    else if (list.some((r) => r.outcome === "fel_nyckel" || r.outcome === "ingen_nyckel"))
+      verdict = "fel_nyckel";
+    else if (list.some((r) => r.outcome === "ogiltig_json" || r.outcome === "annan_typ"))
+      verdict = "fel_format";
+
+    return {
+      verdict,
+      lastAt: last?.received_at ?? null,
+      lastOutcome: last?.outcome ?? null,
+      lastOkAt: lastOk?.received_at ?? null,
+      recent: list.slice(0, 8).map((r) => ({
+        at: r.received_at,
+        outcome: r.outcome,
+        detail: r.detail,
+      })),
+    };
+  });
+
+/** Skickar ett testanrop till mottagningen och rapporterar hela kedjan. */
+export const testIngest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const token = process.env["LOCATION_INGEST_TOKEN"] ?? "";
+    if (!token) return { ok: false, status: 0, message: "Nyckeln saknas på servern." };
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const origin = new URL(getRequest().url).origin;
+    try {
+      const res = await fetch(`${origin}/api/public/plats?token=${encodeURIComponent(token)}`, {
+        method: "GET",
+      });
+      return {
+        ok: res.ok,
+        status: res.status,
+        message: res.ok
+          ? "Adressen svarar. Kommer det ändå inget från telefonen sitter felet i OwnTracks."
+          : `Adressen svarade med fel (${res.status}).`,
+      };
+    } catch (e) {
+      return { ok: false, status: 0, message: e instanceof Error ? e.message : "Okänt fel" };
+    }
+  });
+
 
 /** Raderar all platshistorik (positioner och besök). */
 export const clearLocationHistory = createServerFn({ method: "POST" })

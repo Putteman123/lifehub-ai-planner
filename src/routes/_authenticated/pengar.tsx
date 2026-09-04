@@ -55,6 +55,7 @@ import { MailFindingsCard } from "@/components/pengar/MailFindingsCard";
 import { IncomesCard } from "@/components/pengar/IncomesCard";
 import { MonthOverviewCard } from "@/components/pengar/MonthOverviewCard";
 import { MoneyHeader } from "@/components/pengar/MoneyHeader";
+import { MoneyCoachCard } from "@/components/pengar/MoneyCoachCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   buildBudget,
@@ -175,6 +176,10 @@ function MoneyPage() {
             </TabsList>
 
             <TabsContent value="oversikt" className="mt-4 grid gap-4 lg:grid-cols-2">
+              <div className="lg:col-span-2">
+                <MoneyCoachCard />
+              </div>
+
               <MonthOverviewCard
                 spends={spends}
                 incomes={incomes}
