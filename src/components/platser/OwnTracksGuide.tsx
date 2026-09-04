@@ -15,7 +15,6 @@ type Props = {
   lastPingAt: Date | null;
 };
 
-
 function Step({
   n,
   title,
@@ -34,6 +33,15 @@ function Step({
         <p className="text-sm font-medium">{title}</p>
         {children ? <div className="mt-1 text-sm text-muted-foreground">{children}</div> : null}
       </div>
+    </li>
+  );
+}
+
+function ChecklistItem({ children }: { children: React.ReactNode }) {
+  return (
+    <li className="flex items-start gap-2 text-sm text-muted-foreground">
+      <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+      <span>{children}</span>
     </li>
   );
 }
@@ -73,9 +81,14 @@ export function OwnTracksGuide({ ingestUrl, error, lastPingAt }: Props) {
           </div>
         </Step>
 
-        <Step n={3} title="Klistra in din privata adress i fältet URL">
+        <Step n={3} title="Klistra in adressen i URL-fältet längst ner">
           {ingestUrl ? (
             <>
+              <p className="mt-1 text-sm text-muted-foreground">
+                I OwnTracks-inställningarna ligger fältet <strong>URL</strong> längst ner på
+                sidan, under HTTP-läget. Klistra in hela raden – inklusive allt efter{" "}
+                <code>?token=</code>.
+              </p>
               <code className="mt-1.5 block break-all rounded-lg bg-muted px-3 py-2 text-xs">
                 {ingestUrl}
               </code>
@@ -100,7 +113,6 @@ export function OwnTracksGuide({ ingestUrl, error, lastPingAt }: Props) {
           )}
         </Step>
 
-
         <Step n={4} title="Stäng av Autentisering och Lösenord">
           Din token ligger redan i adressen, så inga inloggningsuppgifter behövs.
         </Step>
@@ -115,6 +127,34 @@ export function OwnTracksGuide({ ingestUrl, error, lastPingAt }: Props) {
           Tingsrätten …) här i LifeHub först, så får besöken rätt namn och kategori automatiskt.
         </Step>
       </ol>
+
+      <div className="mt-4 rounded-xl border border-border/70 bg-muted/40 p-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Så här ska inställningarna se ut
+        </p>
+        <ul className="mt-2 space-y-1.5">
+          <ChecklistItem>
+            <strong>Mode:</strong> HTTP
+          </ChecklistItem>
+          <ChecklistItem>
+            <strong>URL:</strong> hela din privata adress ovan
+          </ChecklistItem>
+          <ChecklistItem>
+            <strong>Autentisering:</strong> av
+          </ChecklistItem>
+          <ChecklistItem>
+            <strong>Lösenord:</strong> av
+          </ChecklistItem>
+          <ChecklistItem>
+            <strong>iOS-platsbehörighet:</strong> Alltid
+          </ChecklistItem>
+        </ul>
+        <p className="mt-2.5 text-xs text-muted-foreground">
+          Om OwnTracks visar <strong>“Status inaktiv”</strong> är det inte fel – det betyder bara
+          att ingen position skickats än. Gå ut och rör på dig, eller tryck på skicka-ikonen
+          uppe till höger i OwnTracks.
+        </p>
+      </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl bg-muted/60 px-3 py-2.5">
         <Button size="sm" variant="secondary" onClick={() => setChecked(true)}>
