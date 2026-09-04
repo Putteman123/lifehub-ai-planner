@@ -107,7 +107,6 @@ export function MobileNav({
               </div>
             ))}
 
-            </ul>
           </nav>
 
           <div className="border-t border-border px-3 py-3">
