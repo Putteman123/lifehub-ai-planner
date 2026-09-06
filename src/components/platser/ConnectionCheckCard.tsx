@@ -16,11 +16,12 @@ const OUTCOME_LABEL: Record<string, string> = {
   ingen_agare: "Hittade ingen ägare",
   saknar_nyckel_server: "Nyckeln saknas i appen",
   get_test: "Test av adressen",
+  test_ok: "Säkert mottagningstest godkänt",
 };
 
 const VERDICT: Record<string, { text: string; tone: "ok" | "warn" | "bad" }> = {
   ok: {
-    text: "Telefonen når fram och positioner sparas.",
+    text: "En riktig position från telefonen har tagits emot och sparats.",
     tone: "ok",
   },
   fel_nyckel: {
@@ -100,6 +101,13 @@ export function ConnectionCheckCard() {
           <HelpCircle className="size-3.5" /> Inga anrop har registrerats än.
         </p>
       )}
+
+      {q.data?.lastTestAt && q.data.verdict !== "ok" ? (
+        <p className="mt-2 text-xs text-muted-foreground">
+          LifeHubs mottagningstest lyckades {timeLocal(q.data.lastTestAt)}, men ingen riktig
+          position har kommit från OwnTracks ännu.
+        </p>
+      ) : null}
 
       {q.data?.recent?.length ? (
         <ul className="mt-3 space-y-1 border-t border-border/60 pt-2 text-xs text-muted-foreground">

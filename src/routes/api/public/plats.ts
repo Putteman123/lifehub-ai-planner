@@ -8,6 +8,7 @@ import { z } from "zod";
 const payloadSchema = z
   .object({
     _type: z.string().optional(),
+    _lifehub_test: z.boolean().optional(),
     lat: z.number().min(-90).max(90),
     lon: z.number().min(-180).max(180).optional(),
     lng: z.number().min(-180).max(180).optional(),
@@ -54,7 +55,7 @@ export const Route = createFileRoute("/api/public/plats")({
         const header = request.headers.get("x-ingest-token");
         const provided = url.searchParams.get("token") ?? header ?? "";
 
-        const expected = process.env["LOCATION_INGEST_TOKEN"];
+        const expected = process.env["LOCATION_INGEST_TOKEN_V2"];
         if (!expected) {
           await log("saknar_nyckel_server", request, null, Boolean(provided));
           return new Response("Not configured", { status: 503 });
@@ -89,6 +90,11 @@ export const Route = createFileRoute("/api/public/plats")({
           return Response.json({ ok: true, ignored: true });
         }
 
+        if (parsed.data._lifehub_test) {
+          await log("test_ok", request, "Korrekt OwnTracks-format och nyckel", true);
+          return Response.json({ ok: true, test: true });
+        }
+
         const { recordPosition, ownerUserId } = await import("@/lib/visit-tracking.server");
         const userId = await ownerUserId();
         if (!userId) {
@@ -97,6 +103,11 @@ export const Route = createFileRoute("/api/public/plats")({
         }
 
         const data = parsed.data;
+        const longitude = data.lon ?? data.lng;
+        if (longitude == null) {
+          await log("ogiltig_json", request, "lon/lng saknas", true);
+          return new Response("Invalid coordinates", { status: 400 });
+        }
         const recordedAt = data.recorded_at
           ? data.recorded_at
           : data.tst
@@ -105,7 +116,7 @@ export const Route = createFileRoute("/api/public/plats")({
 
         await recordPosition(userId, {
           lat: data.lat,
-          lng: (data.lon ?? data.lng)!,
+          lng: longitude,
           accuracy_m: data.acc ?? data.accuracy ?? null,
           recorded_at: recordedAt,
           source: "telefon",
@@ -115,9 +126,17 @@ export const Route = createFileRoute("/api/public/plats")({
         return Response.json({ ok: true });
       },
       GET: async ({ request }) => {
-        // Enkel kontroll från telefonens webbläsare: bekräftar att adressen nås.
-        await log("get_test", request, null, Boolean(new URL(request.url).searchParams.get("token")));
-        return Response.json({ ok: true, hint: "Adressen fungerar. Positioner skickas med POST." });
+        const provided = new URL(request.url).searchParams.get("token") ?? "";
+        const expected = process.env["LOCATION_INGEST_TOKEN_V2"];
+        if (!expected || !timingSafeEqual(provided, expected)) {
+          await log(provided ? "fel_nyckel" : "ingen_nyckel", request, "GET-kontroll", Boolean(provided));
+          return new Response("Unauthorized", { status: 401 });
+        }
+        await log("get_test", request, "Adressen nådd i webbläsare", true);
+        return Response.json({
+          ok: true,
+          hint: "Adressen och nyckeln är rätt. En position måste fortfarande skickas från OwnTracks.",
+        });
       },
     },
   },
