@@ -53,6 +53,7 @@ import { TransferCard } from "@/components/pengar/TransferCard";
 import { LoansCard } from "@/components/pengar/LoansCard";
 import { MailFindingsCard } from "@/components/pengar/MailFindingsCard";
 import { IncomesCard } from "@/components/pengar/IncomesCard";
+import { AutoMonthCard } from "@/components/pengar/AutoMonthCard";
 import { MonthOverviewCard } from "@/components/pengar/MonthOverviewCard";
 import { MoneyHeader } from "@/components/pengar/MoneyHeader";
 import { MoneyCoachCard } from "@/components/pengar/MoneyCoachCard";
@@ -200,6 +201,12 @@ function MoneyPage() {
             </TabsContent>
 
             <TabsContent value="in" className="mt-4 grid gap-4 lg:grid-cols-2">
+              <AutoMonthCard
+                incomes={incomes}
+                spends={spends}
+                fixed={fixed}
+                className="lg:col-span-2"
+              />
               <IncomesCard incomes={incomes} accounts={accounts} className="lg:col-span-2" />
               <FilesCard files={files} className="lg:col-span-2" />
             </TabsContent>
