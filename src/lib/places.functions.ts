@@ -52,6 +52,14 @@ export const placesStatus = createServerFn({ method: "POST" })
       .limit(1)
       .maybeSingle();
 
+    const { data: phonePing } = await supabase
+      .from("location_pings")
+      .select("recorded_at")
+      .eq("source", "telefon")
+      .order("recorded_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
     const { data: open } = await supabase
       .from("visits")
       .select("id, label, arrived_at, entry_kind, place_id")
@@ -70,6 +78,7 @@ export const placesStatus = createServerFn({ method: "POST" })
     return {
       lastPingAt: ping?.recorded_at ?? null,
       lastPingSource: ping?.source ?? null,
+      lastPhonePingAt: phonePing?.recorded_at ?? null,
       phonePings24h: phoneToday ?? 0,
       openVisit: open
         ? {
@@ -147,8 +156,9 @@ export const testIngest = createServerFn({ method: "POST" })
     if (!token) return { ok: false, status: 0, message: "Nyckeln saknas på servern." };
     const { getRequest } = await import("@tanstack/react-start/server");
     const origin = new URL(getRequest().url).origin;
+    const stable = /-preview--|localhost|127\.0\.0\.1/.test(origin) ? PUBLIC_ORIGIN : origin;
     try {
-      const res = await fetch(`${origin}/api/public/plats?token=${encodeURIComponent(token)}`, {
+      const res = await fetch(`${stable}/api/public/plats?token=${encodeURIComponent(token)}`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({

@@ -12,3 +12,4 @@
 - [x] Grupperad meny (Vardag, Ekonomi, Familj & juridik, Verktyg)
 - [x] Daglig AI-briefing på Översikt
 - [x] Ekonomicoach på Pengar
+- [x] Reparera OwnTracks med ny privat adress och verkligt mottagningstest

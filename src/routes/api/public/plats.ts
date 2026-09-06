@@ -126,9 +126,17 @@ export const Route = createFileRoute("/api/public/plats")({
         return Response.json({ ok: true });
       },
       GET: async ({ request }) => {
-        // Enkel kontroll från telefonens webbläsare: bekräftar att adressen nås.
-        await log("get_test", request, null, Boolean(new URL(request.url).searchParams.get("token")));
-        return Response.json({ ok: true, hint: "Adressen fungerar. Positioner skickas med POST." });
+        const provided = new URL(request.url).searchParams.get("token") ?? "";
+        const expected = process.env["LOCATION_INGEST_TOKEN_V2"];
+        if (!expected || !timingSafeEqual(provided, expected)) {
+          await log(provided ? "fel_nyckel" : "ingen_nyckel", request, "GET-kontroll", Boolean(provided));
+          return new Response("Unauthorized", { status: 401 });
+        }
+        await log("get_test", request, "Adressen nådd i webbläsare", true);
+        return Response.json({
+          ok: true,
+          hint: "Adressen och nyckeln är rätt. En position måste fortfarande skickas från OwnTracks.",
+        });
       },
     },
   },

@@ -31,7 +31,10 @@ export function PlacesStatusCard({ onOpenSettings }: { onOpenSettings?: () => vo
 
   const data = q.data;
   const lastPing = data?.lastPingAt ?? null;
-  const silentHours = lastPing ? (Date.now() - new Date(lastPing).getTime()) / 3600000 : Infinity;
+  const lastPhonePing = data?.lastPhonePingAt ?? null;
+  const silentHours = lastPhonePing
+    ? (Date.now() - new Date(lastPhonePing).getTime()) / 3600000
+    : Infinity;
   const silent = silentHours > 6;
 
   return (
@@ -43,9 +46,13 @@ export function PlacesStatusCard({ onOpenSettings }: { onOpenSettings?: () => vo
           </h2>
           {q.isLoading ? (
             <p className="mt-1 text-sm text-muted-foreground">Kontrollerar…</p>
+          ) : lastPhonePing ? (
+            <p className="mt-1 text-sm text-muted-foreground">
+              Senaste position från OwnTracks {timeLocal(lastPhonePing)} ({agoLabel(lastPhonePing)}).
+            </p>
           ) : lastPing ? (
             <p className="mt-1 text-sm text-muted-foreground">
-              Senaste position {timeLocal(lastPing)} ({agoLabel(lastPing)}) från{" "}
+              Ingen ny position från OwnTracks. Senaste manuella position {timeLocal(lastPing)} från{" "}
               {SOURCE_LABEL[data?.lastPingSource ?? ""] ?? data?.lastPingSource ?? "okänd källa"}.
             </p>
           ) : (
