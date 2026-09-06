@@ -53,6 +53,7 @@ import { TransferCard } from "@/components/pengar/TransferCard";
 import { LoansCard } from "@/components/pengar/LoansCard";
 import { MailFindingsCard } from "@/components/pengar/MailFindingsCard";
 import { IncomesCard } from "@/components/pengar/IncomesCard";
+import { AutoMonthCard } from "@/components/pengar/AutoMonthCard";
 import { MonthOverviewCard } from "@/components/pengar/MonthOverviewCard";
 import { MoneyHeader } from "@/components/pengar/MoneyHeader";
 import { MoneyCoachCard } from "@/components/pengar/MoneyCoachCard";
