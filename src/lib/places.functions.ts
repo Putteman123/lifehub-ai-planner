@@ -91,7 +91,7 @@ const PUBLIC_ORIGIN = "https://lifehub-ai-planner.lovable.app";
 export const getIngestInfo = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
-    const token = process.env["LOCATION_INGEST_TOKEN"] ?? "";
+    const token = process.env["LOCATION_INGEST_TOKEN_V2"] ?? "";
     const { getRequest } = await import("@tanstack/react-start/server");
     const request = getRequest();
     const origin = new URL(request.url).origin;
@@ -116,6 +116,7 @@ export const ingestDiagnostics = createServerFn({ method: "POST" })
     const list = rows ?? [];
     const last = list[0] ?? null;
     const lastOk = list.find((r) => r.outcome === "ok") ?? null;
+    const lastTest = list.find((r) => r.outcome === "test_ok") ?? null;
 
     let verdict: "ingen_kontakt" | "fel_nyckel" | "fel_format" | "ok" = "ingen_kontakt";
     if (lastOk) verdict = "ok";
@@ -129,6 +130,7 @@ export const ingestDiagnostics = createServerFn({ method: "POST" })
       lastAt: last?.received_at ?? null,
       lastOutcome: last?.outcome ?? null,
       lastOkAt: lastOk?.received_at ?? null,
+      lastTestAt: lastTest?.received_at ?? null,
       recent: list.slice(0, 8).map((r) => ({
         at: r.received_at,
         outcome: r.outcome,
@@ -141,19 +143,28 @@ export const ingestDiagnostics = createServerFn({ method: "POST" })
 export const testIngest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
-    const token = process.env["LOCATION_INGEST_TOKEN"] ?? "";
+    const token = process.env["LOCATION_INGEST_TOKEN_V2"] ?? "";
     if (!token) return { ok: false, status: 0, message: "Nyckeln saknas på servern." };
     const { getRequest } = await import("@tanstack/react-start/server");
     const origin = new URL(getRequest().url).origin;
     try {
       const res = await fetch(`${origin}/api/public/plats?token=${encodeURIComponent(token)}`, {
-        method: "GET",
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          _type: "location",
+          _lifehub_test: true,
+          lat: 0,
+          lon: 0,
+          acc: 1,
+          tst: Math.floor(Date.now() / 1000),
+        }),
       });
       return {
         ok: res.ok,
         status: res.status,
         message: res.ok
-          ? "Adressen svarar. Kommer det ändå inget från telefonen sitter felet i OwnTracks."
+          ? "Mottagningen godkände adressen och OwnTracks-formatet. Skicka nu en position från telefonen."
           : `Adressen svarade med fel (${res.status}).`,
       };
     } catch (e) {

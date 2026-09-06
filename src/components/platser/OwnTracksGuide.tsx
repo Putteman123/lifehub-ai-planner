@@ -1,13 +1,8 @@
 import { useState } from "react";
-import { Check, ChevronDown, Copy, TriangleAlert } from "lucide-react";
+import { Check, Copy, Send, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 
 type Props = {
   ingestUrl: string | null;
@@ -61,33 +56,31 @@ export function OwnTracksGuide({ ingestUrl, error, lastPingAt }: Props) {
   return (
     <div className="mt-4">
       <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        Koppla OwnTracks (rekommenderas)
+        Reparera OwnTracks
       </h3>
 
       <ol className="mt-3 space-y-3">
-        <Step n={1} title="Installera OwnTracks">
-          Gratis i App Store. Öppna appen och tillåt notiser om den frågar.
+        <Step n={1} title="Radera hela den gamla adressen">
+          Den gamla adressen innehöll nyckeln två gånger och fungerar inte. Markera hela
+          innehållet i OwnTracks-fältet <strong>URL</strong> och radera det.
         </Step>
 
-        <Step n={2} title="Byt till HTTP-läge – gör detta först">
+        <Step n={2} title="Kontrollera att Mode är HTTP">
           <div className="flex gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-2.5 text-[13px] text-foreground">
             <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-500" />
             <p>
-              OwnTracks startar i <strong>MQTT-läge</strong>. Då visas Host, Port 8883, TLS,
-              DeviceID och subTopic – och URL-fältet fungerar inte. Gå till{" "}
-              <strong>Inställningar → Läge (Mode)</strong> och välj <strong>HTTP</strong>. Då
-              byts listan ut och <strong>URL</strong> blir det fält du ska fylla i.
+              Din bild visar redan <strong>HTTP</strong>, vilket är rätt. Fälten Host, Port och
+              DeviceID kan fortfarande synas men ska inte fyllas i.
             </p>
           </div>
         </Step>
 
-        <Step n={3} title="Klistra in adressen i URL-fältet längst ner">
+        <Step n={3} title="Kopiera den nya adressen och klistra in den exakt en gång">
           {ingestUrl ? (
             <>
               <p className="mt-1 text-sm text-muted-foreground">
-                I OwnTracks-inställningarna ligger fältet <strong>URL</strong> längst ner på
-                sidan, under HTTP-läget. Klistra in hela raden – inklusive allt efter{" "}
-                <code>?token=</code>.
+                 Klistra in hela raden i fältet <strong>URL</strong>. Den ska ha exakt ett{" "}
+                 <code>?token=</code> och sluta efter den nya nyckeln.
               </p>
               <code className="mt-1.5 block break-all rounded-lg bg-muted px-3 py-2 text-xs">
                 {ingestUrl}
@@ -113,18 +106,15 @@ export function OwnTracksGuide({ ingestUrl, error, lastPingAt }: Props) {
           )}
         </Step>
 
-        <Step n={4} title="Stäng av Autentisering och Lösenord">
-          Din token ligger redan i adressen, så inga inloggningsuppgifter behövs.
+        <Step n={4} title="Kontrollera iPhone-behörigheterna">
+          Inställningar → OwnTracks → Plats: <strong>Alltid</strong>, <strong>Exakt plats</strong>{" "}
+          på och <strong>Bakgrundsuppdatering</strong> på. I OwnTracks ska Autentisering och
+          Lösenord vara av.
         </Step>
 
-        <Step n={5} title="Ställ in Locator">
-          <strong>Significant</strong> sparar mest batteri och räcker för att se var du är.{" "}
-          <strong>Move</strong> loggar tätare men drar mer ström.
-        </Step>
-
-        <Step n={6} title="Tillåt plats “Alltid”">
-          Annars slutar loggningen när skärmen låses. Skapa dina platser (Jobbet, Hemma,
-          Tingsrätten …) här i LifeHub först, så får besöken rätt namn och kategori automatiskt.
+        <Step n={5} title="Välj Locator och skicka en position">
+          Välj <strong>Significant</strong> eller <strong>Move</strong>. Gå sedan till kartan och
+          tryck på skicka-ikonen uppe till höger.
         </Step>
       </ol>
 
@@ -146,19 +136,21 @@ export function OwnTracksGuide({ ingestUrl, error, lastPingAt }: Props) {
             <strong>Lösenord:</strong> av
           </ChecklistItem>
           <ChecklistItem>
-            <strong>iOS-platsbehörighet:</strong> Alltid
+            <strong>Locator:</strong> Significant eller Move
+          </ChecklistItem>
+          <ChecklistItem>
+            <strong>iPhone:</strong> Plats Alltid, Exakt plats och Bakgrundsuppdatering på
           </ChecklistItem>
         </ul>
         <p className="mt-2.5 text-xs text-muted-foreground">
-          Om OwnTracks visar <strong>“Status inaktiv”</strong> är det inte fel – det betyder bara
-          att ingen position skickats än. Gå ut och rör på dig, eller tryck på skicka-ikonen
-          uppe till höger i OwnTracks.
+          Din bild visar <strong>“Status inaktiv”</strong>. Det betyder att OwnTracks inte skickar
+          just nu. Efter steg 5 ska en riktig position synas i kontrollen ovan.
         </p>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl bg-muted/60 px-3 py-2.5">
         <Button size="sm" variant="secondary" onClick={() => setChecked(true)}>
-          <Check className="size-4" /> Fungerar det?
+          <Send className="size-4" /> Kontrollera senaste position
         </Button>
         <p className="text-xs text-muted-foreground">
           {!checked
@@ -170,32 +162,8 @@ export function OwnTracksGuide({ ingestUrl, error, lastPingAt }: Props) {
       </div>
 
       <p className="mt-3 text-xs text-muted-foreground">
-        Fälten DeviceID, subTopic, clientId och pubTopicBase gäller bara MQTT-läget och kan
-        lämnas som de är.
+        Host, Port, DeviceID och MQTT-fälten ska lämnas som de är.
       </p>
-
-      <Collapsible className="mt-4 border-t border-border/70 pt-3">
-        <CollapsibleTrigger className="group flex w-full items-center justify-between text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Alternativ: Genvägar (utan extra app)
-          <ChevronDown className="size-4 transition-transform group-data-[state=open]:rotate-180" />
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <ol className="mt-2 list-decimal space-y-1 pl-4 text-sm text-muted-foreground">
-            <li>Genvägar → Automation → Ny personlig automation.</li>
-            <li>
-              Välj t.ex. <strong>Ankomst</strong> till en plats.
-            </li>
-            <li>
-              Lägg till <strong>Hämta aktuell plats</strong>.
-            </li>
-            <li>
-              Lägg till <strong>Hämta innehåll från URL</strong>: metod POST, JSON med fälten{" "}
-              <code>lat</code> och <code>lon</code> från platsen, och adressen ovan som URL.
-            </li>
-            <li>Slå av ”Fråga innan körning”.</li>
-          </ol>
-        </CollapsibleContent>
-      </Collapsible>
     </div>
   );
 }
