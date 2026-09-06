@@ -200,6 +200,12 @@ function MoneyPage() {
             </TabsContent>
 
             <TabsContent value="in" className="mt-4 grid gap-4 lg:grid-cols-2">
+              <AutoMonthCard
+                incomes={incomes}
+                spends={spends}
+                fixed={fixed}
+                className="lg:col-span-2"
+              />
               <IncomesCard incomes={incomes} accounts={accounts} className="lg:col-span-2" />
               <FilesCard files={files} className="lg:col-span-2" />
             </TabsContent>
