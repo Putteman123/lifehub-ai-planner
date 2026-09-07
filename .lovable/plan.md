@@ -1,36 +1,35 @@
-# Egen iPhone-app för resespårning
+# LifeHub 6.0 – nytt utseende rakt igenom
 
-Målet: en riktig app på hemskärmen som spårar dina resor i bakgrunden — utan OwnTracks och utan att LifeHub behöver vara öppen. Resorna hamnar ändå i LifeHub som i dag.
+Appen byter från dagens mörka nattblå till ett ljust, lugnt uttryck: varmt papper, djupblått bläck och en varm röd accent. Samma innehåll och funktioner — men tydligare, luftigare och lättare att läsa i dagsljus.
 
-## Vad du får
+## Färg och känsla
 
-- **Appen "LifeHub Resor"** – en avskalad iPhone-app med tre saker: en stor på/av-knapp för spårning, dagens rutt med tid och sträcka, och en knapp för att skicka in position direkt.
-- **Bakgrundsspårning** – appen fortsätter registrera positioner när telefonen är låst eller appen ligger i bakgrunden, och den startar om av sig själv efter omstart av telefonen.
-- **Ingen kopiering av adresser** – du loggar in en gång med ditt LifeHub-konto, sedan sköter appen kopplingen själv.
-- **Fungerar utan täckning** – positioner sparas i telefonen och skickas när nätet är tillbaka.
-- **Batterisnålt** – tre lägen: Sparläge, Balanserat och Detaljerat (tätare punkter när du kör).
+- **Bakgrund:** varmt papper (#F6F3EC), kort i rent vitt med mjuk skugga i stället för glaseffekter.
+- **Text och rubriker:** djupblått bläck (#1B2A5B).
+- **Accent:** varm röd (#D2543F) för det som är viktigt — varningar, förfallna räkningar, aktiva val.
+- **Kategorifärgerna** (jobb, barn, jurist, pengar, IPTV med flera) görs om till en dämpad palett som fungerar mot ljus bakgrund, med samma betydelse som i dag.
+- **Mörkt läge** följer med: samma palett vänd till kväll, så appen inte bländar på natten.
 
-## Vad du behöver
+## Typografi
 
-Appen måste byggas och installeras via en Mac med Xcode. Jag förbereder allt i projektet och skriver en enkel steg-för-steg-instruktion (öppna projektet i Xcode, välj din telefon, tryck kör). Med ett vanligt gratis Apple-ID måste appen installeras om var sjunde dag; med ett utvecklarkonto (ca 99 USD/år) gäller den i ett år.
+Rubriker i **Outfit**, brödtext i **Figtree** — rundare och tydligare på telefon. Siffror (belopp, tider, avstånd) får fast bredd så kolumner ligger i linje.
 
-Om du inte har Mac: säg till, då bygger jag i stället om OwnTracks-flödet så långt det går i LifeHub.
+## Layout: kontrollpanel
 
-## Så går arbetet till
+- **Översikt** börjar med en rad nyckeltal högst upp: saldo kvar i månaden, dagens händelser, uppgifter kvar, senaste position. Under det ligger dagens innehåll i tätare kort.
+- **Pengar, Platser, Handla, Kalender** får samma uppbyggnad: nyckeltal överst, innehåll under, samma kortmall överallt.
+- Kort blir stramare: tydlig rubrikrad med ikon i kategorifärg, mindre inramning, mer luft mellan innehållet.
+- Flytande menyn och flikarna behåller sin funktion men får det nya utseendet och tydligare markering av vald sida.
 
-1. Paketera projektet som en iOS-app (Capacitor) och lägga till en egen liten startsida bara för spårning.
-2. Lägga till bakgrundsposition med rätt behörighetstexter på svenska.
-3. Kö och automatisk återsändning av positioner som inte kommit fram.
-4. Inloggning i appen med ditt vanliga LifeHub-konto.
-5. Låta LifeHub ta emot positionerna från den nya appen på samma sätt som i dag, med källan "telefon".
-6. Instruktion för hur du bygger och installerar appen på din iPhone.
+## Vad som inte ändras
+
+Ingen funktion tas bort, inga data påverkas, ingen databasändring. Bara utseendet.
 
 ## Tekniska detaljer
 
-- Capacitor 7 + `@capacitor/geolocation` för förgrund och `@capacitor-community/background-geolocation` för bakgrund; `ios/` läggs till i repot, `capacitor.config.ts` pekar på den publicerade URL:en för webbdelen så du kan uppdatera utan att bygga om.
-- Ny rutt `src/routes/tracker.tsx` (kompakt spårningsvy) som appen laddar som startsida; övriga LifeHub-vyer nås fortfarande.
-- Positioner postas till befintlig `src/routes/api/public/plats.ts` i OwnTracks-format (`_type: "location"`, `lat`, `lon`, `acc`, `tst`, `batt`), så `visit-tracking.server.ts`, besöksloggen och dagskartan fungerar oförändrat.
-- Autentisering: token hämtas från Supabase-sessionen i webbvyn och nyckeln till ingest-endpointen hämtas via `getIngestInfo`, lagras i Capacitor Preferences — ingen manuell adress.
-- Offlinekö i Preferences med exponentiell backoff; batchpost stöds genom att endpointen får acceptera en array av punkter (bakåtkompatibelt med enskilda objekt).
-- Info.plist: `NSLocationAlwaysAndWhenInUseUsageDescription`, `NSLocationWhenInUseUsageDescription`, bakgrundsläget `location`.
-- Ingen databasmigrering behövs.
+- `src/styles.css`: nya oklch-tokens för `:root` och `.dark` (background, foreground, card, primary = bläckblått, accent = tegelrött, border, muted), omgjorda `--cat-*` och `--nav-*`, `--radius` sänks till ca 1rem, nya skuggtokens (`--shadow-card`, `--shadow-raised`) som ersätter aurora-gradienterna.
+- Fonter laddas via `<link>` i `src/routes/__root.tsx` (Outfit + Figtree från Google Fonts) och sätts som `--font-display` / `--font-sans` i `@theme`. Inga URL-importer i CSS.
+- `SectionCard.tsx` får en stramare variant plus en ny `StatTile`-komponent för nyckeltalsraden; `AppShell.tsx` och `FloatingNav.tsx` uppdateras mot de nya tokens.
+- Genomgång av komponenter under `src/components/**` och rutter under `src/routes/_authenticated/**` för hårdkodade färgklasser (t.ex. `text-white`, `bg-black`, glass-/aurora-klasser) som byts mot semantiska tokens.
+- Sidorna `dashboard.tsx`, `pengar.tsx`, `platser.tsx`, `handla.tsx`, `kalender.tsx` får nyckeltalsraden överst.
+- Verifiering: typkontroll, befintliga tester och en skärmbildskontroll av Översikt, Pengar och Platser i iPhone-bredd.
