@@ -82,69 +82,68 @@
 
 :root {
   --radius: 1.25rem;
-  /* Aurora Glass – mörk natt-blå bas med mint och lila som accenter. */
-  --background: oklch(0.19 0.045 275);
-  --foreground: oklch(0.97 0.008 275);
-  --surface: oklch(1 0 0 / 6%);
-  --card: oklch(1 0 0 / 7%);
-  --card-foreground: oklch(0.97 0.008 275);
-  --popover: oklch(0.22 0.05 272);
-  --popover-foreground: oklch(0.97 0.008 275);
-  --primary: oklch(0.85 0.19 152);
-  --primary-foreground: oklch(0.19 0.045 275);
-  --secondary: oklch(1 0 0 / 8%);
-  --secondary-foreground: oklch(0.96 0.008 275);
-  --muted: oklch(1 0 0 / 7%);
-  --muted-foreground: oklch(0.78 0.03 275);
-  --accent: oklch(0.78 0.15 300);
-  --accent-foreground: oklch(0.18 0.05 300);
-  --destructive: oklch(0.66 0.2 22);
-  --destructive-foreground: oklch(0.98 0.005 275);
-  --border: oklch(1 0 0 / 14%);
-  --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.85 0.19 152);
-  --chart-1: oklch(0.85 0.19 152);
-  --chart-2: oklch(0.78 0.15 300);
-  --chart-3: oklch(0.76 0.12 220);
-  --chart-4: oklch(0.82 0.14 80);
-  --chart-5: oklch(0.7 0.18 20);
-  --sidebar: oklch(0.21 0.05 274);
-  --sidebar-foreground: oklch(0.96 0.008 275);
-  --sidebar-primary: oklch(0.85 0.19 152);
-  --sidebar-primary-foreground: oklch(0.19 0.045 275);
-  --sidebar-accent: oklch(1 0 0 / 8%);
-  --sidebar-accent-foreground: oklch(0.96 0.008 275);
-  --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.85 0.19 152);
+  /* LifeHub 6.0 – papper, bläckblå och varm tegelröd. */
+  --background: oklch(0.96 0.012 85);
+  --foreground: oklch(0.29 0.075 268);
+  --surface: oklch(0.985 0.006 85);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.29 0.075 268);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.29 0.075 268);
+  --primary: oklch(0.29 0.075 268);
+  --primary-foreground: oklch(0.98 0.008 85);
+  --secondary: oklch(0.93 0.012 85);
+  --secondary-foreground: oklch(0.29 0.075 268);
+  --muted: oklch(0.94 0.01 85);
+  --muted-foreground: oklch(0.52 0.035 268);
+  --accent: oklch(0.6 0.15 34);
+  --accent-foreground: oklch(0.98 0.008 85);
+  --destructive: oklch(0.58 0.18 28);
+  --destructive-foreground: oklch(0.98 0.008 85);
+  --border: oklch(0.29 0.075 268 / 12%);
+  --input: oklch(0.29 0.075 268 / 18%);
+  --ring: oklch(0.29 0.075 268 / 45%);
+  --chart-1: oklch(0.29 0.075 268);
+  --chart-2: oklch(0.6 0.15 34);
+  --chart-3: oklch(0.58 0.1 220);
+  --chart-4: oklch(0.72 0.12 80);
+  --chart-5: oklch(0.55 0.1 160);
+  --sidebar: oklch(0.985 0.006 85);
+  --sidebar-foreground: oklch(0.29 0.075 268);
+  --sidebar-primary: oklch(0.29 0.075 268);
+  --sidebar-primary-foreground: oklch(0.98 0.008 85);
+  --sidebar-accent: oklch(0.94 0.01 85);
+  --sidebar-accent-foreground: oklch(0.29 0.075 268);
+  --sidebar-border: oklch(0.29 0.075 268 / 12%);
+  --sidebar-ring: oklch(0.29 0.075 268 / 45%);
 
-  --cat-jobb: oklch(0.8 0.05 275);
-  --cat-ledig: oklch(0.85 0.19 152);
-  --cat-jurist: oklch(0.82 0.14 75);
-  --cat-barn: oklch(0.85 0.14 95);
-  --cat-privat: oklch(0.78 0.15 300);
-  --cat-viktigt: oklch(0.72 0.19 22);
-  --cat-natt: oklch(0.72 0.14 285);
-  --cat-kvall: oklch(0.8 0.14 55);
-  --cat-iptv: oklch(0.78 0.13 205);
-  --cat-ekonomi: oklch(0.82 0.15 165);
+  --cat-jobb: oklch(0.38 0.09 268);
+  --cat-ledig: oklch(0.52 0.11 165);
+  --cat-jurist: oklch(0.55 0.11 75);
+  --cat-barn: oklch(0.6 0.12 95);
+  --cat-privat: oklch(0.5 0.12 300);
+  --cat-viktigt: oklch(0.58 0.16 28);
+  --cat-natt: oklch(0.45 0.1 285);
+  --cat-kvall: oklch(0.58 0.13 55);
+  --cat-iptv: oklch(0.52 0.1 205);
+  --cat-ekonomi: oklch(0.5 0.11 165);
 
-  --shadow-soft:
-    inset 0 1px 0 oklch(1 0 0 / 8%), 0 1px 2px oklch(0.1 0.04 275 / 40%),
-    0 18px 40px -20px oklch(0.08 0.04 275 / 70%);
-  --shadow-glow: 0 0 0 1px oklch(1 0 0 / 8%), 0 12px 40px -12px color-mix(in oklab, var(--primary) 45%, transparent);
+  --shadow-soft: 0 1px 2px oklch(0.29 0.075 268 / 6%), 0 12px 28px -18px oklch(0.29 0.075 268 / 30%);
+  --shadow-glow: 0 0 0 1px oklch(0.29 0.075 268 / 12%), 0 16px 36px -20px oklch(0.29 0.075 268 / 35%);
 
-  --nav-oversikt: oklch(0.95 0.01 275);
-  --nav-kalender: oklch(0.78 0.13 258);
-  --nav-attgora: oklch(0.78 0.15 305);
-  --nav-handla: oklch(0.85 0.17 152);
-  --nav-barn: oklch(0.86 0.13 95);
-  --nav-jurist: oklch(0.83 0.13 75);
-  --nav-iptv: oklch(0.78 0.15 330);
-  --nav-platser: oklch(0.78 0.12 205);
-  --nav-kassaskap: oklch(0.74 0.18 22);
-  --nav-kalendrar: oklch(0.8 0.02 275);
-  --nav-pengar: oklch(0.82 0.15 165);
+  --nav-oversikt: oklch(0.29 0.075 268);
+  --nav-kalender: oklch(0.45 0.11 258);
+  --nav-attgora: oklch(0.5 0.12 305);
+  --nav-handla: oklch(0.5 0.11 160);
+  --nav-barn: oklch(0.6 0.12 95);
+  --nav-jurist: oklch(0.55 0.11 75);
+  --nav-iptv: oklch(0.52 0.13 330);
+  --nav-platser: oklch(0.5 0.1 205);
+  --nav-kassaskap: oklch(0.58 0.16 28);
+  --nav-kalendrar: oklch(0.45 0.03 268);
+  --nav-pengar: oklch(0.5 0.11 165);
 }
+
 
 
 /* Appen är mörk som standard – klassen finns kvar för komponenter som frågar efter den. */
