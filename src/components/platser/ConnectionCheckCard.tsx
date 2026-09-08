@@ -102,6 +102,17 @@ export function ConnectionCheckCard() {
         </p>
       )}
 
+      {q.data?.encrypted ? (
+        <div className="mt-2 flex gap-2 rounded-2xl bg-amber-500/10 p-3 text-sm text-amber-600">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+          <p>
+            Telefonen skickar krypterat – appen kan inte läsa de positionerna. Töm fältet{" "}
+            <strong>Hemlig krypteringsnyckel</strong> i OwnTracks-inställningarna, annars går
+            en del positioner förlorade.
+          </p>
+        </div>
+      ) : null}
+
       {q.data?.lastTestAt && q.data.verdict !== "ok" ? (
         <p className="mt-2 text-xs text-muted-foreground">
           LifeHubs mottagningstest lyckades {timeLocal(q.data.lastTestAt)}, men ingen riktig
