@@ -320,14 +320,14 @@ export const setFixedPaid = createServerFn({ method: "POST" })
 
     const { data: expense } = await supabase
       .from("fixed_expenses")
-      .select("amount")
+      .select("amount, account_id")
       .eq("id", data.expenseId)
       .maybeSingle();
 
     const amount = data.amount ?? Number(expense?.amount ?? 0);
 
-    // Huvudkontot = kontot med lägst sort_order, om inget konto angetts.
-    let accountId = data.accountId ?? existing?.account_id ?? null;
+    // Kontot på utgiften styr, sedan tidigare betalning, sist huvudkontot.
+    let accountId = data.accountId ?? expense?.account_id ?? existing?.account_id ?? null;
     if (!accountId) {
       const { data: account } = await supabase
         .from("finance_accounts")
@@ -337,6 +337,7 @@ export const setFixedPaid = createServerFn({ method: "POST" })
         .maybeSingle();
       accountId = account?.id ?? null;
     }
+
 
     const { error } = await supabase.from("fixed_expense_payments").upsert(
       {
@@ -490,6 +491,8 @@ export const saveFixedExpense = createServerFn({ method: "POST" })
         amount: z.number(),
         due_day: z.number().int().min(1).max(28),
         category: z.string().trim().nullable().default(null),
+        account_id: z.string().uuid().nullable().default(null),
+
         is_active: z.boolean().default(true),
         is_subscription: z.boolean().default(false),
         interval_months: z.number().int().min(1).max(12).default(1),

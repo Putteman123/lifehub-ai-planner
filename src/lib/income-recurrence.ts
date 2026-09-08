@@ -141,8 +141,28 @@ export type RecurringSpend = {
   amount: number;
   day: number;
   category: string | null;
+  accountId: string | null;
   months: string[];
 };
+
+/** Kontot som posten oftast betalats från. */
+function commonAccount(rows: Array<{ account_id: string | null }>): string | null {
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    if (!row.account_id) continue;
+    counts.set(row.account_id, (counts.get(row.account_id) ?? 0) + 1);
+  }
+  let best: string | null = null;
+  let bestCount = 0;
+  for (const [id, count] of counts) {
+    if (count > bestCount) {
+      best = id;
+      bestCount = count;
+    }
+  }
+  return best;
+}
+
 
 /**
  * Köp som återkommer varje månad (till exempel abonnemang som betalas med
@@ -181,8 +201,93 @@ export function detectRecurringSpends(
       amount: Math.round(mid),
       day: Math.round(median(rows.map((r) => new Date(r.spent_at).getDate()))),
       category: latest.category,
+      accountId: commonAccount(rows),
       months,
     });
   }
+
   return out.sort((a, b) => b.amount - a.amount);
 }
+
+export type PlannedFixed = {
+  key: string;
+  name: string;
+  amount: number;
+  due_day: number;
+  category: string | null;
+  account_id: string | null;
+  months: number;
+};
+
+/**
+ * Återkommande köp som ännu inte finns som fast utgift, färdiga att läggas in
+ * med det belopp och det konto de faktiskt betalats med.
+ */
+export function planFixedExpenses(
+  spends: SpendRow[],
+  fixed: Array<{ name: string }>,
+  now = new Date(),
+): PlannedFixed[] {
+  const known = new Set(fixed.map((row) => labelKey(row.name)));
+  return detectRecurringSpends(spends, now)
+    .filter((row) => row.label && !known.has(row.key))
+    .map((row) => ({
+      key: row.key,
+      name: row.label,
+      amount: row.amount,
+      due_day: Math.min(Math.max(row.day, 1), 28),
+      category: row.category,
+      account_id: row.accountId,
+      months: row.months.length,
+    }));
+}
+
+export type FixedDrift = {
+  id: string;
+  name: string;
+  current: number;
+  suggested: number;
+  months: number;
+};
+
+/**
+ * Fasta utgifter där de faktiskt betalda beloppen skiljer sig från det
+ * sparade beloppet – så månadsbilden bygger på verkliga siffror.
+ */
+export function fixedAmountDrift(
+  fixed: Array<{ id: string; name: string; amount: number; is_active: boolean }>,
+  payments: Array<{ expense_id: string; amount: number; period: string }>,
+  minMonths = 2,
+  tolerance = 0.05,
+): FixedDrift[] {
+  const byExpense = new Map<string, Array<{ amount: number; period: string }>>();
+  for (const p of payments) {
+    byExpense.set(p.expense_id, [
+      ...(byExpense.get(p.expense_id) ?? []),
+      { amount: Number(p.amount), period: p.period },
+    ]);
+  }
+
+  const out: FixedDrift[] = [];
+  for (const row of fixed) {
+    if (!row.is_active) continue;
+    const history = (byExpense.get(row.id) ?? [])
+      .sort((a, b) => a.period.localeCompare(b.period))
+      .slice(-3);
+    if (history.length < minMonths) continue;
+    const suggested = Math.round(median(history.map((h) => h.amount)));
+    const current = Number(row.amount);
+    if (suggested <= 0 || Math.abs(suggested - current) <= current * tolerance) continue;
+    out.push({ id: row.id, name: row.name, current, suggested, months: history.length });
+  }
+  return out.sort((a, b) => Math.abs(b.suggested - b.current) - Math.abs(a.suggested - a.current));
+}
+
+/** Kontot en fast utgift oftast betalats från, enligt betalningshistoriken. */
+export function fixedAccountFromHistory(
+  expenseId: string,
+  payments: Array<{ expense_id: string; account_id: string | null }>,
+): string | null {
+  return commonAccount(payments.filter((p) => p.expense_id === expenseId));
+}
+
