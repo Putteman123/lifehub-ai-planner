@@ -127,6 +127,15 @@ export const ingestDiagnostics = createServerFn({ method: "POST" })
     const lastOk = list.find((r) => r.outcome === "ok") ?? null;
     const lastTest = list.find((r) => r.outcome === "test_ok") ?? null;
 
+    // Krypterade OwnTracks-meddelanden kan vi inte läsa – positionerna går förlorade.
+    const lastEncrypted =
+      list.find(
+        (r) => r.outcome === "annan_typ" && (r.detail ?? "").includes("encrypted"),
+      ) ?? null;
+    const encryptedAfterOk = Boolean(
+      lastEncrypted && (!lastOk || lastEncrypted.received_at > lastOk.received_at),
+    );
+
     let verdict: "ingen_kontakt" | "fel_nyckel" | "fel_format" | "ok" = "ingen_kontakt";
     if (lastOk) verdict = "ok";
     else if (list.some((r) => r.outcome === "fel_nyckel" || r.outcome === "ingen_nyckel"))
@@ -136,6 +145,8 @@ export const ingestDiagnostics = createServerFn({ method: "POST" })
 
     return {
       verdict,
+      encrypted: encryptedAfterOk,
+      lastEncryptedAt: lastEncrypted?.received_at ?? null,
       lastAt: last?.received_at ?? null,
       lastOutcome: last?.outcome ?? null,
       lastOkAt: lastOk?.received_at ?? null,
