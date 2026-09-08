@@ -1,35 +1,26 @@
-# LifeHub 6.0 – nytt utseende rakt igenom
+# LifeHub 6.0 – nytt utseende ("Mjuka rutor")
 
-Appen byter från dagens mörka nattblå till ett ljust, lugnt uttryck: varmt papper, djupblått bläck och en varm röd accent. Samma innehåll och funktioner — men tydligare, luftigare och lättare att läsa i dagsljus.
+Hela appen byter från mörkt glas till ljust papper med bläckblå text, varm tegelröd accent och mjuka vita kort med rundade hörn. Inga funktioner, data eller sidor ändras – bara utseendet.
 
-## Färg och känsla
+## Så kommer det se ut
 
-- **Bakgrund:** varmt papper (#F6F3EC), kort i rent vitt med mjuk skugga i stället för glaseffekter.
-- **Text och rubriker:** djupblått bläck (#1B2A5B).
-- **Accent:** varm röd (#D2543F) för det som är viktigt — varningar, förfallna räkningar, aktiva val.
-- **Kategorifärgerna** (jobb, barn, jurist, pengar, IPTV med flera) görs om till en dämpad palett som fungerar mot ljus bakgrund, med samma betydelse som i dag.
-- **Mörkt läge** följer med: samma palett vänd till kväll, så appen inte bländar på natten.
+- Bakgrund: varmt ljust papper istället för mörkblått.
+- Kort: helvita, tydligt rundade, tunn kant och mjuk skugga (ingen glaseffekt, inget norrsken i bakgrunden).
+- Text och knappar: djup bläckblå som huvudfärg, tegelröd för det som är viktigt eller brådskande.
+- Typsnitt: Outfit för rubriker, Figtree för brödtext.
+- Nyckeltal högst upp på Översikt i en tät tvåkolumnsrad (t.ex. "Att spendera idag" med liten stapel, och Andreas lägesbild).
+- Flikarna Idag/Kalender/Statistik som en ljus segmentkontroll.
+- "Kräver din uppmärksamhet" och dagens händelser som ljusa listrader med färgprick per kategori.
+- Andrea-knappen nere till höger blir en mörkblå rund knapp med ljus ram.
 
-## Typografi
+## Vad som ändras i koden
 
-Rubriker i **Outfit**, brödtext i **Figtree** — rundare och tydligare på telefon. Siffror (belopp, tider, avstånd) får fast bredd så kolumner ligger i linje.
+- `src/styles.css`: nya färgtoken (bakgrund, kort, primär, accent, ram, kategori- och navigationsfärger), ny skuggdefinition, aurora-bakgrunden tas bort, `card-soft`/`surface-soft` görs om till ljusa ytor utan blur, `.dark`-blocket justeras så det inte ger mörk yta.
+- `src/routes/__root.tsx`: laddar Outfit + Figtree istället för Space Grotesk + DM Sans.
+- `src/components/SectionCard.tsx`, `AppShell.tsx`, `FloatingNav.tsx`: rundare kort, tunnare kanter, ljusare aktivt läge i navigeringen.
+- `src/routes/_authenticated/dashboard.tsx`: nyckeltalsrad överst enligt vald skiss.
+- Ca 20 ställen i komponenter/sidor med hårdkodade färger (vit/svart/hex) byts till semantiska token så allt följer nya paletten.
 
-## Layout: kontrollpanel
+## Kontroll före leverans
 
-- **Översikt** börjar med en rad nyckeltal högst upp: saldo kvar i månaden, dagens händelser, uppgifter kvar, senaste position. Under det ligger dagens innehåll i tätare kort.
-- **Pengar, Platser, Handla, Kalender** får samma uppbyggnad: nyckeltal överst, innehåll under, samma kortmall överallt.
-- Kort blir stramare: tydlig rubrikrad med ikon i kategorifärg, mindre inramning, mer luft mellan innehållet.
-- Flytande menyn och flikarna behåller sin funktion men får det nya utseendet och tydligare markering av vald sida.
-
-## Vad som inte ändras
-
-Ingen funktion tas bort, inga data påverkas, ingen databasändring. Bara utseendet.
-
-## Tekniska detaljer
-
-- `src/styles.css`: nya oklch-tokens för `:root` och `.dark` (background, foreground, card, primary = bläckblått, accent = tegelrött, border, muted), omgjorda `--cat-*` och `--nav-*`, `--radius` sänks till ca 1rem, nya skuggtokens (`--shadow-card`, `--shadow-raised`) som ersätter aurora-gradienterna.
-- Fonter laddas via `<link>` i `src/routes/__root.tsx` (Outfit + Figtree från Google Fonts) och sätts som `--font-display` / `--font-sans` i `@theme`. Inga URL-importer i CSS.
-- `SectionCard.tsx` får en stramare variant plus en ny `StatTile`-komponent för nyckeltalsraden; `AppShell.tsx` och `FloatingNav.tsx` uppdateras mot de nya tokens.
-- Genomgång av komponenter under `src/components/**` och rutter under `src/routes/_authenticated/**` för hårdkodade färgklasser (t.ex. `text-white`, `bg-black`, glass-/aurora-klasser) som byts mot semantiska tokens.
-- Sidorna `dashboard.tsx`, `pengar.tsx`, `platser.tsx`, `handla.tsx`, `kalender.tsx` får nyckeltalsraden överst.
-- Verifiering: typkontroll, befintliga tester och en skärmbildskontroll av Översikt, Pengar och Platser i iPhone-bredd.
+Typkontroll, tester och bygge körs, och Översikt fotograferas i iPhone-bredd för att bekräfta att allt får plats utan sidoscroll.
