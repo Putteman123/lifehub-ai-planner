@@ -8,8 +8,10 @@
 ## Åtgärd på telefonen (ingen kodändring)
 
 1. OwnTracks → Inställningar → töm fältet **Hemlig krypteringsnyckel** helt.
-2. Skicka en position manuellt från kartan.
-3. Kontrollera i LifeHub → Platser att den syns direkt.
+2. Kontrollera att hela LifeHub-adressen ligger i **URL-fältet** för HTTP-läget (kopiera från LifeHub → Platser vid osäkerhet).
+3. Sätt **Locator/Positionsrapportering = Move** för tätare uppdateringar.
+4. Skicka en position manuellt från kartan.
+5. Kontrollera i LifeHub → Platser att den syns direkt.
 
 ## Ändring i appen
 
