@@ -523,9 +523,31 @@ function Dashboard() {
       }
     >
       <DataGate queries={[eventsQ, tasksQ, remindersQ, todosQ]}>
+        <div className="mb-4 grid grid-cols-3 gap-2 sm:gap-3">
+          {[
+            { label: "Idag", value: todayEvents.length, hint: "händelser" },
+            {
+              label: "Att göra",
+              value: todos.filter((t) => !t.is_done).length,
+              hint: "öppna",
+            },
+            { label: "Påminner", value: openReminders.length, hint: "aktiva" },
+          ].map((kpi) => (
+            <div key={kpi.label} className="card-soft px-3 py-2.5">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                {kpi.label}
+              </p>
+              <p className="font-display text-2xl font-bold tabular-nums leading-tight">
+                {kpi.value}
+              </p>
+              <p className="text-[11px] text-muted-foreground">{kpi.hint}</p>
+            </div>
+          ))}
+        </div>
         <div className="mb-4">
           <DailyBriefingCard />
         </div>
+
         {/* Mobil: flikar så varje vy får full bredd och läsbar text. */}
 
         <Tabs value={tab} onValueChange={setTab} className="min-w-0 lg:hidden">
