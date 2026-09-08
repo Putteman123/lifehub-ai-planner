@@ -81,19 +81,45 @@ export function PlacesStatusCard({ onOpenSettings }: { onOpenSettings?: () => vo
 
       {silent && !q.isLoading ? (
         <div className="mt-3 rounded-2xl bg-destructive/5 p-3 text-xs text-muted-foreground">
-          Telefonen har inte skickat någon position på länge ({data?.phonePings24h ?? 0} senaste
-          dygnet). Kontrollera att OwnTracks är igång i HTTP-läge med rätt adress.
+          <p className="font-medium text-destructive">
+            {lastPhonePing
+              ? `Telefonen har inte skickat någon position sedan ${timeLocal(lastPhonePing)} (${agoLabel(lastPhonePing)}).`
+              : "Telefonen har aldrig skickat någon position."}
+          </p>
+          <p className="mt-1">
+            Testträffar från appen räknas inte. Senaste dygnet: {data?.phonePings24h ?? 0}{" "}
+            positioner från telefonen. Gå igenom detta i tur och ordning:
+          </p>
+          <ol className="mt-2 list-decimal space-y-1 pl-4">
+            <li>
+              iPhone-inställningar → OwnTracks → Plats ska stå på <strong>Alltid</strong> med{" "}
+              <strong>Exakt plats</strong> påslaget.
+            </li>
+            <li>
+              OwnTracks → Inställningar → Positionsrapportering → välj <strong>Move</strong> (eller
+              Significant). Står den på Manual skickas ingenting.
+            </li>
+            <li>
+              iPhone-inställningar → OwnTracks → Bakgrundsuppdatering på, och Lågeffektläge av.
+            </li>
+            <li>
+              Adressen från guiden ska ligga i HTTP-lägets adressfält, och fältet Hemlig
+              krypteringsnyckel ska vara tomt.
+            </li>
+            <li>Skicka en position manuellt från kartan i OwnTracks och ladda om den här sidan.</li>
+          </ol>
           {onOpenSettings ? (
             <button
               type="button"
               onClick={onOpenSettings}
-              className="ml-1 font-medium text-foreground underline"
+              className="mt-2 font-medium text-foreground underline"
             >
-              Öppna guiden
+              Öppna guiden med adressen
             </button>
           ) : null}
         </div>
       ) : null}
+
     </section>
   );
 }
