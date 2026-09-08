@@ -54,6 +54,8 @@ import { LoansCard } from "@/components/pengar/LoansCard";
 import { MailFindingsCard } from "@/components/pengar/MailFindingsCard";
 import { IncomesCard } from "@/components/pengar/IncomesCard";
 import { AutoMonthCard } from "@/components/pengar/AutoMonthCard";
+import { AutoFixedCard } from "@/components/pengar/AutoFixedCard";
+
 import { MonthOverviewCard } from "@/components/pengar/MonthOverviewCard";
 import { MoneyHeader } from "@/components/pengar/MoneyHeader";
 import { MoneyCoachCard } from "@/components/pengar/MoneyCoachCard";
@@ -219,9 +221,22 @@ function MoneyPage() {
             </TabsContent>
 
             <TabsContent value="fasta" className="mt-4 grid gap-4 lg:grid-cols-2">
-              <FixedCard expenses={fixed} payments={payments} spends={spends} />
+              <AutoFixedCard
+                spends={spends}
+                fixed={fixed}
+                payments={payments}
+                accounts={accounts}
+                className="lg:col-span-2"
+              />
+              <FixedCard
+                expenses={fixed}
+                payments={payments}
+                spends={spends}
+                accounts={accounts}
+              />
               <LoansCard accounts={accounts} fixed={fixed} payments={payments} />
             </TabsContent>
+
 
             <TabsContent value="mer" className="mt-4 grid gap-4 lg:grid-cols-2">
               <MailFindingsCard accounts={accounts} className="lg:col-span-2" />
@@ -289,6 +304,8 @@ type FixedInput = {
   amount: number;
   due_day: number;
   category: string | null;
+  account_id?: string | null;
+
   is_active: boolean;
   is_subscription: boolean;
   interval_months: number;
@@ -678,11 +695,14 @@ function FixedCard({
   expenses,
   payments,
   spends,
+  accounts,
 }: {
   expenses: FixedExpenseRow[];
   payments: FixedPaymentRow[];
   spends: SpendRow[];
+  accounts: AccountRow[];
 }) {
+
 
   const qc = useQueryClient();
   const setPaid = useMutation({
@@ -733,6 +753,8 @@ function FixedCard({
   const [subscription, setSubscription] = useState(false);
   const [interval, setInterval] = useState("1");
   const [syncCal, setSyncCal] = useState(true);
+  const [fixedAccount, setFixedAccount] = useState("");
+
 
   const categories = spendCategories(spends);
 
@@ -752,6 +774,8 @@ function FixedCard({
     setSubscription(false);
     setInterval("1");
     setSyncCal(true);
+    setFixedAccount(accounts[0]?.id ?? "");
+
     setOpen(true);
   }
 
@@ -764,6 +788,8 @@ function FixedCard({
     setSubscription(Boolean(row.is_subscription));
     setInterval(String(row.interval_months ?? 1));
     setSyncCal(row.sync_calendar !== false);
+    setFixedAccount(row.account_id ?? "");
+
     setOpen(true);
   }
 
@@ -778,6 +804,8 @@ function FixedCard({
         amount: num(amount),
         due_day: parsedDay,
         category: category.trim() || null,
+        account_id: fixedAccount || null,
+
         is_active: editing?.is_active ?? true,
         is_subscription: subscription,
         interval_months: months,
@@ -869,6 +897,10 @@ function FixedCard({
                         ? `Förfallen den ${row.due_day}:e`
                         : `Dras den ${row.due_day}:e`}
                   {row.category ? ` · ${row.category}` : ""}
+                  {row.account_id
+                    ? ` · ${accounts.find((a) => a.id === row.account_id)?.name ?? "konto"}`
+                    : ""}
+
                   {carryOver.length
                     ? ` · ${carryOver.length} obetald${carryOver.length > 1 ? "a" : ""} månad${
                         carryOver.length > 1 ? "er" : ""
@@ -964,6 +996,22 @@ function FixedCard({
                 </Select>
               </div>
             </div>
+            <div>
+              <Label>Betalas från</Label>
+              <Select value={fixedAccount} onValueChange={setFixedAccount}>
+                <SelectTrigger className="h-11" aria-label="Betalas från">
+                  <SelectValue placeholder="Välj konto" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
