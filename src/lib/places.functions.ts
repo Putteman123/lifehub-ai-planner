@@ -225,12 +225,10 @@ export const ingestDiagnostics = createServerFn({ method: "POST" })
 /** Skickar ett testanrop till mottagningen och rapporterar hela kedjan. */
 export const testIngest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
-    const token = process.env["LOCATION_INGEST_TOKEN_V2"] ?? "";
+  .handler(async ({ context }) => {
+    const { token } = await readSettings(context.supabase as never);
     if (!token) return { ok: false, status: 0, message: "Nyckeln saknas på servern." };
-    const { getRequest } = await import("@tanstack/react-start/server");
-    const origin = new URL(getRequest().url).origin;
-    const stable = /-preview--|localhost|127\.0\.0\.1/.test(origin) ? PUBLIC_ORIGIN : origin;
+    const stable = await stableOrigin();
     try {
       const res = await fetch(`${stable}/api/public/plats?token=${encodeURIComponent(token)}`, {
         method: "POST",
