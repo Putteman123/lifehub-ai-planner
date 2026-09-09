@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import QRCode from "qrcode";
-import { Copy, Eye, EyeOff, KeyRound, Loader2, QrCode, Smartphone } from "lucide-react";
+import { Copy, Download, Eye, EyeOff, KeyRound, Loader2, QrCode, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,7 @@ export function OwnTracksSetupCard() {
   const apply = useCallback(async (next: Info) => {
     setInfo(next);
     try {
-      setQr(await QRCode.toDataURL(next.otrcUrl, { width: 320, margin: 1 }));
+      setQr(await QRCode.toDataURL(next.owntracksLink, { width: 320, margin: 1 }));
     } catch {
       setQr(null);
     }
@@ -108,7 +108,12 @@ export function OwnTracksSetupCard() {
         {info ? "Öppna i OwnTracks" : <Loader2 className="size-4 animate-spin" />}
       </Button>
       <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
-        OwnTracks frågar om den får hämta inställningarna – svara Ja.
+        OwnTracks frågar om den får importera inställningarna – svara Ja.
+      </p>
+      <p className="mt-1.5 text-[11px] text-muted-foreground">
+        Om OwnTracks svarar ”URI or file configuration not allowed”: tryck Fortsätt, slå på
+        fjärrkonfiguration i OwnTracks inställningar och tryck på knappen igen – eller använd
+        inställningsfilen nedan.
       </p>
 
       <div className="mt-4">
@@ -144,6 +149,16 @@ export function OwnTracksSetupCard() {
       <div className="mt-4 flex flex-wrap gap-2">
         <Button size="sm" variant="outline" onClick={() => setShowQr((v) => !v)} disabled={!qr}>
           <QrCode className="size-4" /> {showQr ? "Dölj QR-kod" : "Visa QR-kod"}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={!info}
+          onClick={() => {
+            if (info) window.location.href = info.otrcUrl;
+          }}
+        >
+          <Download className="size-4" /> Ladda ner inställningsfil
         </Button>
         <Button size="sm" variant="outline" onClick={() => setShowUrl((v) => !v)} disabled={!info}>
           {showUrl ? <EyeOff className="size-4" /> : <Eye className="size-4" />} Visa adressen

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { buildInlineLink } from "@/lib/owntracks-config";
 
 const positionSchema = z.object({
   lat: z.number().min(-90).max(90),
@@ -108,10 +109,11 @@ type LocatorMode = "move" | "significant";
 function buildLinks(origin: string, token: string, mode: LocatorMode) {
   const t = encodeURIComponent(token);
   const otrcUrl = `${origin}/api/public/otrc?token=${t}&mode=${mode}`;
+  const ingestUrl = `${origin}/api/public/plats?token=${t}`;
   return {
-    url: `${origin}/api/public/plats?token=${t}`,
+    url: ingestUrl,
     otrcUrl,
-    owntracksLink: `owntracks:///config?url=${encodeURIComponent(otrcUrl)}`,
+    owntracksLink: buildInlineLink(ingestUrl, mode),
     locatorMode: mode,
   };
 }
