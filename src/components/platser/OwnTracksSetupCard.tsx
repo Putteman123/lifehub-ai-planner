@@ -41,7 +41,7 @@ export function OwnTracksSetupCard() {
   const apply = useCallback(async (next: Info) => {
     setInfo(next);
     try {
-      setQr(await QRCode.toDataURL(next.otrcUrl, { width: 320, margin: 1 }));
+      setQr(await QRCode.toDataURL(next.owntracksLink, { width: 320, margin: 1 }));
     } catch {
       setQr(null);
     }
