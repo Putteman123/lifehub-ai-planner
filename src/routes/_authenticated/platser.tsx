@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { DataGate } from "@/components/DataGate";
 import { OwnTracksGuide } from "@/components/platser/OwnTracksGuide";
+import { OwnTracksSetupCard } from "@/components/platser/OwnTracksSetupCard";
 import { ConnectionCheckCard } from "@/components/platser/ConnectionCheckCard";
 
 import { MapDialog, type MapTarget } from "@/components/platser/MapDialog";
@@ -545,6 +546,7 @@ function PlacesPage() {
           </TabsContent>
 
           <TabsContent value="installningar" className="mt-4 space-y-4">
+            <OwnTracksSetupCard />
             <ConnectionCheckCard />
             <div className="rounded-[18px] border bg-card p-4 shadow-sm">
 
