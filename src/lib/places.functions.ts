@@ -109,31 +109,10 @@ function buildLinks(origin: string, token: string, mode: LocatorMode) {
   const t = encodeURIComponent(token);
   const otrcUrl = `${origin}/api/public/otrc?token=${t}&mode=${mode}`;
   const ingestUrl = `${origin}/api/public/plats?token=${t}`;
-  // Inline-länken bär hela konfigurationen – OwnTracks behöver inte hämta något.
-  const json = JSON.stringify({
-    _type: "configuration",
-    mode: 3,
-    url: ingestUrl,
-    auth: false,
-    username: "lifehub",
-    deviceId: "iphone",
-    tid: "LH",
-    encryptionKey: "",
-    monitoring: mode === "move" ? 2 : 1,
-    locatorDisplacement: mode === "move" ? 50 : 200,
-    locatorInterval: mode === "move" ? 60 : 300,
-    ignoreStaleLocations: 0,
-    pubExtendedData: true,
-    allowRemoteLocation: true,
-    cmd: true,
-    ws: false,
-    tls: true,
-  });
-  const inline = btoa(unescape(encodeURIComponent(json)));
   return {
     url: ingestUrl,
     otrcUrl,
-    owntracksLink: `owntracks:///config?inline=${encodeURIComponent(inline)}`,
+    owntracksLink: buildInlineLink(ingestUrl, mode),
     locatorMode: mode,
   };
 }
