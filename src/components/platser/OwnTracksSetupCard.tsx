@@ -150,6 +150,16 @@ export function OwnTracksSetupCard() {
         <Button size="sm" variant="outline" onClick={() => setShowQr((v) => !v)} disabled={!qr}>
           <QrCode className="size-4" /> {showQr ? "Dölj QR-kod" : "Visa QR-kod"}
         </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={!info}
+          onClick={() => {
+            if (info) window.location.href = info.otrcUrl;
+          }}
+        >
+          <Download className="size-4" /> Ladda ner inställningsfil
+        </Button>
         <Button size="sm" variant="outline" onClick={() => setShowUrl((v) => !v)} disabled={!info}>
           {showUrl ? <EyeOff className="size-4" /> : <Eye className="size-4" />} Visa adressen
         </Button>
