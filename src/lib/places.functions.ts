@@ -96,21 +96,84 @@ export const placesStatus = createServerFn({ method: "POST" })
 /** Publik adress som telefonen alltid når – aldrig förhandsvisningen. */
 const PUBLIC_ORIGIN = "https://lifehub-ai-planner.lovable.app";
 
-/** Ger den privata webhook-adressen som telefonen ska posta till. */
+/** Väljer den adress telefonen alltid når – aldrig förhandsvisningen. */
+async function stableOrigin() {
+  const { getRequest } = await import("@tanstack/react-start/server");
+  const origin = new URL(getRequest().url).origin;
+  return /-preview--|localhost|127\.0\.0\.1/.test(origin) ? PUBLIC_ORIGIN : origin;
+}
+
+type LocatorMode = "move" | "significant";
+
+function buildLinks(origin: string, token: string, mode: LocatorMode) {
+  const t = encodeURIComponent(token);
+  const otrcUrl = `${origin}/api/public/otrc?token=${t}&mode=${mode}`;
+  return {
+    url: `${origin}/api/public/plats?token=${t}`,
+    otrcUrl,
+    owntracksLink: `owntracks:///config?url=${encodeURIComponent(otrcUrl)}`,
+    locatorMode: mode,
+  };
+}
+
+/** Läser (eller skapar) appens egna platsinställningar. */
+async function readSettings(supabase: {
+  from: (t: "location_settings") => any;
+}): Promise<{ token: string; mode: LocatorMode }> {
+  const { data } = await supabase
+    .from("location_settings")
+    .select("token, locator_mode")
+    .limit(1)
+    .maybeSingle();
+  if (data?.token) {
+    return {
+      token: data.token as string,
+      mode: (data.locator_mode as LocatorMode) ?? "move",
+    };
+  }
+  const fallback = process.env["LOCATION_INGEST_TOKEN_V2"] ?? "";
+  return { token: fallback, mode: "move" };
+}
+
+/** Ger den privata webhook-adressen och den färdiga OwnTracks-länken. */
 export const getIngestInfo = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
-    const token = process.env["LOCATION_INGEST_TOKEN_V2"] ?? "";
-    const { getRequest } = await import("@tanstack/react-start/server");
-    const request = getRequest();
-    const origin = new URL(request.url).origin;
-    // Förhandsvisningens adress fungerar inte från telefonen – använd den publika.
-    const stable = /-preview--|localhost|127\.0\.0\.1/.test(origin) ? PUBLIC_ORIGIN : origin;
-    return {
-      url: `${stable}/api/public/plats?token=${encodeURIComponent(token)}`,
-      configured: Boolean(token),
-    };
+  .handler(async ({ context }) => {
+    const { token, mode } = await readSettings(context.supabase as never);
+    const origin = await stableOrigin();
+    return { ...buildLinks(origin, token, mode), configured: Boolean(token) };
   });
+
+/** Skapar en ny hemlig nyckel och returnerar de nya länkarna. */
+export const rotateIngestToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const bytes = new Uint8Array(24);
+    crypto.getRandomValues(bytes);
+    const token = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+    const { mode } = await readSettings(context.supabase as never);
+    await (context.supabase as never as { from: (t: string) => any })
+      .from("location_settings")
+      .upsert({ id: true, token, locator_mode: mode }, { onConflict: "id" });
+    const origin = await stableOrigin();
+    return { ...buildLinks(origin, token, mode), configured: true };
+  });
+
+/** Sparar valt rapporteringsläge (Move eller Significant). */
+export const setLocatorMode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ mode: z.enum(["move", "significant"]) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { token } = await readSettings(context.supabase as never);
+    await (context.supabase as never as { from: (t: string) => any })
+      .from("location_settings")
+      .upsert({ id: true, token, locator_mode: data.mode }, { onConflict: "id" });
+    const origin = await stableOrigin();
+    return { ...buildLinks(origin, token, data.mode), configured: Boolean(token) };
+  });
+
 
 /** Visar om telefonen överhuvudtaget når fram, och vad som i så fall händer. */
 export const ingestDiagnostics = createServerFn({ method: "POST" })
