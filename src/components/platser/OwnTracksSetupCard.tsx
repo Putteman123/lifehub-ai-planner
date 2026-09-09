@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import QRCode from "qrcode";
-import { Copy, Eye, EyeOff, KeyRound, Loader2, QrCode, Smartphone } from "lucide-react";
+import { Copy, Download, Eye, EyeOff, KeyRound, Loader2, QrCode, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
