@@ -108,7 +108,12 @@ export function OwnTracksSetupCard() {
         {info ? "Öppna i OwnTracks" : <Loader2 className="size-4 animate-spin" />}
       </Button>
       <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
-        OwnTracks frågar om den får hämta inställningarna – svara Ja.
+        OwnTracks frågar om den får importera inställningarna – svara Ja.
+      </p>
+      <p className="mt-1.5 text-[11px] text-muted-foreground">
+        Om OwnTracks svarar ”URI or file configuration not allowed”: tryck Fortsätt, slå på
+        fjärrkonfiguration i OwnTracks inställningar och tryck på knappen igen – eller använd
+        inställningsfilen nedan.
       </p>
 
       <div className="mt-4">
