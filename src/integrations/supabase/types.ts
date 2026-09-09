@@ -1113,6 +1113,30 @@ export type Database = {
         }
         Relationships: []
       }
+      location_settings: {
+        Row: {
+          created_at: string
+          id: boolean
+          locator_mode: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: boolean
+          locator_mode?: string
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: boolean
+          locator_mode?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mail_findings: {
         Row: {
           account_id: string | null
