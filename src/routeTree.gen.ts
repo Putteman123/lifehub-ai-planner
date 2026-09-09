@@ -31,6 +31,7 @@ import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiTtsRouteImport } from './routes/api/tts'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
+import { Route as ApiPublicOtrcRouteImport } from './routes/api/public/otrc'
 import { Route as ApiPublicPlatsRouteImport } from './routes/api/public/plats'
 
 const IndexRoute = IndexRouteImport.update({
@@ -145,6 +146,11 @@ const Char91DotmcpChar93InvokeToolToolRoute =
     path: '/.mcp/invoke-tool/$tool',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicOtrcRoute = ApiPublicOtrcRouteImport.update({
+  id: '/api/public/otrc',
+  path: '/api/public/otrc',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPlatsRoute = ApiPublicPlatsRouteImport.update({
   id: '/api/public/plats',
   path: '/api/public/plats',
@@ -173,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/api/tts': typeof ApiTtsRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/public/otrc': typeof ApiPublicOtrcRoute
   '/api/public/plats': typeof ApiPublicPlatsRoute
 }
 export interface FileRoutesByTo {
@@ -197,6 +204,7 @@ export interface FileRoutesByTo {
   '/api/tts': typeof ApiTtsRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/public/otrc': typeof ApiPublicOtrcRoute
   '/api/public/plats': typeof ApiPublicPlatsRoute
 }
 export interface FileRoutesById {
@@ -223,6 +231,7 @@ export interface FileRoutesById {
   '/api/tts': typeof ApiTtsRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/api/public/otrc': typeof ApiPublicOtrcRoute
   '/api/public/plats': typeof ApiPublicPlatsRoute
 }
 export interface FileRouteTypes {
@@ -249,6 +258,7 @@ export interface FileRouteTypes {
     | '/api/tts'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/public/otrc'
     | '/api/public/plats'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -273,6 +283,7 @@ export interface FileRouteTypes {
     | '/api/tts'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/public/otrc'
     | '/api/public/plats'
   id:
     | '__root__'
@@ -298,6 +309,7 @@ export interface FileRouteTypes {
     | '/api/tts'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/api/public/otrc'
     | '/api/public/plats'
   fileRoutesById: FileRoutesById
 }
@@ -312,6 +324,7 @@ export interface RootRouteChildren {
   ApiTtsRoute: typeof ApiTtsRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
+  ApiPublicOtrcRoute: typeof ApiPublicOtrcRoute
   ApiPublicPlatsRoute: typeof ApiPublicPlatsRoute
 }
 
@@ -471,6 +484,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/otrc': {
+      id: '/api/public/otrc'
+      path: '/api/public/otrc'
+      fullPath: '/api/public/otrc'
+      preLoaderRoute: typeof ApiPublicOtrcRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/plats': {
       id: '/api/public/plats'
       path: '/api/public/plats'
@@ -526,6 +546,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTtsRoute: ApiTtsRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
+  ApiPublicOtrcRoute: ApiPublicOtrcRoute,
   ApiPublicPlatsRoute: ApiPublicPlatsRoute,
 }
 export const routeTree = rootRouteImport
