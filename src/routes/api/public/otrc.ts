@@ -36,25 +36,8 @@ export const Route = createFileRoute("/api/public/otrc")({
 
         const ingestUrl = `${url.origin}/api/public/plats?token=${encodeURIComponent(provided)}`;
 
-        const config = {
-          _type: "configuration",
-          mode: 3, // HTTP
-          url: ingestUrl,
-          auth: false,
-          username: "lifehub",
-          deviceId: "iphone",
-          tid: "LH",
-          encryptionKey: "",
-          monitoring: mode === "move" ? 2 : 1,
-          locatorDisplacement: mode === "move" ? 50 : 200,
-          locatorInterval: mode === "move" ? 60 : 300,
-          ignoreStaleLocations: 0,
-          pubExtendedData: true,
-          allowRemoteLocation: true,
-          cmd: true,
-          ws: false,
-          tls: true,
-        };
+        const { buildOwnTracksConfig } = await import("@/lib/owntracks-config");
+        const config = buildOwnTracksConfig(ingestUrl, mode);
 
         return new Response(JSON.stringify(config, null, 2), {
           headers: {
