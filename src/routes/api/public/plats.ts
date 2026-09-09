@@ -27,6 +27,25 @@ function timingSafeEqual(a: string, b: string) {
   return diff === 0;
 }
 
+/** Nycklar som godkänns: appens egen nyckel plus den gamla från servern. */
+async function acceptedTokens(): Promise<string[]> {
+  const list: string[] = [];
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("location_settings")
+      .select("token")
+      .limit(1)
+      .maybeSingle();
+    if (data?.token) list.push(data.token as string);
+  } catch {
+    // Faller tillbaka på servernyckeln nedan.
+  }
+  const legacy = process.env["LOCATION_INGEST_TOKEN_V2"];
+  if (legacy) list.push(legacy);
+  return list;
+}
+
 /** Sparar spår av varje anrop så det går att felsöka telefonens koppling. */
 async function log(
   outcome: string,
@@ -55,13 +74,13 @@ export const Route = createFileRoute("/api/public/plats")({
         const header = request.headers.get("x-ingest-token");
         const provided = url.searchParams.get("token") ?? header ?? "";
 
-        const expected = process.env["LOCATION_INGEST_TOKEN_V2"];
-        if (!expected) {
+        const accepted = await acceptedTokens();
+        if (accepted.length === 0) {
           await log("saknar_nyckel_server", request, null, Boolean(provided));
           return new Response("Not configured", { status: 503 });
         }
 
-        if (!timingSafeEqual(provided, expected)) {
+        if (!accepted.some((t) => timingSafeEqual(provided, t))) {
           await log(
             provided ? "fel_nyckel" : "ingen_nyckel",
             request,
@@ -127,8 +146,8 @@ export const Route = createFileRoute("/api/public/plats")({
       },
       GET: async ({ request }) => {
         const provided = new URL(request.url).searchParams.get("token") ?? "";
-        const expected = process.env["LOCATION_INGEST_TOKEN_V2"];
-        if (!expected || !timingSafeEqual(provided, expected)) {
+        const accepted = await acceptedTokens();
+        if (!accepted.some((t) => timingSafeEqual(provided, t))) {
           await log(provided ? "fel_nyckel" : "ingen_nyckel", request, "GET-kontroll", Boolean(provided));
           return new Response("Unauthorized", { status: 401 });
         }
