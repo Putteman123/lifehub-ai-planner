@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { buildInlineLink } from "@/lib/owntracks-config";
 
 const positionSchema = z.object({
   lat: z.number().min(-90).max(90),
