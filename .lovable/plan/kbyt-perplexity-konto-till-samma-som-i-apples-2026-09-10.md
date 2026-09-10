@@ -1,4 +1,4 @@
-# Byt Perplexity-konto till samma som i Apples
+# KByt Perplexity-konto till samma som i Apples
 
 Perplexity är redan inkopplat i LifeHub och Andrea kan söka på webben med det. Det som ska ändras är vilket Perplexity-konto som används, så att det blir samma konto som i Apples.
 
