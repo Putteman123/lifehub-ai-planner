@@ -12,9 +12,28 @@ export async function searchWeb(
   query: string,
   mode: "web" | "academic" = "web",
 ): Promise<WebSearchResult> {
-  const key = process.env["PERPLEXITY_API_KEY"];
-  if (!key) throw new Error("Perplexity är inte kopplat.");
+  const keys = [process.env["PERPLEXITY_API_KEY_1"], process.env["PERPLEXITY_API_KEY"]].filter(
+    (k): k is string => Boolean(k),
+  );
+  if (keys.length === 0) throw new Error("Perplexity är inte kopplat.");
 
+  let lastError: Error | null = null;
+  for (const key of keys) {
+    try {
+      return await searchWithKey(key, query, mode);
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      console.warn(`Perplexity-nyckel misslyckades, provar nästa om det finns: ${lastError.message}`);
+    }
+  }
+  throw lastError ?? new Error("Perplexity är inte kopplat.");
+}
+
+async function searchWithKey(
+  key: string,
+  query: string,
+  mode: "web" | "academic",
+): Promise<WebSearchResult> {
   const res = await fetch("https://api.perplexity.ai/chat/completions", {
     method: "POST",
     headers: {
