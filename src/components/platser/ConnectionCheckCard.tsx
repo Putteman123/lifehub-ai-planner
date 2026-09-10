@@ -38,6 +38,11 @@ const VERDICT: Record<string, { text: string; tone: "ok" | "warn" | "bad" }> = {
   },
 };
 
+const DEFAULT_VERDICT = {
+  text: "Ingenting har nått fram från telefonen. Då är det adressen i OwnTracks som är fel, eller så står appen kvar i MQTT-läge.",
+  tone: "bad" as const,
+};
+
 /** Visar om telefonens positioner överhuvudtaget når fram till appen. */
 export function ConnectionCheckCard() {
   const diag = useServerFn(ingestDiagnostics);
@@ -46,7 +51,7 @@ export function ConnectionCheckCard() {
   const q = useQuery({
     queryKey: ["ingest_diagnostics"],
     queryFn: () => diag({}),
-    refetchInterval: 60000,
+    refetchInterval: 15000,
   });
 
   const runTest = useMutation({
@@ -58,7 +63,7 @@ export function ConnectionCheckCard() {
     },
   });
 
-  const verdict = VERDICT[q.data?.verdict ?? "ingen_kontakt"]!;
+  const verdict = VERDICT[q.data?.verdict ?? "ingen_kontakt"] ?? DEFAULT_VERDICT;
   const tone =
     verdict.tone === "ok"
       ? "bg-emerald-500/10 text-emerald-600"
