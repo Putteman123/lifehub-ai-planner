@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, CheckCircle2, MapPin, Radio } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { placesStatus } from "@/lib/places.functions";
 import { timeLocal } from "@/lib/tz";
 
@@ -26,7 +27,7 @@ export function PlacesStatusCard({ onOpenSettings }: { onOpenSettings?: () => vo
   const q = useQuery({
     queryKey: ["places_status"],
     queryFn: () => status({}),
-    refetchInterval: 5 * 60000,
+    refetchInterval: 30000,
   });
 
   const data = q.data;
@@ -47,9 +48,15 @@ export function PlacesStatusCard({ onOpenSettings }: { onOpenSettings?: () => vo
           {q.isLoading ? (
             <p className="mt-1 text-sm text-muted-foreground">Kontrollerar…</p>
           ) : lastPhonePing ? (
-            <p className="mt-1 text-sm text-muted-foreground">
-              Senaste position från OwnTracks {timeLocal(lastPhonePing)} ({agoLabel(lastPhonePing)}).
-            </p>
+            <div className="mt-1 space-y-1">
+              <p className="text-sm font-medium text-foreground">OwnTracks fungerar</p>
+              <p className="text-sm text-muted-foreground">
+                Senaste position {timeLocal(lastPhonePing)} ({agoLabel(lastPhonePing)}).
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {data?.phonePings24h ?? 0} positioner mottagna senaste dygnet.
+              </p>
+            </div>
           ) : lastPing ? (
             <p className="mt-1 text-sm text-muted-foreground">
               Ingen ny position från OwnTracks. Senaste manuella position {timeLocal(lastPing)} från{" "}
@@ -108,17 +115,22 @@ export function PlacesStatusCard({ onOpenSettings }: { onOpenSettings?: () => vo
             </li>
             <li>Skicka en position manuellt från kartan i OwnTracks och ladda om den här sidan.</li>
           </ol>
-          {onOpenSettings ? (
-            <button
-              type="button"
-              onClick={onOpenSettings}
-              className="mt-2 font-medium text-foreground underline"
-            >
-              Öppna guiden med adressen
-            </button>
-          ) : null}
+           {onOpenSettings ? (
+             <Button className="mt-2" size="sm" variant="link" onClick={onOpenSettings}>
+               Öppna guiden med adressen
+             </Button>
+           ) : null}
         </div>
-      ) : null}
+       ) : lastPhonePing ? (
+         <div className="mt-3 rounded-2xl bg-emerald-500/10 p-3 text-xs text-muted-foreground">
+           <p>
+             Din inställning <strong className="text-foreground">monitoring 1</strong> är aktiv och
+             <strong className="text-foreground"> locatorInterval 180</strong> betyder att telefonen
+             rapporterar ungefär var tredje minut. OwnTracks kan ändå visa ”inaktiv” på sin
+             statussida.
+           </p>
+         </div>
+       ) : null}
 
     </section>
   );

@@ -46,7 +46,7 @@ export function ConnectionCheckCard() {
   const q = useQuery({
     queryKey: ["ingest_diagnostics"],
     queryFn: () => diag({}),
-    refetchInterval: 60000,
+    refetchInterval: 15000,
   });
 
   const runTest = useMutation({
@@ -58,7 +58,7 @@ export function ConnectionCheckCard() {
     },
   });
 
-  const verdict = VERDICT[q.data?.verdict ?? "ingen_kontakt"]!;
+  const verdict = VERDICT[q.data?.verdict ?? "ingen_kontakt"] ?? VERDICT.ingen_kontakt;
   const tone =
     verdict.tone === "ok"
       ? "bg-emerald-500/10 text-emerald-600"

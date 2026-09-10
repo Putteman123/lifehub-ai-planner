@@ -143,8 +143,9 @@ export function OwnTracksGuide({ ingestUrl, error, lastPingAt }: Props) {
           </ChecklistItem>
         </ul>
         <p className="mt-2.5 text-xs text-muted-foreground">
-          Din bild visar <strong>“Status inaktiv”</strong>. Det betyder att OwnTracks inte skickar
-          just nu. Efter steg 5 ska en riktig position synas i kontrollen ovan.
+          OwnTracks kan visa <strong>“Status inaktiv”</strong> även när bakgrundsrapporteringen
+          fungerar. Lita på LifeHubs <strong>Loggningens status</strong>: där ser du tiden för den
+          senaste riktiga positionen från telefonen.
         </p>
       </div>
 
