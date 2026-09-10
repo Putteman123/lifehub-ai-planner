@@ -211,10 +211,49 @@ export async function completeVision(opts: {
   if (!key) throw new Error("AI-tjänsten är inte tillgänglig just nu. Försök igen om en stund.");
 
   const blocks: Block[] = [{ type: "text", text: opts.input }];
+  let imagesOnly = opts.attachments.length > 0;
   for (const file of opts.attachments) {
     const url = `data:${file.mimeType};base64,${file.data}`;
     if (file.mimeType.startsWith("image/")) blocks.push({ type: "image_url", image_url: { url } });
-    else blocks.push({ type: "file", file: { filename: file.filename, file_data: url } });
+    else {
+      imagesOnly = false;
+      blocks.push({ type: "file", file: { filename: file.filename, file_data: url } });
+    }
+  }
+
+  // Förstahandsval för bilder: användarens eget Gemini-konto.
+  if (imagesOnly && process.env["GEMINI_API_KEY"]) {
+    try {
+      const googleFetch = createGoogleAiStudioFetch();
+      const geminiRes = await googleFetch(
+        "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env["GEMINI_API_KEY"]}`,
+          },
+          body: JSON.stringify({
+            model: ANDREA_FAST_MODEL,
+            stream: true,
+            messages: [
+              { role: "system", content: opts.system },
+              { role: "user", content: blocks },
+            ],
+            ...jsonFormat(opts.jsonSchema),
+          }),
+        },
+      );
+      if (geminiRes.ok && geminiRes.body) {
+        const text = await readStream(geminiRes.body);
+        if (text) return text;
+      } else {
+        const detail = await geminiRes.text().catch(() => "");
+        console.warn(`Gemini (bilaga) svarade ${geminiRes.status}: ${detail.slice(0, 300)}`);
+      }
+    } catch (error) {
+      console.warn("Gemini (bilaga) misslyckades, provar reservtjänsten.", error);
+    }
   }
 
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
