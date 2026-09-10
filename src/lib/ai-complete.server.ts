@@ -197,8 +197,9 @@ type Block =
   | { type: "file"; file: { filename: string; file_data: string } };
 
 /**
- * Multimodalt anrop (PDF och bilder) via Lovable AI-gatewayen. Används när ett
- * mejl har bilagor – där ligger oftast kvittot eller fakturan.
+ * Multimodalt anrop (PDF och bilder). Används när ett mejl har bilagor –
+ * där ligger oftast kvittot eller fakturan. Prioritet: Gemini (eget konto,
+ * endast bilder) → Lovable AI (reserv, stöder även PDF).
  */
 export async function completeVision(opts: {
   system: string;
