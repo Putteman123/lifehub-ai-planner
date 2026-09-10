@@ -82,8 +82,86 @@ async function completeViaLovable(
 }
 
 /**
- * Kör ett strömmande textanrop mot användarens Google AI Studio-konto och
- * faller tillbaka på Lovable AI om nyckeln, behörigheten eller kvoten fallerar.
+ * Förstahandsval: användarens eget ChatGPT-konto (OPENAI_API_KEY).
+ * Returnerar null om nyckeln saknas eller anropet misslyckas, så att
+ * anroparen kan gå vidare i reservkedjan.
+ */
+async function completeViaOpenAI(
+  messages: Message[],
+  jsonSchema?: JsonSchema,
+): Promise<string | null> {
+  const apiKey = process.env["OPENAI_API_KEY"];
+  if (!apiKey) return null;
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-5-mini",
+        stream: true,
+        messages,
+        ...jsonFormat(jsonSchema),
+      }),
+    });
+    if (!res.ok || !res.body) {
+      const detail = await res.text().catch(() => "");
+      console.warn(`ChatGPT svarade ${res.status}: ${detail.slice(0, 300)}`);
+      return null;
+    }
+    const text = await readStream(res.body);
+    return text || null;
+  } catch (error) {
+    console.warn("ChatGPT misslyckades, provar nästa tjänst.", error);
+    return null;
+  }
+}
+
+/** Andrahandsval: användarens Google AI Studio-konto (GEMINI_API_KEY). */
+async function completeViaGemini(
+  messages: Message[],
+  jsonSchema: JsonSchema | undefined,
+  model: string,
+  apiKeyOverride?: string,
+): Promise<string | null> {
+  const apiKey = apiKeyOverride ?? process.env["GEMINI_API_KEY"];
+  if (!apiKey) return null;
+  try {
+    const googleFetch = createGoogleAiStudioFetch();
+    const res = await googleFetch(
+      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          stream: true,
+          messages,
+          ...jsonFormat(jsonSchema),
+        }),
+      },
+    );
+    if (!res.ok || !res.body) {
+      const detail = await res.text().catch(() => "");
+      console.warn(`Google AI Studio svarade ${res.status}: ${detail.slice(0, 300)}`);
+      return null;
+    }
+    const text = await readStream(res.body);
+    return text || null;
+  } catch (error) {
+    console.warn("Google AI Studio misslyckades, provar reservtjänsten.", error);
+    return null;
+  }
+}
+
+/**
+ * Kör ett strömmande textanrop i prioritetsordning:
+ * ChatGPT (eget konto) → Gemini (eget konto) → Lovable AI (reserv).
  */
 export async function completeText(opts: {
   apiKey?: string;
@@ -97,43 +175,18 @@ export async function completeText(opts: {
     { role: "user", content: opts.input },
   ];
 
-  const apiKey = opts.apiKey ?? process.env["GEMINI_API_KEY"];
-  if (!apiKey) return completeViaLovable(messages, opts.jsonSchema);
+  const openAiText = await completeViaOpenAI(messages, opts.jsonSchema);
+  if (openAiText) return openAiText;
 
-  let text = "";
-  try {
-    const googleFetch = createGoogleAiStudioFetch();
-    const res = await googleFetch(
-      "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: opts.model ?? ANDREA_FAST_MODEL,
-          stream: true,
-          messages,
-          ...jsonFormat(opts.jsonSchema),
-        }),
-      },
-    );
+  const geminiText = await completeViaGemini(
+    messages,
+    opts.jsonSchema,
+    opts.model ?? ANDREA_FAST_MODEL,
+    opts.apiKey,
+  );
+  if (geminiText) return geminiText;
 
-    if (!res.ok || !res.body) {
-      const detail = await res.text().catch(() => "");
-      console.warn(`Google AI Studio svarade ${res.status}: ${detail.slice(0, 300)}`);
-      return await completeViaLovable(messages, opts.jsonSchema);
-    }
-
-    text = await readStream(res.body);
-  } catch (error) {
-    console.warn("Google AI Studio misslyckades, använder reservtjänsten.", error);
-    return completeViaLovable(messages, opts.jsonSchema);
-  }
-
-  if (!text) return completeViaLovable(messages, opts.jsonSchema);
-  return text;
+  return completeViaLovable(messages, opts.jsonSchema);
 }
 
 export type AiAttachment = { filename: string; mimeType: string; data: string };
@@ -144,8 +197,9 @@ type Block =
   | { type: "file"; file: { filename: string; file_data: string } };
 
 /**
- * Multimodalt anrop (PDF och bilder) via Lovable AI-gatewayen. Används när ett
- * mejl har bilagor – där ligger oftast kvittot eller fakturan.
+ * Multimodalt anrop (PDF och bilder). Används när ett mejl har bilagor –
+ * där ligger oftast kvittot eller fakturan. Prioritet: Gemini (eget konto,
+ * endast bilder) → Lovable AI (reserv, stöder även PDF).
  */
 export async function completeVision(opts: {
   system: string;
@@ -157,10 +211,49 @@ export async function completeVision(opts: {
   if (!key) throw new Error("AI-tjänsten är inte tillgänglig just nu. Försök igen om en stund.");
 
   const blocks: Block[] = [{ type: "text", text: opts.input }];
+  let imagesOnly = opts.attachments.length > 0;
   for (const file of opts.attachments) {
     const url = `data:${file.mimeType};base64,${file.data}`;
     if (file.mimeType.startsWith("image/")) blocks.push({ type: "image_url", image_url: { url } });
-    else blocks.push({ type: "file", file: { filename: file.filename, file_data: url } });
+    else {
+      imagesOnly = false;
+      blocks.push({ type: "file", file: { filename: file.filename, file_data: url } });
+    }
+  }
+
+  // Förstahandsval för bilder: användarens eget Gemini-konto.
+  if (imagesOnly && process.env["GEMINI_API_KEY"]) {
+    try {
+      const googleFetch = createGoogleAiStudioFetch();
+      const geminiRes = await googleFetch(
+        "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env["GEMINI_API_KEY"]}`,
+          },
+          body: JSON.stringify({
+            model: ANDREA_FAST_MODEL,
+            stream: true,
+            messages: [
+              { role: "system", content: opts.system },
+              { role: "user", content: blocks },
+            ],
+            ...jsonFormat(opts.jsonSchema),
+          }),
+        },
+      );
+      if (geminiRes.ok && geminiRes.body) {
+        const text = await readStream(geminiRes.body);
+        if (text) return text;
+      } else {
+        const detail = await geminiRes.text().catch(() => "");
+        console.warn(`Gemini (bilaga) svarade ${geminiRes.status}: ${detail.slice(0, 300)}`);
+      }
+    } catch (error) {
+      console.warn("Gemini (bilaga) misslyckades, provar reservtjänsten.", error);
+    }
   }
 
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
