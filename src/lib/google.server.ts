@@ -432,11 +432,17 @@ function base64Url(value: string) {
     .replace(/=+$/, "");
 }
 
+/** Rubriker med å/ä/ö måste MIME-kodas, annars blir de oläsliga. */
+function mimeHeader(value: string) {
+  return /^[\x00-\x7F]*$/.test(value) ? value : `=?UTF-8?B?${base64Url(value)}?=`;
+}
+
 export async function gmailSend(to: string, subject: string, body: string) {
   const raw = base64Url(
     [
       `To: ${to}`,
-      `Subject: ${subject}`,
+      `Subject: ${mimeHeader(subject)}`,
+      "MIME-Version: 1.0",
       'Content-Type: text/plain; charset="UTF-8"',
       "",
       body,
