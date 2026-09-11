@@ -1,30 +1,38 @@
-# Dela appen med Google AI
+# E-post och kalender som verkligen skickar
 
-En ny funktion där LifeHub automatiskt skickar en beskrivning av hela appen (struktur och viktig kod) till Google AI (Gemini) och visar svaret direkt i appen. Bra för att få analys, förbättringsförslag eller felsökningshjälp om själva bygget.
+Idag finns kopplingarna till ditt Google-konto, men inget i appen använder dem för att skicka: inkorgskortet visar bara mejl, och händelser du lägger in stannar i LifeHub. Det här fixas i tre delar.
 
-## Så fungerar det för dig
+## 1. Skicka mejl från appen
 
-1. Ny sektion "Dela med Google AI" under Mer/Inställningar.
-2. Du väljer vad Google AI ska titta på: hela appen, bara ekonomidelen, bara platser, eller egen fråga.
-3. Du trycker på "Skicka till Google AI" – appen paketerar och skickar automatiskt.
-4. Svaret visas i appen, med möjlighet att spara det som anteckning.
-5. Du ser alltid en förhandsvisning av vad som skickas innan du trycker, och inga lösenord, nycklar eller kassaskåpsdata följer med.
+- Ny knapp "Skriv mejl" på inkorgskortet, plus "Svara" på varje mejl (mottagare och ämne förifylls med "Sv: ...").
+- Ett litet fönster med mottagare, ämne och text. Knappen "Skicka" skickar via ditt Gmail och bekräftar med en notis; fel visas i klartext.
+- Andrea får verktyget "skicka mejl": hon skriver förslaget, du ser mottagare/ämne/text i chatten och trycker Godkänn innan det går iväg.
 
-## Vad som skickas
+## 2. Händelser skrivs till Google Calendar
 
-- Filträd över projektet
-- Innehållet i de viktigaste kodfilerna (avkortat vid storleksgräns)
-- Kort beskrivning av appens funktioner
-- Aldrig: hemligheter, .env, kassaskåp, personliga data ur databasen
+- I händelsefönstret väljer du kalender som vanligt. Väljer du en Google-kalender skapas händelsen även i din riktiga Google-kalender direkt när du sparar.
+- Kopplingen sparas så att en senare synk inte skapar dubbletter, och redigering/borttagning i LifeHub uppdaterar Google-händelsen.
+- Andrea bokar i Google-kalendern direkt utan att fråga, enligt ditt val.
 
-## Teknisk lösning
+## 3. Appens egna notismejl
 
-- Nytt build-steg genererar en kodögonblicksbild (`src/generated/app-snapshot.json`): filträd + innehåll för utvalda mappar (`src/lib`, `src/routes`, `src/components`), med filter mot `.env`, nycklar och genererade filer, samt teckenbudget per fil och totalt.
-- Ny serverfunktion `src/lib/share-code.functions.ts` (`shareWithGoogleAI`) som bygger prompten och anropar Google AI via befintlig `google-ai.server.ts`-fetch. Vid kvotfel (429) faller den tillbaka till Lovable-modellen precis som `ai-complete.server.ts` gör idag.
-- Långa svar streamas inte i första versionen; anropet körs med rimlig modell för lång kontext (Gemini Flash) och svaret returneras som text.
-- Ny komponent `src/components/ShareCodeCard.tsx` med val av fokus, egen fråga, förhandsvisning av vad som skickas, skicka-knapp och svarsvy.
-- Ingen ändring i befintlig data, ekonomilogik, platser eller Andrea.
+Kräver en avsändardomän du äger (t.ex. notify.mellberg.online). När den är på plats:
 
-## Öppna frågor som inte blockerar
+- Veckosammanfattning och viktiga påminnelser (fasta utgifter som förfaller, IPTV som går ut) skickas som mejl till dig.
+- Mallarna får samma utseende som appen; du kan slå på/av varje utskick under Inställningar.
 
-Om snapshotten blir för stor för en förfrågan delas den upp i två anrop (struktur först, sedan detaljer) och svaren slås ihop.
+Om du hellre vill nöja dig med Gmail-utskick i steg 1 kan vi hoppa över den här delen.
+
+## Tekniskt
+
+- `sendMail` och `createGoogleEvent` finns redan i `src/lib/google.functions.ts` / `google.server.ts` men saknar anropare.
+- Nytt: `src/components/google/ComposeMailDialog.tsx` kopplat till `InboxCard`; verktyget `gmail_send` i `src/routes/api/chat.ts` med godkännandeflöde.
+- Ny serverfunktion `pushEventToGoogle` som anropas från `EventDialog`-sparningen när `calendars.source = "google"`; Google-händelsens id sparas i `events.external_id`, uppdatering/radering via PATCH/DELETE mot samma id. Synken i `calendar-sync.functions.ts` hoppar över rader som redan finns.
+- Gmail-sändning kräver scopet `gmail.send`; om Google svarar 403 om saknad behörighet begärs en ny godkännande-runda för Google-kopplingen.
+- Notismejl: e-postdomän sätts upp först, sedan mallregister + serverfunktion som skickar veckosammanfattning och varningar.
+
+## Ordning
+
+1. Mejlutskick i appen + Andrea-verktyg med godkännande.
+2. Kalenderskrivning till Google (skapa, ändra, ta bort).
+3. Domänuppsättning och appens notismejl.
