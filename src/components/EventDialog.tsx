@@ -163,12 +163,17 @@ export function EventDialog({
     });
   }
 
+  const isGoogleCalendar =
+    form.calendarId !== NONE &&
+    calendars.some((c) => c.id === form.calendarId && c.source === "google");
+
   function save() {
 
     if (!form.title.trim() || !form.startsAt || !form.endsAt) return;
+    const eventId = event?.id ?? crypto.randomUUID();
     upsert.mutate(
       {
-        ...(event ? { id: event.id } : {}),
+        id: eventId,
         title: form.title.trim(),
         starts_at: new Date(form.startsAt).toISOString(),
         ends_at: new Date(form.endsAt).toISOString(),
@@ -180,8 +185,37 @@ export function EventDialog({
         child_id: form.childId === NONE ? null : form.childId,
         case_id: form.caseId === NONE ? null : form.caseId,
       },
-      { onSuccess: () => onOpenChange(false) },
+      {
+        onSuccess: () => {
+          onOpenChange(false);
+          if (!isGoogleCalendar) return;
+          void pushToGoogle({ data: { eventId } })
+            .then((res) => {
+              if (res.pushed) toast.success("Lagd i din Google-kalender");
+            })
+            .catch((error: unknown) =>
+              toast.error(
+                error instanceof Error
+                  ? `Kunde inte skriva till Google: ${error.message}`
+                  : "Kunde inte skriva till Google-kalendern.",
+              ),
+            );
+        },
+      },
     );
+  }
+
+  function removeEvent() {
+    if (!event) return;
+    const calendarId = event.calendar_id;
+    const externalId = event.external_id;
+    remove.mutate(event.id, {
+      onSuccess: () => {
+        onOpenChange(false);
+        if (!calendarId || !externalId?.startsWith("gcal:")) return;
+        void removeFromGoogle({ data: { calendarId, externalId } }).catch(() => undefined);
+      },
+    });
   }
 
   return (
