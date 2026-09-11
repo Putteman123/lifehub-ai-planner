@@ -437,7 +437,7 @@ export function EventDialog({
             <Button
               variant="ghost"
               className="text-destructive"
-              onClick={() => remove.mutate(event.id, { onSuccess: () => onOpenChange(false) })}
+              onClick={removeEvent}
             >
               Ta bort
             </Button>
