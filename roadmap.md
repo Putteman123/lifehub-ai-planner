@@ -13,3 +13,6 @@
 - [x] Daglig AI-briefing på Översikt
 - [x] Ekonomicoach på Pengar
 - [x] Reparera OwnTracks med ny privat adress och verkligt mottagningstest
+- [x] Skicka mejl från appen (skriv/svara i inkorgen, Andrea med godkännande)
+- [x] Händelser skrivs, ändras och tas bort i Google Calendar
+- [ ] Appens egna notismejl – väntar på avsändardomän
