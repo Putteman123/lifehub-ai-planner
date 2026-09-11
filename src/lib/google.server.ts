@@ -159,6 +159,37 @@ export async function createGoogleEvent(
   return { id: data.id ?? null, link: data.htmlLink ?? null };
 }
 
+/** Uppdatera en befintlig Google-händelse. */
+export async function updateGoogleEvent(
+  calendarId: string,
+  eventId: string,
+  input: { title: string; startsAt: string; endsAt: string; location?: string; description?: string },
+) {
+  const body = {
+    summary: input.title,
+    location: input.location ?? null,
+    description: input.description ?? null,
+    start: { dateTime: new Date(input.startsAt).toISOString() },
+    end: { dateTime: new Date(input.endsAt).toISOString() },
+  };
+  const data = (await call(
+    "calendar",
+    `/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
+    { method: "PATCH", body },
+  )) as { id?: string; htmlLink?: string };
+  return { id: data.id ?? eventId, link: data.htmlLink ?? null };
+}
+
+/** Ta bort en händelse ur Google-kalendern. */
+export async function deleteGoogleEvent(calendarId: string, eventId: string) {
+  await call(
+    "calendar",
+    `/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
+    { method: "DELETE" },
+  );
+  return { deleted: true };
+}
+
 /* ---------------- Gmail ---------------- */
 
 export type MailSummary = {
