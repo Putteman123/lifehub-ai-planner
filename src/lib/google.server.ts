@@ -425,16 +425,17 @@ export async function gmailMessageContent(
 
 
 
+function base64(value: string) {
+  return btoa(String.fromCharCode(...new TextEncoder().encode(value)));
+}
+
 function base64Url(value: string) {
-  return btoa(unescape(encodeURIComponent(value)))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
+  return base64(value).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 /** Rubriker med å/ä/ö måste MIME-kodas, annars blir de oläsliga. */
 function mimeHeader(value: string) {
-  return /^[\x00-\x7F]*$/.test(value) ? value : `=?UTF-8?B?${base64Url(value)}?=`;
+  return /^[\x00-\x7F]*$/.test(value) ? value : `=?UTF-8?B?${base64(value)}?=`;
 }
 
 export async function gmailSend(to: string, subject: string, body: string) {
