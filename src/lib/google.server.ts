@@ -159,6 +159,37 @@ export async function createGoogleEvent(
   return { id: data.id ?? null, link: data.htmlLink ?? null };
 }
 
+/** Uppdatera en befintlig Google-händelse. */
+export async function updateGoogleEvent(
+  calendarId: string,
+  eventId: string,
+  input: { title: string; startsAt: string; endsAt: string; location?: string; description?: string },
+) {
+  const body = {
+    summary: input.title,
+    location: input.location ?? null,
+    description: input.description ?? null,
+    start: { dateTime: new Date(input.startsAt).toISOString() },
+    end: { dateTime: new Date(input.endsAt).toISOString() },
+  };
+  const data = (await call(
+    "calendar",
+    `/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
+    { method: "PATCH", body },
+  )) as { id?: string; htmlLink?: string };
+  return { id: data.id ?? eventId, link: data.htmlLink ?? null };
+}
+
+/** Ta bort en händelse ur Google-kalendern. */
+export async function deleteGoogleEvent(calendarId: string, eventId: string) {
+  await call(
+    "calendar",
+    `/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
+    { method: "DELETE" },
+  );
+  return { deleted: true };
+}
+
 /* ---------------- Gmail ---------------- */
 
 export type MailSummary = {
@@ -394,18 +425,25 @@ export async function gmailMessageContent(
 
 
 
+function base64(value: string) {
+  return btoa(String.fromCharCode(...new TextEncoder().encode(value)));
+}
+
 function base64Url(value: string) {
-  return btoa(unescape(encodeURIComponent(value)))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
+  return base64(value).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+/** Rubriker med å/ä/ö måste MIME-kodas, annars blir de oläsliga. */
+function mimeHeader(value: string) {
+  return /^[\x00-\x7F]*$/.test(value) ? value : `=?UTF-8?B?${base64(value)}?=`;
 }
 
 export async function gmailSend(to: string, subject: string, body: string) {
   const raw = base64Url(
     [
       `To: ${to}`,
-      `Subject: ${subject}`,
+      `Subject: ${mimeHeader(subject)}`,
+      "MIME-Version: 1.0",
       'Content-Type: text/plain; charset="UTF-8"',
       "",
       body,

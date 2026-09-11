@@ -35,22 +35,66 @@ export type EventInput = {
 };
 
 export async function createEvent(userId: string, input: EventInput) {
+  // Finns en kopplad Google-kalender bokas händelsen även där.
+  const { data: googleCal } = await supabaseAdmin
+    .from("calendars")
+    .select("id, external_id")
+    .eq("user_id", userId)
+    .eq("source", "google")
+    .not("external_id", "is", null)
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  const startsAt = iso(input.starts_at);
+  const endsAt = iso(input.ends_at);
+
   const { data, error } = await supabaseAdmin
     .from("events")
     .insert({
       user_id: userId,
       title: input.title,
-      starts_at: iso(input.starts_at),
-      ends_at: iso(input.ends_at),
+      starts_at: startsAt,
+      ends_at: endsAt,
       category: input.category,
       all_day: input.all_day ?? false,
       location: input.location ?? null,
       description: input.description ?? null,
+      calendar_id: googleCal?.id ?? null,
     })
     .select("id")
     .single();
   fail(error);
-  return ok(`Händelsen "${input.title}" är inlagd.`, data?.id);
+
+  let inGoogle = false;
+  if (googleCal?.external_id && data?.id) {
+    try {
+      const { createGoogleEvent, hasGoogle } = await import("@/lib/google.server");
+      if (hasGoogle("calendar")) {
+        const created = await createGoogleEvent(googleCal.external_id, {
+          title: input.title,
+          startsAt,
+          endsAt,
+          ...(input.location ? { location: input.location } : {}),
+          ...(input.description ? { description: input.description } : {}),
+        });
+        if (created.id) {
+          await supabaseAdmin
+            .from("events")
+            .update({ external_id: `gcal:${created.id}` })
+            .eq("id", data.id);
+          inGoogle = true;
+        }
+      }
+    } catch (googleError) {
+      console.error("Kunde inte skriva till Google-kalendern", googleError);
+    }
+  }
+
+  return ok(
+    `Händelsen "${input.title}" är inlagd${inGoogle ? " och bokad i din Google-kalender" : ""}.`,
+    data?.id,
+  );
 }
 
 export async function rememberFact(

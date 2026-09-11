@@ -87,6 +87,86 @@ export const sendMail = createServerFn({ method: "POST" })
     return gmailSend(data.to, data.subject, data.body);
   });
 
+/**
+ * Skriv en LifeHub-händelse till den riktiga Google-kalendern.
+ * Skapar händelsen första gången och uppdaterar den vid senare ändringar.
+ */
+export const syncEventToGoogle = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { eventId: string }) => {
+    if (!input?.eventId) throw new Error("Händelse-id saknas.");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { createGoogleEvent, updateGoogleEvent, hasGoogle } = await import("./google.server");
+    if (!hasGoogle("calendar")) return { pushed: false as const, reason: "not_connected" };
+
+    const { data: event, error } = await supabase
+      .from("events")
+      .select("id, title, starts_at, ends_at, location, description, external_id, calendar_id")
+      .eq("id", data.eventId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!event?.calendar_id) return { pushed: false as const, reason: "no_calendar" };
+
+    const { data: calendar } = await supabase
+      .from("calendars")
+      .select("source, external_id")
+      .eq("id", event.calendar_id)
+      .maybeSingle();
+    if (!calendar || calendar.source !== "google" || !calendar.external_id) {
+      return { pushed: false as const, reason: "not_google" };
+    }
+
+    const payload = {
+      title: event.title,
+      startsAt: event.starts_at,
+      endsAt: event.ends_at,
+      ...(event.location ? { location: event.location } : {}),
+      ...(event.description ? { description: event.description } : {}),
+    };
+
+    const existingId = event.external_id?.startsWith("gcal:")
+      ? event.external_id.slice("gcal:".length)
+      : null;
+
+    if (existingId) {
+      await updateGoogleEvent(calendar.external_id, existingId, payload);
+      return { pushed: true as const, googleEventId: existingId };
+    }
+
+    const created = await createGoogleEvent(calendar.external_id, payload);
+    if (created.id) {
+      await supabase.from("events").update({ external_id: `gcal:${created.id}` }).eq("id", event.id);
+    }
+    return { pushed: true as const, googleEventId: created.id };
+  });
+
+/** Ta bort en händelse ur Google-kalendern när den raderas i LifeHub. */
+export const removeEventFromGoogle = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { calendarId: string; externalId: string }) => {
+    if (!input?.calendarId || !input.externalId) throw new Error("Kalender och händelse krävs.");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const { deleteGoogleEvent, hasGoogle } = await import("./google.server");
+    if (!hasGoogle("calendar") || !data.externalId.startsWith("gcal:")) {
+      return { deleted: false as const };
+    }
+    const { data: calendar } = await context.supabase
+      .from("calendars")
+      .select("source, external_id")
+      .eq("id", data.calendarId)
+      .maybeSingle();
+    if (!calendar || calendar.source !== "google" || !calendar.external_id) {
+      return { deleted: false as const };
+    }
+    await deleteGoogleEvent(calendar.external_id, data.externalId.slice("gcal:".length));
+    return { deleted: true as const };
+  });
+
 /** Sök filer i Google Drive. */
 export const searchDrive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
