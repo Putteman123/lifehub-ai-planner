@@ -70,6 +70,8 @@ export function EventDialog({
   const [adding, setAdding] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const askAi = useServerFn(suggestCategoryAi);
+  const pushToGoogle = useServerFn(syncEventToGoogle);
+  const removeFromGoogle = useServerFn(removeEventFromGoogle);
   const [aiReason, setAiReason] = useState<string | null>(null);
   const categoryTouched = useRef(false);
   const groups = useMemo(() => groupCategories(categoryOptions), [categoryOptions]);
