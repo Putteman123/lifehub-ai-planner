@@ -315,6 +315,14 @@ function PinGate() {
             )}
             Fortsätt med Google
           </Button>
+          <button
+            type="button"
+            className="lovable-auth-button mt-3 w-full"
+            onClick={() => void signInWithLovable()}
+            disabled={status === "checking"}
+          >
+            Fortsätt med Lovable
+          </button>
           <p className="mt-6 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
             <Lock className="size-3.5" /> Efter inloggning räcker pinkod eller Face ID
           </p>
