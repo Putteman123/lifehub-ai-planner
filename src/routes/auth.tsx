@@ -3,6 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Delete, Fingerprint, Loader2, Lock, LogIn, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import "@lovable.dev/cloud-auth-js/styles.css";
+
 import { Button } from "@/components/ui/button";
 import { lovable } from "@/integrations/lovable";
 import { supabase } from "@/integrations/supabase/client";
@@ -106,6 +108,21 @@ function PinGate() {
     setStatus("checking");
     setMessage(null);
     const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) {
+      setMessage("Inloggningen misslyckades – försök igen.");
+      setStatus("idle");
+      return;
+    }
+    if (result.redirected) return;
+    window.location.reload();
+  }, []);
+
+  const signInWithLovable = useCallback(async () => {
+    setStatus("checking");
+    setMessage(null);
+    const result = await lovable.auth.signInWithOAuth("lovable", {
       redirect_uri: window.location.origin,
     });
     if (result.error) {
@@ -298,6 +315,14 @@ function PinGate() {
             )}
             Fortsätt med Google
           </Button>
+          <button
+            type="button"
+            className="lovable-auth-button mt-3 w-full"
+            onClick={() => void signInWithLovable()}
+            disabled={status === "checking"}
+          >
+            Fortsätt med Lovable
+          </button>
           <p className="mt-6 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
             <Lock className="size-3.5" /> Efter inloggning räcker pinkod eller Face ID
           </p>
