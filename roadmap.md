@@ -15,6 +15,8 @@
 - [x] Reparera OwnTracks med ny privat adress och verkligt mottagningstest
 - [x] Skicka mejl från appen (skriv/svara i inkorgen, Andrea med godkännande)
 - [x] Händelser skrivs, ändras och tas bort i Google Calendar
-- [ ] Appens egna notismejl – väntar på avsändardomän
+- [x] Appens egna notismejl – mallar klara, väntar på att domänen verifieras
 - [x] Matrix-vy: sparade resor med körda mil jämfört mot Googles rutt och gatubilder
-- [ ] E-post från egen domän (veckosammanfattning och påminnelser)
+- [x] Matrix-resor syns i kalendern med mil och datum
+- [x] E-post från egen domän (veckosammanfattning och påminnelser) – DNS-verifiering pågår
+
