@@ -93,3 +93,25 @@ Den nya nyckeln används automatiskt för kartor och avstånd i hela appen.
 - Tailwind CSS
 - shadcn/ui
 - Supabase (Lovable Cloud)
+
+## Egen Google Maps-nyckel
+
+LifeHub använder din egen Google-nyckel för karta, rutter, avstånd, gatubilder och platssök.
+Nyckeln sparas som hemligheten `GOOGLE_MAPS_OWN_KEY` i projektets inställningar.
+
+Aktivera dessa API:er i Google Cloud:
+
+- Maps JavaScript API
+- Places API (New)
+- Geocoding API
+- Routes API
+- Street View Static API
+- Maps Static API
+
+Begränsa nyckeln till webbadresserna:
+
+- `https://mellberg.online/*`
+- `https://www.mellberg.online/*`
+- `https://*.lovable.app/*`
+
+Saknas nyckeln faller appen tillbaka till Lovables delade kartnyckel, som bara fungerar på lovable.app-adressen.
