@@ -17,8 +17,60 @@ export const GOOGLE_CONNECTORS = {
 
 export type GoogleService = keyof typeof GOOGLE_CONNECTORS;
 
+/** Egen Google Maps-nyckel (fungerar på alla domäner, t.ex. mellberg.online). */
+export function ownMapsKey() {
+  return process.env["GOOGLE_MAPS_OWN_KEY"] ?? null;
+}
+
 export function hasGoogle(service: GoogleService) {
+  if (service === "maps" && ownMapsKey()) return true;
   return Boolean(process.env["LOVABLE_API_KEY"] && process.env[GOOGLE_CONNECTORS[service].env]);
+}
+
+/** Rätt Google-värd för en gateway-sökväg när vi ringer Google direkt. */
+function directMapsUrl(path: string) {
+  const clean = path.startsWith("/") ? path.slice(1) : path;
+  const prefixes: Record<string, string> = {
+    "routes/": "https://routes.googleapis.com/",
+    "places/": "https://places.googleapis.com/",
+    "airquality/": "https://airquality.googleapis.com/",
+    "weather/": "https://weather.googleapis.com/",
+    "pollen/": "https://pollen.googleapis.com/",
+    "addressvalidation/": "https://addressvalidation.googleapis.com/",
+  };
+  for (const [prefix, host] of Object.entries(prefixes)) {
+    if (clean.startsWith(prefix)) return `${host}${clean.slice(prefix.length)}`;
+  }
+  return `https://maps.googleapis.com/${clean}`;
+}
+
+async function callMapsDirect(
+  key: string,
+  path: string,
+  init?: { method?: string; body?: unknown; headers?: Record<string, string> },
+): Promise<unknown> {
+  const headers: Record<string, string> = {
+    "X-Goog-Api-Key": key,
+    ...(init?.headers ?? {}),
+  };
+  if (init?.body !== undefined) headers["Content-Type"] = "application/json";
+
+  const url = new URL(directMapsUrl(path));
+  // Legacy-API:er (geocoding m.fl.) vill ha nyckeln som query-parameter.
+  if (url.hostname === "maps.googleapis.com") url.searchParams.set("key", key);
+
+  const res = await fetch(url.toString(), {
+    method: init?.method ?? "GET",
+    headers,
+    ...(init?.body !== undefined ? { body: JSON.stringify(init.body) } : {}),
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    console.error(`Google Maps (egen nyckel) ${res.status}: ${text.slice(0, 400)}`);
+    throw new Error(`Google Maps svarade ${res.status}: ${text.slice(0, 300)}`);
+  }
+  return text ? (JSON.parse(text) as unknown) : null;
 }
 
 async function call(
@@ -26,6 +78,10 @@ async function call(
   path: string,
   init?: { method?: string; body?: unknown; headers?: Record<string, string> },
 ): Promise<unknown> {
+  if (service === "maps") {
+    const own = ownMapsKey();
+    if (own) return callMapsDirect(own, path, init);
+  }
   const lovableKey = process.env["LOVABLE_API_KEY"];
   const connectorKey = process.env[GOOGLE_CONNECTORS[service].env];
   if (!lovableKey || !connectorKey) {
