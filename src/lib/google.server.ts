@@ -795,6 +795,141 @@ export async function placesNearby(
     .slice(0, max);
 }
 
+/* ---------------- Avståndsmatris ---------------- */
+
+export type MatrixCell = {
+  originIndex: number;
+  destinationIndex: number;
+  meters: number;
+  minutes: number;
+};
+
+/**
+ * Avstånd och restid mellan flera punkter i ett enda anrop (Routes computeRouteMatrix).
+ * Max 10x10 för att hålla nere kostnaden.
+ */
+export async function mapsMatrix(
+  origins: Array<{ lat: number; lng: number }>,
+  destinations: Array<{ lat: number; lng: number }>,
+  mode: RouteResult["mode"] = "bil",
+): Promise<MatrixCell[]> {
+  const waypoint = (p: { lat: number; lng: number }) => ({
+    waypoint: { location: { latLng: { latitude: p.lat, longitude: p.lng } } },
+  });
+
+  const data = (await call("maps", "/routes/distanceMatrix/v2:computeRouteMatrix", {
+    method: "POST",
+    headers: {
+      "X-Goog-FieldMask":
+        "originIndex,destinationIndex,duration,distanceMeters,condition",
+    },
+    body: {
+      origins: origins.slice(0, 10).map(waypoint),
+      destinations: destinations.slice(0, 10).map(waypoint),
+      travelMode: TRAVEL_MODE[mode],
+    },
+  })) as
+    | Array<{
+        originIndex?: number;
+        destinationIndex?: number;
+        duration?: string;
+        distanceMeters?: number;
+        condition?: string;
+      }>
+    | null;
+
+  return (data ?? [])
+    .filter((row) => row.condition !== "ROUTE_NOT_FOUND")
+    .map((row) => ({
+      originIndex: row.originIndex ?? 0,
+      destinationIndex: row.destinationIndex ?? 0,
+      meters: row.distanceMeters ?? 0,
+      minutes: Math.round(Number((row.duration ?? "0s").replace("s", "")) / 60),
+    }));
+}
+
+/* ---------------- Platssök ---------------- */
+
+export type PlaceSuggestion = { placeId: string; text: string };
+
+/** Förslag medan man skriver (Places API New autocomplete). */
+export async function placesAutocomplete(
+  input: string,
+  bias?: { lat: number; lng: number } | null,
+  sessionToken?: string,
+): Promise<PlaceSuggestion[]> {
+  const trimmed = input.trim();
+  if (trimmed.length < 2) return [];
+
+  const body: Record<string, unknown> = {
+    input: trimmed,
+    languageCode: "sv",
+    regionCode: "SE",
+    ...(sessionToken ? { sessionToken } : {}),
+  };
+  if (bias) {
+    body["locationBias"] = {
+      circle: { center: { latitude: bias.lat, longitude: bias.lng }, radius: 50000 },
+    };
+  }
+
+  const data = (await call("maps", "/places/v1/places:autocomplete", {
+    method: "POST",
+    headers: {
+      "X-Goog-FieldMask":
+        "suggestions.placePrediction.placeId,suggestions.placePrediction.text.text",
+    },
+    body,
+  })) as {
+    suggestions?: Array<{ placePrediction?: { placeId?: string; text?: { text?: string } } }>;
+  };
+
+  return (data.suggestions ?? [])
+    .map((s) => ({
+      placeId: s.placePrediction?.placeId ?? "",
+      text: s.placePrediction?.text?.text ?? "",
+    }))
+    .filter((s) => s.placeId && s.text)
+    .slice(0, 6);
+}
+
+export type PlaceDetails = {
+  placeId: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+};
+
+/** Detaljer för ett valt förslag. */
+export async function placeDetails(
+  placeId: string,
+  sessionToken?: string,
+): Promise<PlaceDetails | null> {
+  const query = sessionToken ? `?sessionToken=${encodeURIComponent(sessionToken)}` : "";
+  const data = (await call("maps", `/places/v1/places/${encodeURIComponent(placeId)}${query}`, {
+    headers: {
+      "X-Goog-FieldMask": "id,displayName,formattedAddress,location",
+    },
+  })) as {
+    id?: string;
+    displayName?: { text?: string };
+    formattedAddress?: string;
+    location?: { latitude?: number; longitude?: number };
+  };
+
+  const lat = data.location?.latitude;
+  const lng = data.location?.longitude;
+  if (typeof lat !== "number" || typeof lng !== "number") return null;
+  return {
+    placeId: data.id ?? placeId,
+    name: data.displayName?.text ?? data.formattedAddress ?? "Plats",
+    address: data.formattedAddress ?? "",
+    lat,
+    lng,
+  };
+}
+
 
 
 
