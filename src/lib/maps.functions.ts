@@ -50,3 +50,50 @@ export const reverseGeocode = createServerFn({ method: "POST" })
     const { resolvePlaceName } = await import("./maps.server");
     return resolvePlaceName(data.lat, data.lng);
   });
+
+/** Avståndsmatris – hur långt och hur länge mellan flera punkter. */
+export const distanceMatrix = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        origins: z.array(pointSchema).min(1).max(10),
+        destinations: z.array(pointSchema).min(1).max(10),
+        mode: z.enum(["bil", "kollektivt", "gang_cykel"]).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { resolveMatrix } = await import("./maps.server");
+    return resolveMatrix(data.origins, data.destinations, data.mode ?? "bil");
+  });
+
+/** Platsförslag medan man skriver. */
+export const placeAutocomplete = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        input: z.string().min(1).max(200),
+        bias: pointSchema.nullable().optional(),
+        sessionToken: z.string().max(80).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { suggestPlaces } = await import("./maps.server");
+    return suggestPlaces(data.input, data.bias ?? null, data.sessionToken);
+  });
+
+/** Detaljer för ett valt platsförslag. */
+export const placeLookup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z
+      .object({ placeId: z.string().min(1).max(300), sessionToken: z.string().max(80).optional() })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { resolvePlaceDetails } = await import("./maps.server");
+    return resolvePlaceDetails(data.placeId, data.sessionToken);
+  });
