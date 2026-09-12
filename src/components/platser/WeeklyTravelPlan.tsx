@@ -144,7 +144,7 @@ export function WeeklyTravelPlan() {
           </h2>
           <p className="truncate text-xs text-muted-foreground">
             {plan.length
-              ? `${plan.length} resor · ${risky} med knapp marginal`
+              ? `${plan.length} resor · ${formatDistance(totalMeters)} · ${Math.round(totalMinutes)} min · ${risky} med knapp marginal`
               : "Inga kommande aktiviteter med känd plats"}
           </p>
         </div>
