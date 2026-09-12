@@ -56,6 +56,7 @@ function CalendarPage() {
   const navigate = useNavigate({ from: "/kalender" });
   const eventsQ = useEvents();
   const rawEvents = eventsQ.data ?? [];
+  const tripsQ = useTripEvents();
   const [view, setView] = useState<View>(search.vy ?? "vecka");
   const [cursor, setCursor] = useState(() =>
     search.datum ? new Date(`${search.datum}T12:00:00`) : new Date(),
@@ -67,9 +68,14 @@ function CalendarPage() {
   const [selected, setSelected] = useState<EventRow | null>(null);
 
   const events = useMemo(
-    () => mergeDuplicates(rawEvents).filter((e) => !hidden.includes(e.category)),
-    [rawEvents, hidden],
+    () =>
+      mergeDuplicates([...rawEvents, ...(tripsQ.data ?? [])]).filter(
+        (e) => !hidden.includes(e.category),
+      ),
+    [rawEvents, tripsQ.data, hidden],
   );
+
+
 
 
   useEffect(() => {
@@ -99,10 +105,15 @@ function CalendarPage() {
   }
 
   function open(event: EventRow | null, date?: Date) {
+    if (event && isTripEvent(event)) {
+      void navigate({ to: "/platser" });
+      return;
+    }
     setSelected(event);
     if (date) setCursor(date);
     setDialogOpen(true);
   }
+
 
   function toggle(category: Category) {
     setHidden((prev) =>
