@@ -118,7 +118,9 @@ export const listOrganizations = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data: orgs, error } = await context.supabase
       .from("organizations")
-      .select("id, name, org_number, contact_email, is_active, created_at")
+      .select(
+        "id, name, org_number, contact_email, contact_phone, is_active, created_at, segment, address, website, contact_name, contact_role, billing_address, billing_email, billing_reference, contract_start, contract_type, status, seats, internal_notes",
+      )
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
 
@@ -129,12 +131,163 @@ export const listOrganizations = createServerFn({ method: "GET" })
     const { data: members } = ids.length
       ? await context.supabase.from("org_members").select("org_id, role").in("org_id", ids)
       : { data: [] as { org_id: string; role: string }[] };
+    const { data: clients } = ids.length
+      ? await context.supabase.from("care_clients").select("org_id").in("org_id", ids)
+      : { data: [] as { org_id: string }[] };
 
-    return (orgs ?? []).map((o) => ({
-      ...o,
-      modules: (modules ?? []).filter((m) => m.org_id === o.id && m.enabled).map((m) => m.module),
-      memberCount: (members ?? []).filter((m) => m.org_id === o.id).length,
-    }));
+    return (orgs ?? []).map((o) => {
+      const orgMembers = (members ?? []).filter((m) => m.org_id === o.id);
+      return {
+        ...o,
+        modules: (modules ?? []).filter((m) => m.org_id === o.id && m.enabled).map((m) => m.module),
+        memberCount: orgMembers.length,
+        staffCount: orgMembers.filter((m) => m.role === "caregiver" || m.role === "org_admin").length,
+        relativeCount: orgMembers.filter((m) => m.role === "relative").length,
+        clientCount: (clients ?? []).filter((c) => c.org_id === o.id).length,
+      };
+    });
+  });
+
+const customerSchema = z.object({
+  name: z.string().min(2).max(160),
+  org_number: z.string().max(40).optional(),
+  segment: z.string().max(40).optional(),
+  address: z.string().max(240).optional(),
+  website: z.string().max(200).optional(),
+  contact_name: z.string().max(120).optional(),
+  contact_role: z.string().max(120).optional(),
+  contact_email: z.string().email().max(160).optional().or(z.literal("")),
+  contact_phone: z.string().max(60).optional(),
+  billing_address: z.string().max(240).optional(),
+  billing_email: z.string().email().max(160).optional().or(z.literal("")),
+  billing_reference: z.string().max(120).optional(),
+  contract_start: z.string().max(20).optional().or(z.literal("")),
+  contract_type: z.string().max(20).optional(),
+  status: z.string().max(20).optional(),
+  seats: z.number().int().min(0).max(100000).optional(),
+  internal_notes: z.string().max(4000).optional(),
+});
+
+type CustomerInput = z.infer<typeof customerSchema>;
+
+function customerRow(data: CustomerInput) {
+  const blank = (v?: string) => (v && v.trim().length > 0 ? v.trim() : null);
+  return {
+    name: data.name.trim(),
+    org_number: blank(data.org_number),
+    segment: blank(data.segment),
+    address: blank(data.address),
+    website: blank(data.website),
+    contact_name: blank(data.contact_name),
+    contact_role: blank(data.contact_role),
+    contact_email: blank(data.contact_email),
+    contact_phone: blank(data.contact_phone),
+    billing_address: blank(data.billing_address),
+    billing_email: blank(data.billing_email),
+    billing_reference: blank(data.billing_reference),
+    contract_start: blank(data.contract_start),
+    contract_type: data.contract_type ?? "pilot",
+    status: data.status ?? "prospekt",
+    seats: data.seats ?? null,
+    internal_notes: blank(data.internal_notes),
+  };
+}
+
+const permissionSchema = z.object({
+  orgId: z.string().uuid(),
+  permissions: z
+    .array(
+      z.object({
+        role: roleEnumLazy(),
+        module: z.string().max(40),
+        can_view: z.boolean(),
+        can_edit: z.boolean(),
+      }),
+    )
+    .max(200),
+});
+
+function roleEnumLazy() {
+  return z.enum(["superadmin", "org_admin", "caregiver", "client", "relative"]);
+}
+
+/** Ny kund med alla affärsuppgifter, moduler och behörighetsmatris i ett svep. */
+export const createCustomer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        customer: customerSchema,
+        modules: z.array(z.string().max(40)).max(40),
+        permissions: permissionSchema.shape.permissions,
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: ownerFlag } = await context.supabase.rpc("is_app_owner", {
+      _user_id: context.userId,
+    });
+    if (ownerFlag !== true) throw new Error("Endast superadmin kan lägga upp kunder.");
+
+    const { data: org, error } = await context.supabase
+      .from("organizations")
+      .insert({ ...customerRow(data.customer), created_by: context.userId })
+      .select("id")
+      .single();
+    if (error || !org) throw new Error(error?.message ?? "Kunde inte skapa kunden.");
+
+    if (data.modules.length > 0) {
+      await context.supabase
+        .from("org_modules")
+        .insert(data.modules.map((module) => ({ org_id: org.id, module, enabled: true })));
+    }
+    if (data.permissions.length > 0) {
+      await context.supabase
+        .from("org_permissions")
+        .insert(data.permissions.map((p) => ({ ...p, org_id: org.id })));
+    }
+    return { id: org.id };
+  });
+
+export const updateCustomer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ orgId: z.string().uuid(), customer: customerSchema }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("organizations")
+      .update(customerRow(data.customer))
+      .eq("id", data.orgId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const getOrgPermissions = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ orgId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("org_permissions")
+      .select("role, module, can_view, can_edit")
+      .eq("org_id", data.orgId);
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+/** Ersätter hela matrisen för en kund. Databasen håller integritetsspärrarna. */
+export const setOrgPermissions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => permissionSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    await context.supabase.from("org_permissions").delete().eq("org_id", data.orgId);
+    if (data.permissions.length > 0) {
+      const { error } = await context.supabase
+        .from("org_permissions")
+        .insert(data.permissions.map((p) => ({ ...p, org_id: data.orgId })));
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
   });
 
 export const createOrganization = createServerFn({ method: "POST" })
