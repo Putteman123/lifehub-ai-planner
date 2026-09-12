@@ -43,8 +43,33 @@ export const submitLead = createServerFn({ method: "POST" })
       message: data.message ?? null,
     });
     if (error) throw new Error("Kunde inte skicka just nu. Försök igen om en stund.");
+
+    // Bekräftelsemejl – anmälan sparas även om mejlet inte går fram.
+    try {
+      const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
+      await sendTemplateEmail("care-lead", data.email, {
+        templateData: {
+          contactName: data.contact_name,
+          orgName: data.org_name,
+          message: data.message ?? "",
+        },
+      });
+    } catch (mailError) {
+      console.error("Kunde inte skicka bekräftelsemejl för intresseanmälan:", mailError);
+    }
+
     return { ok: true };
   });
+
+const SITE_URL = () => process.env["SITE_URL"] ?? "https://mellberg.online";
+
+const ROLE_LABEL: Record<string, string> = {
+  superadmin: "superadmin",
+  org_admin: "verksamhetsadmin",
+  caregiver: "vårdpersonal",
+  client: "brukare",
+  relative: "anhörig",
+};
 
 export type CareMembership = {
   orgId: string;
