@@ -43,8 +43,33 @@ export const submitLead = createServerFn({ method: "POST" })
       message: data.message ?? null,
     });
     if (error) throw new Error("Kunde inte skicka just nu. Försök igen om en stund.");
+
+    // Bekräftelsemejl – anmälan sparas även om mejlet inte går fram.
+    try {
+      const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
+      await sendTemplateEmail("care-lead", data.email, {
+        templateData: {
+          contactName: data.contact_name,
+          orgName: data.org_name,
+          message: data.message ?? "",
+        },
+      });
+    } catch (mailError) {
+      console.error("Kunde inte skicka bekräftelsemejl för intresseanmälan:", mailError);
+    }
+
     return { ok: true };
   });
+
+const SITE_URL = () => process.env["SITE_URL"] ?? "https://mellberg.online";
+
+const ROLE_LABEL: Record<string, string> = {
+  superadmin: "superadmin",
+  org_admin: "verksamhetsadmin",
+  caregiver: "vårdpersonal",
+  client: "brukare",
+  relative: "anhörig",
+};
 
 export type CareMembership = {
   orgId: string;
@@ -220,7 +245,78 @@ export const inviteMember = createServerFn({ method: "POST" })
       .select("id, token")
       .single();
     if (error || !invite) throw new Error(error?.message ?? "Kunde inte skapa inbjudan.");
-    return { id: invite.id, token: invite.token };
+
+    const { data: org } = await context.supabase
+      .from("organizations")
+      .select("name")
+      .eq("id", data.orgId)
+      .maybeSingle();
+
+    let emailSent = false;
+    try {
+      const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
+      const result = await sendTemplateEmail("care-invite", data.email, {
+        templateData: {
+          orgName: org?.name ?? "LifeHub Vård",
+          displayName: data.display_name,
+          roleLabel: ROLE_LABEL[data.role] ?? data.role,
+          acceptUrl: `${SITE_URL()}/invite/${invite.token}`,
+        },
+        idempotencyKey: `invite-${invite.id}`,
+      });
+      emailSent = result.sent;
+    } catch (mailError) {
+      console.error("Kunde inte skicka inbjudningsmejl:", mailError);
+    }
+
+    return { id: invite.id, token: invite.token, emailSent };
+  });
+
+/** Den inbjudne tackar ja och blir medlem i organisationen. */
+export const acceptInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ token: z.string().min(10) }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: invite } = await supabaseAdmin
+      .from("org_invites")
+      .select("id, org_id, email, display_name, role, status, expires_at")
+      .eq("token", data.token)
+      .maybeSingle();
+
+    if (!invite) throw new Error("Inbjudan hittades inte.");
+    if (invite.status !== "pending") throw new Error("Inbjudan är redan använd.");
+    if (new Date(invite.expires_at).getTime() < Date.now())
+      throw new Error("Inbjudan har gått ut. Be om en ny.");
+
+    const claimEmail = String((context.claims as { email?: string }).email ?? "").toLowerCase();
+    if (claimEmail && claimEmail !== invite.email.toLowerCase()) {
+      throw new Error("Inbjudan gäller en annan e-postadress. Logga in med den adressen.");
+    }
+
+    const { error: memberError } = await supabaseAdmin.from("org_members").upsert(
+      {
+        org_id: invite.org_id,
+        user_id: context.userId,
+        email: invite.email,
+        display_name: invite.display_name ?? invite.email,
+        role: invite.role,
+        is_active: true,
+      },
+      { onConflict: "org_id,user_id,role" },
+    );
+    if (memberError) throw new Error("Kunde inte lägga till dig i verksamheten.");
+
+    await supabaseAdmin.from("org_invites").update({ status: "accepted" }).eq("id", invite.id);
+
+    const { data: org } = await supabaseAdmin
+      .from("organizations")
+      .select("name")
+      .eq("id", invite.org_id)
+      .maybeSingle();
+
+    return { ok: true, orgName: org?.name ?? "verksamheten", role: invite.role };
   });
 
 export const removeInvite = createServerFn({ method: "POST" })

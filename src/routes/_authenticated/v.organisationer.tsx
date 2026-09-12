@@ -113,9 +113,13 @@ function OrgAdmin() {
           role: newInvite.role as CareRole,
         },
       }),
-    onSuccess: () => {
+    onSuccess: (result: { emailSent?: boolean }) => {
       setNewInvite({ display_name: "", email: "", role: "caregiver" });
-      toast.success("Inbjudan skapad.");
+      toast.success(
+        result?.emailSent
+          ? "Inbjudan skickad med mejl."
+          : "Inbjudan skapad, men mejlet gick inte fram. Dela länken manuellt.",
+      );
       void refreshPeople();
     },
     onError: (e: Error) => toast.error(e.message),

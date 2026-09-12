@@ -78,12 +78,25 @@ async function call(
   path: string,
   init?: { method?: string; body?: unknown; headers?: Record<string, string> },
 ): Promise<unknown> {
-  if (service === "maps") {
-    const own = ownMapsKey();
-    if (own) return callMapsDirect(own, path, init);
-  }
   const lovableKey = process.env["LOVABLE_API_KEY"];
   const connectorKey = process.env[GOOGLE_CONNECTORS[service].env];
+
+  if (service === "maps") {
+    const own = ownMapsKey();
+    if (own) {
+      const canFallBack = Boolean(lovableKey && connectorKey);
+      try {
+        return await callMapsDirect(own, path, init);
+      } catch (error) {
+        // Egen nyckel saknar behörighet för just den här tjänsten –
+        // prova Lovables karttjänst istället för att låta funktionen dö.
+        if (!canFallBack) throw error;
+        console.warn(
+          `Egen Google-nyckel funkade inte för ${path} – använder Lovables karttjänst istället.`,
+        );
+      }
+    }
+  }
   if (!lovableKey || !connectorKey) {
     throw new Error(`${GOOGLE_CONNECTORS[service].label} är inte kopplad.`);
   }
