@@ -1530,39 +1530,119 @@ export type Database = {
           },
         ]
       }
-      organizations: {
+      org_permissions: {
         Row: {
-          contact_email: string | null
-          contact_phone: string | null
+          can_edit: boolean
+          can_view: boolean
           created_at: string
-          created_by: string | null
           id: string
-          is_active: boolean
-          name: string
-          org_number: string | null
+          module: string
+          org_id: string
+          role: Database["public"]["Enums"]["care_role"]
           updated_at: string
         }
         Insert: {
-          contact_email?: string | null
-          contact_phone?: string | null
+          can_edit?: boolean
+          can_view?: boolean
           created_at?: string
-          created_by?: string | null
           id?: string
-          is_active?: boolean
-          name: string
-          org_number?: string | null
+          module: string
+          org_id: string
+          role: Database["public"]["Enums"]["care_role"]
           updated_at?: string
         }
         Update: {
+          can_edit?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          module?: string
+          org_id?: string
+          role?: Database["public"]["Enums"]["care_role"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_permissions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          address: string | null
+          billing_address: string | null
+          billing_email: string | null
+          billing_reference: string | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          contact_role: string | null
+          contract_start: string | null
+          contract_type: string
+          created_at: string
+          created_by: string | null
+          id: string
+          internal_notes: string | null
+          is_active: boolean
+          name: string
+          org_number: string | null
+          seats: number | null
+          segment: string | null
+          status: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          billing_address?: string | null
+          billing_email?: string | null
+          billing_reference?: string | null
           contact_email?: string | null
+          contact_name?: string | null
           contact_phone?: string | null
+          contact_role?: string | null
+          contract_start?: string | null
+          contract_type?: string
           created_at?: string
           created_by?: string | null
           id?: string
+          internal_notes?: string | null
+          is_active?: boolean
+          name: string
+          org_number?: string | null
+          seats?: number | null
+          segment?: string | null
+          status?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          billing_address?: string | null
+          billing_email?: string | null
+          billing_reference?: string | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          contact_role?: string | null
+          contract_start?: string | null
+          contract_type?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          internal_notes?: string | null
           is_active?: boolean
           name?: string
           org_number?: string | null
+          seats?: number | null
+          segment?: string | null
+          status?: string
           updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }
