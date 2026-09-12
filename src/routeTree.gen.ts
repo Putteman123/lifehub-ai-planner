@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as VardRouteImport } from './routes/vard'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AuthenticatedArkivRouteImport } from './routes/_authenticated/arkiv'
@@ -29,6 +30,7 @@ import { Route as AuthenticatedPengarRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedPlatserRouteImport } from './routes/_authenticated/platser'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiTtsRouteImport } from './routes/api/tts'
+import { Route as VardIndexRouteImport } from './routes/vard.index'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as ApiPublicOtrcRouteImport } from './routes/api/public/otrc'
@@ -52,6 +54,11 @@ const AuthRoute = AuthRouteImport.update({
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VardRoute = VardRouteImport.update({
+  id: '/vard',
+  path: '/vard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const Char91DotmcpChar93ListToolsRoute =
@@ -136,6 +143,11 @@ const ApiTtsRoute = ApiTtsRouteImport.update({
   path: '/api/tts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VardIndexRoute = VardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => VardRoute,
+} as any)
 const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   id: '/.lovable/oauth/consent',
   path: '/.lovable/oauth/consent',
@@ -168,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
+  '/vard': typeof VardRouteWithChildren
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/arkiv': typeof AuthenticatedArkivRoute
@@ -184,6 +197,7 @@ export interface FileRoutesByFullPath {
   '/platser': typeof AuthenticatedPlatserRoute
   '/api/chat': typeof ApiChatRoute
   '/api/tts': typeof ApiTtsRoute
+  '/vard/': typeof VardIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/otrc': typeof ApiPublicOtrcRoute
@@ -210,6 +224,7 @@ export interface FileRoutesByTo {
   '/platser': typeof AuthenticatedPlatserRoute
   '/api/chat': typeof ApiChatRoute
   '/api/tts': typeof ApiTtsRoute
+  '/vard': typeof VardIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/otrc': typeof ApiPublicOtrcRoute
@@ -222,6 +237,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
+  '/vard': typeof VardRouteWithChildren
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/arkiv': typeof AuthenticatedArkivRoute
@@ -238,6 +254,7 @@ export interface FileRoutesById {
   '/_authenticated/platser': typeof AuthenticatedPlatserRoute
   '/api/chat': typeof ApiChatRoute
   '/api/tts': typeof ApiTtsRoute
+  '/vard/': typeof VardIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/public/otrc': typeof ApiPublicOtrcRoute
@@ -250,6 +267,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/mcp'
+    | '/vard'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/arkiv'
@@ -266,6 +284,7 @@ export interface FileRouteTypes {
     | '/platser'
     | '/api/chat'
     | '/api/tts'
+    | '/vard/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/public/otrc'
@@ -292,6 +311,7 @@ export interface FileRouteTypes {
     | '/platser'
     | '/api/chat'
     | '/api/tts'
+    | '/vard'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/public/otrc'
@@ -303,6 +323,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/mcp'
+    | '/vard'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/arkiv'
@@ -319,6 +340,7 @@ export interface FileRouteTypes {
     | '/_authenticated/platser'
     | '/api/chat'
     | '/api/tts'
+    | '/vard/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/api/public/otrc'
@@ -331,6 +353,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   McpRoute: typeof McpRoute
+  VardRoute: typeof VardRouteWithChildren
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   ApiChatRoute: typeof ApiChatRoute
@@ -370,6 +393,13 @@ declare module '@tanstack/react-router' {
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vard': {
+      id: '/vard'
+      path: '/vard'
+      fullPath: '/vard'
+      preLoaderRoute: typeof VardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/.mcp/list-tools': {
@@ -484,6 +514,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTtsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vard/': {
+      id: '/vard/'
+      path: '/'
+      fullPath: '/vard/'
+      preLoaderRoute: typeof VardIndexRouteImport
+      parentRoute: typeof VardRoute
+    }
     '/.lovable/oauth/consent': {
       id: '/.lovable/oauth/consent'
       path: '/.lovable/oauth/consent'
@@ -555,11 +592,22 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface VardRouteChildren {
+  VardIndexRoute: typeof VardIndexRoute
+}
+
+const VardRouteChildren: VardRouteChildren = {
+  VardIndexRoute: VardIndexRoute,
+}
+
+const VardRouteWithChildren = VardRoute._addFileChildren(VardRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   McpRoute: McpRoute,
+  VardRoute: VardRouteWithChildren,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
