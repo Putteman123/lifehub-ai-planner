@@ -1708,6 +1708,66 @@ export type Database = {
         }
         Relationships: []
       }
+      trip_logs: {
+        Row: {
+          created_at: string
+          driven_km: number
+          driven_on: string
+          from_label: string
+          from_lat: number | null
+          from_lng: number | null
+          id: string
+          purpose: string | null
+          route_checked_at: string | null
+          route_meters: number | null
+          route_minutes: number | null
+          to_label: string
+          to_lat: number | null
+          to_lng: number | null
+          travel_mode: Database["public"]["Enums"]["travel_mode"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          driven_km?: number
+          driven_on?: string
+          from_label: string
+          from_lat?: number | null
+          from_lng?: number | null
+          id?: string
+          purpose?: string | null
+          route_checked_at?: string | null
+          route_meters?: number | null
+          route_minutes?: number | null
+          to_label: string
+          to_lat?: number | null
+          to_lng?: number | null
+          travel_mode?: Database["public"]["Enums"]["travel_mode"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          driven_km?: number
+          driven_on?: string
+          from_label?: string
+          from_lat?: number | null
+          from_lng?: number | null
+          id?: string
+          purpose?: string | null
+          route_checked_at?: string | null
+          route_meters?: number | null
+          route_minutes?: number | null
+          to_label?: string
+          to_lat?: number | null
+          to_lng?: number | null
+          travel_mode?: Database["public"]["Enums"]["travel_mode"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       vault_challenges: {
         Row: {
           challenge: string
