@@ -1,6 +1,8 @@
 import { ExternalLink } from "lucide-react";
 
 import { GoogleMap } from "@/components/GoogleMap";
+import { NavigateButton } from "@/components/maps/NavigateButton";
+import { StreetViewImage } from "@/components/maps/StreetViewImage";
 import {
   Dialog,
   DialogContent,
@@ -45,6 +47,12 @@ export function MapDialog({
                 ]}
               />
             </div>
+            <StreetViewImage
+              lat={target!.lat!}
+              lng={target!.lng!}
+              alt={`Gatubild vid ${target!.title}`}
+            />
+            <NavigateButton lat={target!.lat!} lng={target!.lng!} />
             <div className="flex items-center justify-between gap-3">
               <span className="text-xs tabular-nums text-muted-foreground">
                 {target!.lat!.toFixed(5)}, {target!.lng!.toFixed(5)}
