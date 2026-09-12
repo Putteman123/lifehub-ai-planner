@@ -17,10 +17,12 @@ declare global {
   }
 }
 
-const BROWSER_KEY = import.meta.env["VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY"] as
-  string | undefined;
-const CHANNEL = import.meta.env["VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_TRACKING_ID"] as
-  string | undefined;
+import { BROWSER_MAPS_KEY, USING_OWN_MAPS_KEY } from "@/lib/maps-media";
+
+const BROWSER_KEY = BROWSER_MAPS_KEY;
+const CHANNEL = USING_OWN_MAPS_KEY
+  ? undefined
+  : (import.meta.env["VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_TRACKING_ID"] as string | undefined);
 
 let loader: Promise<void> | null = null;
 
