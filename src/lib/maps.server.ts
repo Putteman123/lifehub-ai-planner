@@ -105,3 +105,47 @@ export async function resolveNearbyPlaces(
     return [];
   }
 }
+
+/** Avstånd och restid mellan flera punkter i ett svep. */
+export async function resolveMatrix(
+  origins: Point[],
+  destinations: Point[],
+  mode: TravelKind = "bil",
+) {
+  if (!hasGoogle("maps")) return [];
+  try {
+    const { mapsMatrix } = await import("./google.server");
+    return await mapsMatrix(origins, destinations, mode);
+  } catch (error) {
+    console.error("Google avståndsmatris misslyckades:", error);
+    return [];
+  }
+}
+
+/** Platsförslag medan användaren skriver. */
+export async function suggestPlaces(
+  input: string,
+  bias: Point | null,
+  sessionToken?: string,
+) {
+  if (!hasGoogle("maps")) return [];
+  try {
+    const { placesAutocomplete } = await import("./google.server");
+    return await placesAutocomplete(input, bias, sessionToken);
+  } catch (error) {
+    console.error("Google platsförslag misslyckades:", error);
+    return [];
+  }
+}
+
+/** Detaljer (namn, adress, koordinater) för ett valt förslag. */
+export async function resolvePlaceDetails(placeId: string, sessionToken?: string) {
+  if (!hasGoogle("maps")) return null;
+  try {
+    const { placeDetails } = await import("./google.server");
+    return await placeDetails(placeId, sessionToken);
+  } catch (error) {
+    console.error("Google platsdetaljer misslyckades:", error);
+    return null;
+  }
+}

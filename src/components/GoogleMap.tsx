@@ -17,10 +17,11 @@ declare global {
   }
 }
 
-const BROWSER_KEY = import.meta.env["VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY"] as
-  string | undefined;
+import { currentOwnMapsKey, resolveMapsScriptKey } from "@/lib/maps-media";
+
 const CHANNEL = import.meta.env["VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_TRACKING_ID"] as
-  string | undefined;
+  | string
+  | undefined;
 
 let loader: Promise<void> | null = null;
 
@@ -29,29 +30,34 @@ function loadMaps(): Promise<void> {
   if (typeof window === "undefined") return Promise.reject(new Error("Ingen webbläsare"));
   if (window.google?.maps) return Promise.resolve();
   if (loader) return loader;
-  if (!BROWSER_KEY) return Promise.reject(new Error("Google Maps-nyckel saknas"));
 
-  loader = new Promise<void>((resolve, reject) => {
-    window.__lifehubMapsReady = () => resolve();
-    // Google anropar gm_authFailure när nyckeln inte tillåter den här domänen.
-    window.gm_authFailure = () => {
-      window.__lifehubMapsAuthFailed = true;
-    };
-    const script = document.createElement("script");
-    const params = new URLSearchParams({
-      key: BROWSER_KEY,
-      loading: "async",
-      libraries: "geometry",
-      language: "sv",
-      region: "SE",
-      callback: "__lifehubMapsReady",
+  loader = (async () => {
+    const key = await resolveMapsScriptKey();
+    if (!key) throw new Error("Google Maps-nyckel saknas");
+
+    await new Promise<void>((resolve, reject) => {
+      window.__lifehubMapsReady = () => resolve();
+      // Google anropar gm_authFailure när nyckeln inte tillåter den här domänen.
+      window.gm_authFailure = () => {
+        window.__lifehubMapsAuthFailed = true;
+      };
+      const script = document.createElement("script");
+      const params = new URLSearchParams({
+        key,
+        loading: "async",
+        libraries: "geometry",
+        language: "sv",
+        region: "SE",
+        callback: "__lifehubMapsReady",
+      });
+      // Kanalspårning gäller bara Lovables delade nyckel.
+      if (CHANNEL && !currentOwnMapsKey()) params.set("channel", CHANNEL);
+      script.src = `https://maps.googleapis.com/maps/api/js?${params.toString()}`;
+      script.async = true;
+      script.onerror = () => reject(new Error("Kunde inte ladda Google Maps"));
+      document.head.appendChild(script);
     });
-    if (CHANNEL) params.set("channel", CHANNEL);
-    script.src = `https://maps.googleapis.com/maps/api/js?${params.toString()}`;
-    script.async = true;
-    script.onerror = () => reject(new Error("Kunde inte ladda Google Maps"));
-    document.head.appendChild(script);
-  });
+  })();
   return loader;
 }
 

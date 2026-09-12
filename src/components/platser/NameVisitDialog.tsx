@@ -4,6 +4,9 @@ import { ExternalLink, Loader2, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { GoogleMap } from "@/components/GoogleMap";
+import { NavigateButton } from "@/components/maps/NavigateButton";
+import { PlaceSearchInput } from "@/components/maps/PlaceSearchInput";
+import { StreetViewImage } from "@/components/maps/StreetViewImage";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -110,6 +113,12 @@ export function NameVisitDialog({
                 markers={[{ lat: target!.lat!, lng: target!.lng! }]}
               />
             </div>
+            <StreetViewImage
+              lat={target!.lat!}
+              lng={target!.lng!}
+              alt="Gatubild vid platsen"
+            />
+            <NavigateButton lat={target!.lat!} lng={target!.lng!} />
             {geocodeQ.data ? (
               <button
                 type="button"
@@ -144,12 +153,13 @@ export function NameVisitDialog({
         <div className="grid gap-3">
           <div className="grid gap-1.5">
             <Label htmlFor="visit-label">Plats</Label>
-            <Input
+            <PlaceSearchInput
               id="visit-label"
               value={label}
-              maxLength={80}
               placeholder="T.ex. ICA Maxi"
-              onChange={(e) => setLabel(e.target.value)}
+              bias={hasCoords ? { lat: target!.lat!, lng: target!.lng! } : null}
+              onChange={setLabel}
+              onPick={(place) => setLabel(place.name)}
             />
           </div>
 
