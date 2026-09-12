@@ -132,6 +132,8 @@ export function WeeklyTravelPlan() {
   });
 
   const risky = plan.filter((p) => p.status !== "ok").length;
+  const totalMeters = plan.reduce((sum, p) => sum + (p.meters ?? 0), 0);
+  const totalMinutes = plan.reduce((sum, p) => sum + (p.minutes ?? 0), 0);
 
   return (
     <section className="rounded-2xl border border-border bg-card p-4">
