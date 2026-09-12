@@ -329,6 +329,97 @@ export type Database = {
         }
         Relationships: []
       }
+      care_clients: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          lat: number | null
+          lng: number | null
+          name: string
+          notes: string | null
+          org_id: string
+          phone: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          lat?: number | null
+          lng?: number | null
+          name: string
+          notes?: string | null
+          org_id: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          notes?: string | null
+          org_id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_clients_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_consents: {
+        Row: {
+          client_id: string
+          created_at: string
+          granted: boolean
+          id: string
+          relative_user_id: string
+          scope: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          granted?: boolean
+          id?: string
+          relative_user_id: string
+          scope: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          granted?: boolean
+          id?: string
+          relative_user_id?: string
+          scope?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_consents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "care_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       case_tasks: {
         Row: {
           case_id: string | null
@@ -1310,6 +1401,171 @@ export type Database = {
         }
         Relationships: []
       }
+      org_invites: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string | null
+          org_id: string
+          role: Database["public"]["Enums"]["care_role"]
+          status: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          org_id: string
+          role: Database["public"]["Enums"]["care_role"]
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string | null
+          org_id?: string
+          role?: Database["public"]["Enums"]["care_role"]
+          status?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_invites_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_members: {
+        Row: {
+          created_at: string
+          display_name: string
+          email: string | null
+          id: string
+          is_active: boolean
+          org_id: string
+          role: Database["public"]["Enums"]["care_role"]
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          org_id: string
+          role: Database["public"]["Enums"]["care_role"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          org_id?: string
+          role?: Database["public"]["Enums"]["care_role"]
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_modules: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          module: string
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          module: string
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          module?: string
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_modules_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          name: string
+          org_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          org_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          org_number?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pantry_items: {
         Row: {
           category: string | null
@@ -1511,6 +1767,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sales_leads: {
+        Row: {
+          contact_name: string
+          created_at: string
+          email: string
+          id: string
+          message: string | null
+          org_name: string
+          phone: string | null
+          segment: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          contact_name: string
+          created_at?: string
+          email: string
+          id?: string
+          message?: string | null
+          org_name: string
+          phone?: string | null
+          segment?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          contact_name?: string
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string | null
+          org_name?: string
+          phone?: string | null
+          segment?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       shopping_items: {
         Row: {
@@ -2026,7 +2321,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_manage_org: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_view_client: {
+        Args: { _client_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_org_role: {
+        Args: {
+          _org_id: string
+          _role: Database["public"]["Enums"]["care_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_app_owner: { Args: { _user_id: string }; Returns: boolean }
+      is_org_member: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       calendar_source:
@@ -2038,6 +2353,12 @@ export type Database = {
         | "school"
         | "sports"
         | "family"
+      care_role:
+        | "superadmin"
+        | "org_admin"
+        | "caregiver"
+        | "client"
+        | "relative"
       event_category:
         | "jobb"
         | "ledig"
@@ -2188,6 +2509,7 @@ export const Constants = {
         "sports",
         "family",
       ],
+      care_role: ["superadmin", "org_admin", "caregiver", "client", "relative"],
       event_category: ["jobb", "ledig", "jurist", "barn", "privat", "viktigt"],
       place_kind: ["jobb", "jurist", "hem", "barn", "annat"],
       shopping_source: ["manuell", "ai"],
