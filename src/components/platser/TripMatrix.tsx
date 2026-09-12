@@ -268,7 +268,7 @@ export function TripMatrix() {
                           ? ""
                           : Math.abs(diff) > 1
                             ? "text-destructive"
-                            : "text-success"
+                            : "text-primary"
                       }`}
                     >
                       {diff == null
