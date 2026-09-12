@@ -40,6 +40,7 @@ import { Route as VardSakerhetRouteImport } from './routes/vard.sakerhet'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as AuthenticatedVIndexRouteImport } from './routes/_authenticated/v.index'
+import { Route as AuthenticatedVOrganisationerRouteImport } from './routes/_authenticated/v.organisationer'
 import { Route as ApiPublicOtrcRouteImport } from './routes/api/public/otrc'
 import { Route as ApiPublicPlatsRouteImport } from './routes/api/public/plats'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -201,6 +202,12 @@ const AuthenticatedVIndexRoute = AuthenticatedVIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedVRoute,
 } as any)
+const AuthenticatedVOrganisationerRoute =
+  AuthenticatedVOrganisationerRouteImport.update({
+    id: '/organisationer',
+    path: '/organisationer',
+    getParentRoute: () => AuthenticatedVRoute,
+  } as any)
 const ApiPublicOtrcRoute = ApiPublicOtrcRouteImport.update({
   id: '/api/public/otrc',
   path: '/api/public/otrc',
@@ -248,6 +255,7 @@ export interface FileRoutesByFullPath {
   '/vard/': typeof VardIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/v/organisationer': typeof AuthenticatedVOrganisationerRoute
   '/api/public/otrc': typeof ApiPublicOtrcRoute
   '/api/public/plats': typeof ApiPublicPlatsRoute
   '/v/': typeof AuthenticatedVIndexRoute
@@ -281,6 +289,7 @@ export interface FileRoutesByTo {
   '/vard': typeof VardIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/v/organisationer': typeof AuthenticatedVOrganisationerRoute
   '/api/public/otrc': typeof ApiPublicOtrcRoute
   '/api/public/plats': typeof ApiPublicPlatsRoute
   '/v': typeof AuthenticatedVIndexRoute
@@ -318,6 +327,7 @@ export interface FileRoutesById {
   '/vard/': typeof VardIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/_authenticated/v/organisationer': typeof AuthenticatedVOrganisationerRoute
   '/api/public/otrc': typeof ApiPublicOtrcRoute
   '/api/public/plats': typeof ApiPublicPlatsRoute
   '/_authenticated/v/': typeof AuthenticatedVIndexRoute
@@ -355,6 +365,7 @@ export interface FileRouteTypes {
     | '/vard/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/v/organisationer'
     | '/api/public/otrc'
     | '/api/public/plats'
     | '/v/'
@@ -388,6 +399,7 @@ export interface FileRouteTypes {
     | '/vard'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/v/organisationer'
     | '/api/public/otrc'
     | '/api/public/plats'
     | '/v'
@@ -424,6 +436,7 @@ export interface FileRouteTypes {
     | '/vard/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/_authenticated/v/organisationer'
     | '/api/public/otrc'
     | '/api/public/plats'
     | '/_authenticated/v/'
@@ -666,6 +679,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVIndexRouteImport
       parentRoute: typeof AuthenticatedVRoute
     }
+    '/_authenticated/v/organisationer': {
+      id: '/_authenticated/v/organisationer'
+      path: '/organisationer'
+      fullPath: '/v/organisationer'
+      preLoaderRoute: typeof AuthenticatedVOrganisationerRouteImport
+      parentRoute: typeof AuthenticatedVRoute
+    }
     '/api/public/otrc': {
       id: '/api/public/otrc'
       path: '/api/public/otrc'
@@ -691,10 +711,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedVRouteChildren {
+  AuthenticatedVOrganisationerRoute: typeof AuthenticatedVOrganisationerRoute
   AuthenticatedVIndexRoute: typeof AuthenticatedVIndexRoute
 }
 
 const AuthenticatedVRouteChildren: AuthenticatedVRouteChildren = {
+  AuthenticatedVOrganisationerRoute: AuthenticatedVOrganisationerRoute,
   AuthenticatedVIndexRoute: AuthenticatedVIndexRoute,
 }
 
