@@ -44,6 +44,7 @@ import { Route as AuthenticatedVIndexRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedVOrganisationerRouteImport } from './routes/_authenticated/v.organisationer'
 import { Route as ApiPublicOtrcRouteImport } from './routes/api/public/otrc'
 import { Route as ApiPublicPlatsRouteImport } from './routes/api/public/plats'
+import { Route as AuthenticatedVKundOrgIdRouteImport } from './routes/_authenticated/v.kund.$orgId'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
 const IndexRoute = IndexRouteImport.update({
@@ -224,6 +225,11 @@ const ApiPublicPlatsRoute = ApiPublicPlatsRouteImport.update({
   path: '/api/public/plats',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedVKundOrgIdRoute = AuthenticatedVKundOrgIdRouteImport.update({
+  id: '/kund/$orgId',
+  path: '/kund/$orgId',
+  getParentRoute: () => AuthenticatedVRoute,
+} as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
@@ -266,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/api/public/otrc': typeof ApiPublicOtrcRoute
   '/api/public/plats': typeof ApiPublicPlatsRoute
   '/v/': typeof AuthenticatedVIndexRoute
+  '/v/kund/$orgId': typeof AuthenticatedVKundOrgIdRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesByTo {
@@ -301,6 +308,7 @@ export interface FileRoutesByTo {
   '/api/public/otrc': typeof ApiPublicOtrcRoute
   '/api/public/plats': typeof ApiPublicPlatsRoute
   '/v': typeof AuthenticatedVIndexRoute
+  '/v/kund/$orgId': typeof AuthenticatedVKundOrgIdRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesById {
@@ -340,6 +348,7 @@ export interface FileRoutesById {
   '/api/public/otrc': typeof ApiPublicOtrcRoute
   '/api/public/plats': typeof ApiPublicPlatsRoute
   '/_authenticated/v/': typeof AuthenticatedVIndexRoute
+  '/_authenticated/v/kund/$orgId': typeof AuthenticatedVKundOrgIdRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRouteTypes {
@@ -379,6 +388,7 @@ export interface FileRouteTypes {
     | '/api/public/otrc'
     | '/api/public/plats'
     | '/v/'
+    | '/v/kund/$orgId'
     | '/lovable/email/transactional/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -414,6 +424,7 @@ export interface FileRouteTypes {
     | '/api/public/otrc'
     | '/api/public/plats'
     | '/v'
+    | '/v/kund/$orgId'
     | '/lovable/email/transactional/preview'
   id:
     | '__root__'
@@ -452,6 +463,7 @@ export interface FileRouteTypes {
     | '/api/public/otrc'
     | '/api/public/plats'
     | '/_authenticated/v/'
+    | '/_authenticated/v/kund/$orgId'
     | '/lovable/email/transactional/preview'
   fileRoutesById: FileRoutesById
 }
@@ -720,6 +732,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPlatsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/v/kund/$orgId': {
+      id: '/_authenticated/v/kund/$orgId'
+      path: '/kund/$orgId'
+      fullPath: '/v/kund/$orgId'
+      preLoaderRoute: typeof AuthenticatedVKundOrgIdRouteImport
+      parentRoute: typeof AuthenticatedVRoute
+    }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
       path: '/lovable/email/transactional/preview'
@@ -733,11 +752,13 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedVRouteChildren {
   AuthenticatedVOrganisationerRoute: typeof AuthenticatedVOrganisationerRoute
   AuthenticatedVIndexRoute: typeof AuthenticatedVIndexRoute
+  AuthenticatedVKundOrgIdRoute: typeof AuthenticatedVKundOrgIdRoute
 }
 
 const AuthenticatedVRouteChildren: AuthenticatedVRouteChildren = {
   AuthenticatedVOrganisationerRoute: AuthenticatedVOrganisationerRoute,
   AuthenticatedVIndexRoute: AuthenticatedVIndexRoute,
+  AuthenticatedVKundOrgIdRoute: AuthenticatedVKundOrgIdRoute,
 }
 
 const AuthenticatedVRouteWithChildren = AuthenticatedVRoute._addFileChildren(
