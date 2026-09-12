@@ -26,8 +26,10 @@ import {
   weekDays,
 } from "@/lib/calendar";
 import { useEvents } from "@/lib/db";
+import { isTripEvent, useTripEvents } from "@/lib/trip-events";
 import { PiggyMarker } from "@/components/pengar/PiggyMarker";
 import { useDailyResult } from "@/lib/finance";
+
 
 type View = "dag" | "vecka" | "manad" | "ar" | "agenda";
 
