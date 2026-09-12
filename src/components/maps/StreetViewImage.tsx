@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-import { streetViewUrl } from "@/lib/maps-media";
+import { ensureOwnMapsKey, streetViewUrl } from "@/lib/maps-media";
 
 /** Gatubild för en plats – döljs helt om Street View saknas. */
 export function StreetViewImage({
@@ -15,7 +15,19 @@ export function StreetViewImage({
   className?: string;
 }) {
   const [failed, setFailed] = useState(false);
-  const url = streetViewUrl(lat, lng);
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setFailed(false);
+    void ensureOwnMapsKey().then(() => {
+      if (!cancelled) setUrl(streetViewUrl(lat, lng));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [lat, lng]);
+
   if (!url || failed) return null;
 
   return (
