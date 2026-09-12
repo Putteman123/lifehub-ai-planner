@@ -282,3 +282,48 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+/* LifeHub Vård – lugn vårdpalett: djup petrol, varm sand. */
+.care-theme {
+  --background: oklch(0.975 0.012 85);
+  --foreground: oklch(0.27 0.045 205);
+  --surface: oklch(0.99 0.006 85);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.27 0.045 205);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.27 0.045 205);
+  --primary: oklch(0.36 0.062 205);
+  --primary-foreground: oklch(0.98 0.01 85);
+  --secondary: oklch(0.93 0.022 80);
+  --secondary-foreground: oklch(0.3 0.05 205);
+  --muted: oklch(0.945 0.014 85);
+  --muted-foreground: oklch(0.5 0.03 205);
+  --accent: oklch(0.76 0.08 72);
+  --accent-foreground: oklch(0.27 0.045 205);
+  --border: oklch(0.36 0.062 205 / 14%);
+  --input: oklch(0.36 0.062 205 / 20%);
+  --ring: oklch(0.36 0.062 205 / 45%);
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+@keyframes care-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.care-rise {
+  animation: care-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.care-hero-glow {
+  background:
+    radial-gradient(60% 70% at 15% 15%, oklch(0.36 0.062 205 / 14%), transparent 70%),
+    radial-gradient(50% 60% at 90% 10%, oklch(0.76 0.08 72 / 22%), transparent 70%);
+}

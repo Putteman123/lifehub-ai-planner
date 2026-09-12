@@ -20,3 +20,11 @@
 - [x] Matrix-resor syns i kalendern med mil och datum
 - [x] E-post från egen domän (veckosammanfattning och påminnelser) – DNS-verifiering pågår
 
+
+## LifeHub Vård (alfa på mellberg.online)
+- [x] Databas: organisationer, medlemmar, moduler, inbjudningar, brukare, samtycken, intresseanmälningar
+- [x] Publik landningssida /vard med undersidor och kontaktformulär
+- [x] Inloggad vy /v med översikt och organisationsadministration
+- [ ] Schema, medicin och uppgifter per besök
+- [ ] Brukar- och anhörigvy med samtyckesstyrning
+- [ ] ICA-näthandel
