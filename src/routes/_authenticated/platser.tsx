@@ -16,6 +16,7 @@ import { FrequentRoutes } from "@/components/platser/FrequentRoutes";
 import { PreferredModes } from "@/components/platser/PreferredModes";
 import { TravelModeStats } from "@/components/platser/TravelModeStats";
 import { WeeklyTravelPlan } from "@/components/platser/WeeklyTravelPlan";
+import { TripMatrix } from "@/components/platser/TripMatrix";
 
 import { TravelTrendChart } from "@/components/platser/TravelTrendChart";
 
@@ -388,8 +389,9 @@ function PlacesPage() {
     >
       <DataGate queries={[placesQ, visitsQ, eventsQ]}>
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="idag">I dag</TabsTrigger>
+            <TabsTrigger value="matrix">Matrix</TabsTrigger>
             <TabsTrigger value="statistik">Statistik</TabsTrigger>
             <TabsTrigger value="platser">Platser</TabsTrigger>
             <TabsTrigger value="installningar">Inställningar</TabsTrigger>
@@ -463,6 +465,10 @@ function PlacesPage() {
 
             <DayLogCard places={places} />
             <TravelTimeline places={places} />
+          </TabsContent>
+
+          <TabsContent value="matrix" className="mt-4 space-y-4">
+            <TripMatrix />
           </TabsContent>
 
           <TabsContent value="statistik" className="mt-4 space-y-4">

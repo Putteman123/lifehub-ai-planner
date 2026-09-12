@@ -16,3 +16,5 @@
 - [x] Skicka mejl från appen (skriv/svara i inkorgen, Andrea med godkännande)
 - [x] Händelser skrivs, ändras och tas bort i Google Calendar
 - [ ] Appens egna notismejl – väntar på avsändardomän
+- [x] Matrix-vy: sparade resor med körda mil jämfört mot Googles rutt och gatubilder
+- [ ] E-post från egen domän (veckosammanfattning och påminnelser)
