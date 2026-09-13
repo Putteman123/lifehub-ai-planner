@@ -67,7 +67,8 @@ async function callMapsDirect(
 
   const text = await res.text();
   if (!res.ok) {
-    console.error(`Google Maps (egen nyckel) ${res.status}: ${text.slice(0, 400)}`);
+    // Logga inte här – anroparen (call) avgör om vi kan falla tillbaka
+    // på Lovables karttjänst, och loggar själv om inget alternativ finns.
     throw new Error(`Google Maps svarade ${res.status}: ${text.slice(0, 300)}`);
   }
   return text ? (JSON.parse(text) as unknown) : null;
