@@ -17,11 +17,21 @@ export const Route = createFileRoute("/api/public/hooks/epost")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env["EMAIL_CRON_TOKEN"] ?? "";
         const provided = (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
-        if (!expected || !timingSafeEqual(provided, expected)) {
-          return new Response("Unauthorized", { status: 401 });
-        }
+        const envToken = process.env["EMAIL_CRON_TOKEN"] ?? "";
+
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data: cron } = await supabaseAdmin
+          .from("cron_settings")
+          .select("token")
+          .limit(1)
+          .maybeSingle();
+        const dbToken = (cron?.token as string | undefined) ?? "";
+
+        const valid =
+          (dbToken !== "" && timingSafeEqual(provided, dbToken)) ||
+          (envToken !== "" && timingSafeEqual(provided, envToken));
+        if (!valid) return new Response("Unauthorized", { status: 401 });
 
         let mode = "reminders";
         try {
