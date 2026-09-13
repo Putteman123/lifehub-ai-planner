@@ -18,9 +18,10 @@ interface Props {
   message?: string;
   dueLabel?: string;
   amountLabel?: string;
+  items?: { label: string; due?: string }[];
 }
 
-const Email = ({ title, message, dueLabel, amountLabel }: Props) => (
+const Email = ({ title, message, dueLabel, amountLabel, items = [] }: Props) => (
   <Html lang="sv" dir="ltr">
     <Head />
     <Preview>{title ?? "Påminnelse från LifeHub"}</Preview>
@@ -34,6 +35,17 @@ const Email = ({ title, message, dueLabel, amountLabel }: Props) => (
           <Section style={box}>
             {dueLabel ? <Text style={row}>Förfaller: {dueLabel}</Text> : null}
             {amountLabel ? <Text style={row}>Belopp: {amountLabel}</Text> : null}
+          </Section>
+        ) : null}
+
+        {items.length > 0 ? (
+          <Section style={box}>
+            {items.map((i) => (
+              <Text key={i.label} style={row}>
+                • {i.label}
+                {i.due ? ` – ${i.due}` : ""}
+              </Text>
+            ))}
           </Section>
         ) : null}
 
