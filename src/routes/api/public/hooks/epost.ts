@@ -34,12 +34,30 @@ export const Route = createFileRoute("/api/public/hooks/epost")({
         if (!valid) return new Response("Unauthorized", { status: 401 });
 
         let mode = "reminders";
+        let force = false;
         try {
-          const body = (await request.json()) as { mode?: string };
+          const body = (await request.json()) as { mode?: string; force?: boolean };
           if (body?.mode === "weekly") mode = "weekly";
+          force = body?.force === true;
         } catch {
           /* tom body = påminnelser */
         }
+
+        // Cron körs i UTC; vi vaktar på svensk lokaltid så sommar-/vintertid inte förskjuter utskicket.
+        const localHour = Number(
+          new Intl.DateTimeFormat("sv-SE", {
+            timeZone: "Europe/Stockholm",
+            hour: "2-digit",
+            hour12: false,
+          }).format(new Date()),
+        );
+        const wantedHour = mode === "weekly" ? 18 : 8;
+        if (!force && localHour !== wantedHour) {
+          return new Response(JSON.stringify({ ok: true, mode, skipped: "fel-timme" }), {
+            headers: { "content-type": "application/json" },
+          });
+        }
+
 
         try {
           const { sendWeeklySummaryEmail, sendDailyRemindersEmail } = await import(
