@@ -18,7 +18,8 @@
 - [x] Appens egna notismejl – mallar klara, väntar på att domänen verifieras
 - [x] Matrix-vy: sparade resor med körda mil jämfört mot Googles rutt och gatubilder
 - [x] Matrix-resor syns i kalendern med mil och datum
-- [x] E-post från egen domän (veckosammanfattning och påminnelser) – DNS-verifiering pågår
+- [x] E-post från egen domän (veckosammanfattning och påminnelser) – domänen verifierad
+- [x] Automatiska utskick: veckosammanfattning söndag 18:00, påminnelser dagligen 08:00
 
 
 ## LifeHub Vård (alfa på mellberg.online)
