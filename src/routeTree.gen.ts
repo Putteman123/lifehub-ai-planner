@@ -45,6 +45,7 @@ import { Route as AuthenticatedVOrganisationerRouteImport } from './routes/_auth
 import { Route as ApiPublicOtrcRouteImport } from './routes/api/public/otrc'
 import { Route as ApiPublicPlatsRouteImport } from './routes/api/public/plats'
 import { Route as AuthenticatedVKundOrgIdRouteImport } from './routes/_authenticated/v.kund.$orgId'
+import { Route as ApiPublicHooksEpostRouteImport } from './routes/api/public/hooks/epost'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 
 const IndexRoute = IndexRouteImport.update({
@@ -230,6 +231,11 @@ const AuthenticatedVKundOrgIdRoute = AuthenticatedVKundOrgIdRouteImport.update({
   path: '/kund/$orgId',
   getParentRoute: () => AuthenticatedVRoute,
 } as any)
+const ApiPublicHooksEpostRoute = ApiPublicHooksEpostRouteImport.update({
+  id: '/api/public/hooks/epost',
+  path: '/api/public/hooks/epost',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
@@ -273,6 +279,7 @@ export interface FileRoutesByFullPath {
   '/api/public/plats': typeof ApiPublicPlatsRoute
   '/v/': typeof AuthenticatedVIndexRoute
   '/v/kund/$orgId': typeof AuthenticatedVKundOrgIdRoute
+  '/api/public/hooks/epost': typeof ApiPublicHooksEpostRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesByTo {
@@ -309,6 +316,7 @@ export interface FileRoutesByTo {
   '/api/public/plats': typeof ApiPublicPlatsRoute
   '/v': typeof AuthenticatedVIndexRoute
   '/v/kund/$orgId': typeof AuthenticatedVKundOrgIdRoute
+  '/api/public/hooks/epost': typeof ApiPublicHooksEpostRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesById {
@@ -349,6 +357,7 @@ export interface FileRoutesById {
   '/api/public/plats': typeof ApiPublicPlatsRoute
   '/_authenticated/v/': typeof AuthenticatedVIndexRoute
   '/_authenticated/v/kund/$orgId': typeof AuthenticatedVKundOrgIdRoute
+  '/api/public/hooks/epost': typeof ApiPublicHooksEpostRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRouteTypes {
@@ -389,6 +398,7 @@ export interface FileRouteTypes {
     | '/api/public/plats'
     | '/v/'
     | '/v/kund/$orgId'
+    | '/api/public/hooks/epost'
     | '/lovable/email/transactional/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -425,6 +435,7 @@ export interface FileRouteTypes {
     | '/api/public/plats'
     | '/v'
     | '/v/kund/$orgId'
+    | '/api/public/hooks/epost'
     | '/lovable/email/transactional/preview'
   id:
     | '__root__'
@@ -464,6 +475,7 @@ export interface FileRouteTypes {
     | '/api/public/plats'
     | '/_authenticated/v/'
     | '/_authenticated/v/kund/$orgId'
+    | '/api/public/hooks/epost'
     | '/lovable/email/transactional/preview'
   fileRoutesById: FileRoutesById
 }
@@ -482,6 +494,7 @@ export interface RootRouteChildren {
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicOtrcRoute: typeof ApiPublicOtrcRoute
   ApiPublicPlatsRoute: typeof ApiPublicPlatsRoute
+  ApiPublicHooksEpostRoute: typeof ApiPublicHooksEpostRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
@@ -739,6 +752,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVKundOrgIdRouteImport
       parentRoute: typeof AuthenticatedVRoute
     }
+    '/api/public/hooks/epost': {
+      id: '/api/public/hooks/epost'
+      path: '/api/public/hooks/epost'
+      fullPath: '/api/public/hooks/epost'
+      preLoaderRoute: typeof ApiPublicHooksEpostRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
       path: '/lovable/email/transactional/preview'
@@ -836,6 +856,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicOtrcRoute: ApiPublicOtrcRoute,
   ApiPublicPlatsRoute: ApiPublicPlatsRoute,
+  ApiPublicHooksEpostRoute: ApiPublicHooksEpostRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport
