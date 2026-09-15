@@ -333,13 +333,16 @@ export type Database = {
         Row: {
           address: string | null
           created_at: string
+          door_code: string | null
           id: string
           is_active: boolean
+          key_info: string | null
           lat: number | null
           lng: number | null
           name: string
           notes: string | null
           org_id: string
+          personal_number: string | null
           phone: string | null
           updated_at: string
           user_id: string | null
@@ -347,13 +350,16 @@ export type Database = {
         Insert: {
           address?: string | null
           created_at?: string
+          door_code?: string | null
           id?: string
           is_active?: boolean
+          key_info?: string | null
           lat?: number | null
           lng?: number | null
           name: string
           notes?: string | null
           org_id: string
+          personal_number?: string | null
           phone?: string | null
           updated_at?: string
           user_id?: string | null
@@ -361,13 +367,16 @@ export type Database = {
         Update: {
           address?: string | null
           created_at?: string
+          door_code?: string | null
           id?: string
           is_active?: boolean
+          key_info?: string | null
           lat?: number | null
           lng?: number | null
           name?: string
           notes?: string | null
           org_id?: string
+          personal_number?: string | null
           phone?: string | null
           updated_at?: string
           user_id?: string | null
@@ -416,6 +425,341 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "care_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_medication_events: {
+        Row: {
+          created_at: string
+          given_at: string
+          given_by: string | null
+          id: string
+          medication_id: string
+          note: string | null
+          org_id: string
+          visit_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          given_at?: string
+          given_by?: string | null
+          id?: string
+          medication_id: string
+          note?: string | null
+          org_id: string
+          visit_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          given_at?: string
+          given_by?: string | null
+          id?: string
+          medication_id?: string
+          note?: string | null
+          org_id?: string
+          visit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_medication_events_medication_id_fkey"
+            columns: ["medication_id"]
+            isOneToOne: false
+            referencedRelation: "care_medications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_medication_events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_medication_events_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "care_visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_medications: {
+        Row: {
+          client_id: string
+          created_at: string
+          dose: string | null
+          id: string
+          instructions: string | null
+          is_active: boolean
+          name: string
+          org_id: string
+          requires_delegation: boolean
+          times: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          dose?: string | null
+          id?: string
+          instructions?: string | null
+          is_active?: boolean
+          name: string
+          org_id: string
+          requires_delegation?: boolean
+          times?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          dose?: string | null
+          id?: string
+          instructions?: string | null
+          is_active?: boolean
+          name?: string
+          org_id?: string
+          requires_delegation?: boolean
+          times?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_medications_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "care_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_medications_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_relatives: {
+        Row: {
+          client_id: string
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          org_id: string
+          phone: string | null
+          relation: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          org_id: string
+          phone?: string | null
+          relation?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          org_id?: string
+          phone?: string | null
+          relation?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_relatives_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "care_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_relatives_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_task_templates: {
+        Row: {
+          created_at: string
+          default_minutes: number
+          description: string | null
+          id: string
+          is_active: boolean
+          org_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_minutes?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          org_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_minutes?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          org_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_task_templates_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_visit_tasks: {
+        Row: {
+          created_at: string
+          done_at: string | null
+          id: string
+          is_done: boolean
+          org_id: string
+          sort_order: number
+          template_id: string | null
+          title: string
+          updated_at: string
+          visit_id: string
+        }
+        Insert: {
+          created_at?: string
+          done_at?: string | null
+          id?: string
+          is_done?: boolean
+          org_id: string
+          sort_order?: number
+          template_id?: string | null
+          title: string
+          updated_at?: string
+          visit_id: string
+        }
+        Update: {
+          created_at?: string
+          done_at?: string | null
+          id?: string
+          is_done?: boolean
+          org_id?: string
+          sort_order?: number
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+          visit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_visit_tasks_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_visit_tasks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "care_task_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_visit_tasks_visit_id_fkey"
+            columns: ["visit_id"]
+            isOneToOne: false
+            referencedRelation: "care_visits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_visits: {
+        Row: {
+          client_id: string
+          created_at: string
+          ends_at: string
+          id: string
+          note: string | null
+          org_id: string
+          repeat_rule: string | null
+          staff_id: string | null
+          starts_at: string
+          status: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          ends_at: string
+          id?: string
+          note?: string | null
+          org_id: string
+          repeat_rule?: string | null
+          staff_id?: string | null
+          starts_at: string
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          ends_at?: string
+          id?: string
+          note?: string | null
+          org_id?: string
+          repeat_rule?: string | null
+          staff_id?: string | null
+          starts_at?: string
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_visits_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "care_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_visits_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_visits_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "org_members"
             referencedColumns: ["id"]
           },
         ]
@@ -1474,34 +1818,46 @@ export type Database = {
           created_at: string
           display_name: string
           email: string | null
+          employment: string | null
           id: string
           is_active: boolean
+          notes: string | null
           org_id: string
+          phone: string | null
           role: Database["public"]["Enums"]["care_role"]
           updated_at: string
           user_id: string | null
+          work_hours: string | null
         }
         Insert: {
           created_at?: string
           display_name: string
           email?: string | null
+          employment?: string | null
           id?: string
           is_active?: boolean
+          notes?: string | null
           org_id: string
+          phone?: string | null
           role: Database["public"]["Enums"]["care_role"]
           updated_at?: string
           user_id?: string | null
+          work_hours?: string | null
         }
         Update: {
           created_at?: string
           display_name?: string
           email?: string | null
+          employment?: string | null
           id?: string
           is_active?: boolean
+          notes?: string | null
           org_id?: string
+          phone?: string | null
           role?: Database["public"]["Enums"]["care_role"]
           updated_at?: string
           user_id?: string | null
+          work_hours?: string | null
         }
         Relationships: [
           {
@@ -1610,6 +1966,7 @@ export type Database = {
           org_number: string | null
           seats: number | null
           segment: string | null
+          slug: string | null
           status: string
           updated_at: string
           website: string | null
@@ -1634,6 +1991,7 @@ export type Database = {
           org_number?: string | null
           seats?: number | null
           segment?: string | null
+          slug?: string | null
           status?: string
           updated_at?: string
           website?: string | null
@@ -1658,6 +2016,7 @@ export type Database = {
           org_number?: string | null
           seats?: number | null
           segment?: string | null
+          slug?: string | null
           status?: string
           updated_at?: string
           website?: string | null
