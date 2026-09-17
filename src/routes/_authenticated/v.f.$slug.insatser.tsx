@@ -21,6 +21,13 @@ export const Route = createFileRoute("/_authenticated/v/f/$slug/insatser")({
   component: TemplatesPage,
 });
 
+type Template = {
+  id: string;
+  title: string;
+  description: string | null;
+  default_minutes: number;
+};
+
 function TemplatesPage() {
   const { slug } = Route.useParams();
   const qc = useQueryClient();
@@ -28,6 +35,7 @@ function TemplatesPage() {
   const save = useServerFn(saveTemplate);
   const remove = useServerFn(removeTemplate);
 
+  const [editId, setEditId] = useState<string | undefined>(undefined);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [minutes, setMinutes] = useState("30");
@@ -39,21 +47,27 @@ function TemplatesPage() {
 
   const invalidate = () => void qc.invalidateQueries({ queryKey: ["care-templates", slug] });
 
+  const reset = () => {
+    setEditId(undefined);
+    setTitle("");
+    setDescription("");
+    setMinutes("30");
+  };
+
   const create = useMutation({
     mutationFn: () =>
       save({
         data: {
           slug,
+          id: editId,
           title: title.trim(),
           description: description.trim() || undefined,
           default_minutes: Math.max(5, Math.min(480, Number(minutes) || 30)),
         },
       }),
     onSuccess: () => {
-      toast.success("Insatsen är sparad.");
-      setTitle("");
-      setDescription("");
-      setMinutes("30");
+      toast.success(editId ? "Insatsen är uppdaterad." : "Insatsen är sparad.");
+      reset();
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -63,6 +77,7 @@ function TemplatesPage() {
     mutationFn: (id: string) => remove({ data: { slug, id } }),
     onSuccess: () => {
       toast.success("Insatsen är borttagen.");
+      if (editId) reset();
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -71,7 +86,7 @@ function TemplatesPage() {
   if (q.isLoading) return <p className="text-sm text-muted-foreground">Hämtar…</p>;
   if (q.error) return <p className="text-sm text-destructive">{(q.error as Error).message}</p>;
 
-  const templates = q.data?.templates ?? [];
+  const templates = (q.data?.templates ?? []) as Template[];
 
   return (
     <div className="space-y-6">
@@ -100,20 +115,26 @@ function TemplatesPage() {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
-        <Button
-          className="mt-3"
-          disabled={title.trim().length < 2 || create.isPending}
-          onClick={() => create.mutate()}
-        >
-          Lägg till insats
-        </Button>
+        <div className="mt-3 flex gap-2">
+          <Button
+            disabled={title.trim().length < 2 || create.isPending}
+            onClick={() => create.mutate()}
+          >
+            {editId ? "Spara insats" : "Lägg till insats"}
+          </Button>
+          {editId ? (
+            <Button variant="ghost" onClick={reset}>
+              Avbryt
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       {templates.length === 0 ? (
         <p className="text-sm text-muted-foreground">Inga insatser upplagda ännu.</p>
       ) : (
         <ul className="space-y-2">
-          {templates.map((t: { id: string; title: string; description: string | null; default_minutes: number }) => (
+          {templates.map((t) => (
             <li
               key={t.id}
               className="flex items-start gap-3 rounded-2xl border border-border/70 bg-card p-4"
@@ -124,6 +145,18 @@ function TemplatesPage() {
                   {t.default_minutes} min{t.description ? ` · ${t.description}` : ""}
                 </p>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setEditId(t.id);
+                  setTitle(t.title);
+                  setDescription(t.description ?? "");
+                  setMinutes(String(t.default_minutes));
+                }}
+              >
+                Ändra
+              </Button>
               <Button variant="ghost" size="sm" onClick={() => del.mutate(t.id)}>
                 Ta bort
               </Button>
