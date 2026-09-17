@@ -202,6 +202,11 @@ function CompanyHome() {
                     {m.email ? ` · ${m.email}` : ""}
                   </p>
                 </div>
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/v/f/$slug/personal/$memberId" params={{ slug, memberId: m.id }}>
+                    Öppna
+                  </Link>
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
