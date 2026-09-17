@@ -42,6 +42,7 @@ import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as AuthenticatedVIndexRouteImport } from './routes/_authenticated/v.index'
 import { Route as AuthenticatedVOrganisationerRouteImport } from './routes/_authenticated/v.organisationer'
+import { Route as AuthenticatedVSamtalRouteImport } from './routes/_authenticated/v.samtal'
 import { Route as ApiPublicOtrcRouteImport } from './routes/api/public/otrc'
 import { Route as ApiPublicPlatsRouteImport } from './routes/api/public/plats'
 import { Route as AuthenticatedVFSlugRouteImport } from './routes/_authenticated/v.f.$slug'
@@ -223,6 +224,11 @@ const AuthenticatedVOrganisationerRoute =
     path: '/organisationer',
     getParentRoute: () => AuthenticatedVRoute,
   } as any)
+const AuthenticatedVSamtalRoute = AuthenticatedVSamtalRouteImport.update({
+  id: '/samtal',
+  path: '/samtal',
+  getParentRoute: () => AuthenticatedVRoute,
+} as any)
 const ApiPublicOtrcRoute = ApiPublicOtrcRouteImport.update({
   id: '/api/public/otrc',
   path: '/api/public/otrc',
@@ -323,6 +329,7 @@ export interface FileRoutesByFullPath {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/v/organisationer': typeof AuthenticatedVOrganisationerRoute
+  '/v/samtal': typeof AuthenticatedVSamtalRoute
   '/api/public/otrc': typeof ApiPublicOtrcRoute
   '/api/public/plats': typeof ApiPublicPlatsRoute
   '/v/': typeof AuthenticatedVIndexRoute
@@ -367,6 +374,7 @@ export interface FileRoutesByTo {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/v/organisationer': typeof AuthenticatedVOrganisationerRoute
+  '/v/samtal': typeof AuthenticatedVSamtalRoute
   '/api/public/otrc': typeof ApiPublicOtrcRoute
   '/api/public/plats': typeof ApiPublicPlatsRoute
   '/v': typeof AuthenticatedVIndexRoute
@@ -414,6 +422,7 @@ export interface FileRoutesById {
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/v/organisationer': typeof AuthenticatedVOrganisationerRoute
+  '/_authenticated/v/samtal': typeof AuthenticatedVSamtalRoute
   '/api/public/otrc': typeof ApiPublicOtrcRoute
   '/api/public/plats': typeof ApiPublicPlatsRoute
   '/_authenticated/v/': typeof AuthenticatedVIndexRoute
@@ -462,6 +471,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/v/organisationer'
+    | '/v/samtal'
     | '/api/public/otrc'
     | '/api/public/plats'
     | '/v/'
@@ -506,6 +516,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/v/organisationer'
+    | '/v/samtal'
     | '/api/public/otrc'
     | '/api/public/plats'
     | '/v'
@@ -552,6 +563,7 @@ export interface FileRouteTypes {
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/v/organisationer'
+    | '/_authenticated/v/samtal'
     | '/api/public/otrc'
     | '/api/public/plats'
     | '/_authenticated/v/'
@@ -819,6 +831,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVOrganisationerRouteImport
       parentRoute: typeof AuthenticatedVRoute
     }
+    '/_authenticated/v/samtal': {
+      id: '/_authenticated/v/samtal'
+      path: '/samtal'
+      fullPath: '/v/samtal'
+      preLoaderRoute: typeof AuthenticatedVSamtalRouteImport
+      parentRoute: typeof AuthenticatedVRoute
+    }
     '/api/public/otrc': {
       id: '/api/public/otrc'
       path: '/api/public/otrc'
@@ -930,6 +949,7 @@ const AuthenticatedVFSlugRouteWithChildren =
 
 interface AuthenticatedVRouteChildren {
   AuthenticatedVOrganisationerRoute: typeof AuthenticatedVOrganisationerRoute
+  AuthenticatedVSamtalRoute: typeof AuthenticatedVSamtalRoute
   AuthenticatedVIndexRoute: typeof AuthenticatedVIndexRoute
   AuthenticatedVFSlugRoute: typeof AuthenticatedVFSlugRouteWithChildren
   AuthenticatedVKundOrgIdRoute: typeof AuthenticatedVKundOrgIdRoute
@@ -937,6 +957,7 @@ interface AuthenticatedVRouteChildren {
 
 const AuthenticatedVRouteChildren: AuthenticatedVRouteChildren = {
   AuthenticatedVOrganisationerRoute: AuthenticatedVOrganisationerRoute,
+  AuthenticatedVSamtalRoute: AuthenticatedVSamtalRoute,
   AuthenticatedVIndexRoute: AuthenticatedVIndexRoute,
   AuthenticatedVFSlugRoute: AuthenticatedVFSlugRouteWithChildren,
   AuthenticatedVKundOrgIdRoute: AuthenticatedVKundOrgIdRoute,
