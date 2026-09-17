@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 
 import careLogo from "@/assets/care-logo.png";
-import { APP_VERSION } from "@/lib/nav-theme";
+import { APP_NAME, APP_VERSION } from "@/lib/nav-theme";
 import { listMyAdminOrgs } from "@/lib/care-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/v")({
@@ -49,7 +49,7 @@ function CareAppLayout() {
         <Outlet />
       </main>
       <footer className="mx-auto max-w-5xl px-4 pb-10 text-xs text-muted-foreground">
-        LifeHub Vård · version {APP_VERSION}
+        Alfa Vård · version {APP_VERSION}
       </footer>
     </div>
   );
