@@ -47,7 +47,10 @@ function CompanyAdminLayout() {
             <Tab key={tab.key} to={tab.to} slug={slug} label={tab.label} exact={tab.exact === true} />
           ))}
         </nav>
-        <DemoRoleSwitcher />
+        <div className="flex items-center gap-2">
+          {slug === "alfa-demo" ? <ShareDemoButton slug={slug} /> : null}
+          <DemoRoleSwitcher />
+        </div>
       </div>
 
       {role !== "admin" ? (
