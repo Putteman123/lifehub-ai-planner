@@ -33,6 +33,7 @@ export function CareClientChat({ clientId, title }: { clientId: string; title?: 
   const qc = useQueryClient();
   const fetchMessages = useServerFn(listCareMessages);
   const send = useServerFn(sendCareMessage);
+  const startMeet = useServerFn(startCareMeet);
   const [body, setBody] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
