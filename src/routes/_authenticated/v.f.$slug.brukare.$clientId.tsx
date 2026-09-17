@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { CareClientChat } from "@/components/care/CareClientChat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -137,6 +138,8 @@ function ClientDetail() {
         ) : null}
         {client.notes ? <p className="mt-3 text-sm">{client.notes}</p> : null}
       </header>
+
+      <CareClientChat clientId={clientId} />
 
       <section className="space-y-3">
         <h2 className="font-display text-lg font-semibold">Anhöriga</h2>

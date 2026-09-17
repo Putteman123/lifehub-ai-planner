@@ -9,6 +9,7 @@ export const Route = createFileRoute("/_authenticated/v")({
 const LINKS = [
   { to: "/v", label: "Översikt", exact: true },
   { to: "/v/organisationer", label: "Kunder", exact: false },
+  { to: "/v/samtal", label: "Samtal", exact: false },
 ] as const;
 
 function CareAppLayout() {

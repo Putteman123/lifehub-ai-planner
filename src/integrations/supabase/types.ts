@@ -541,6 +541,54 @@ export type Database = {
           },
         ]
       }
+      care_messages: {
+        Row: {
+          author_id: string
+          author_name: string
+          author_role: string
+          body: string
+          client_id: string
+          created_at: string
+          id: string
+          org_id: string
+        }
+        Insert: {
+          author_id: string
+          author_name: string
+          author_role?: string
+          body: string
+          client_id: string
+          created_at?: string
+          id?: string
+          org_id: string
+        }
+        Update: {
+          author_id?: string
+          author_name?: string
+          author_role?: string
+          body?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_messages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "care_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_messages_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       care_relatives: {
         Row: {
           client_id: string
@@ -553,6 +601,7 @@ export type Database = {
           phone: string | null
           relation: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           client_id: string
@@ -565,6 +614,7 @@ export type Database = {
           phone?: string | null
           relation?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           client_id?: string
@@ -577,6 +627,7 @@ export type Database = {
           phone?: string | null
           relation?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -2793,6 +2844,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_care_client: {
+        Args: { _client_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_manage_org: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
