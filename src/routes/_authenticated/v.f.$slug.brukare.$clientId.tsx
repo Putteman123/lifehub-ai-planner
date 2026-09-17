@@ -138,6 +138,8 @@ function ClientDetail() {
         {client.notes ? <p className="mt-3 text-sm">{client.notes}</p> : null}
       </header>
 
+      <CareClientChat clientId={clientId} />
+
       <section className="space-y-3">
         <h2 className="font-display text-lg font-semibold">Anhöriga</h2>
         {(q.data?.relatives ?? []).length === 0 ? (
