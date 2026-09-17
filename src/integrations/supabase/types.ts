@@ -699,8 +699,11 @@ export type Database = {
       }
       care_visits: {
         Row: {
+          checkin_at: string | null
+          checkout_at: string | null
           client_id: string
           created_at: string
+          deviation: string | null
           ends_at: string
           id: string
           note: string | null
@@ -710,11 +713,16 @@ export type Database = {
           starts_at: string
           status: string
           title: string | null
+          travel_meters: number | null
+          travel_seconds: number | null
           updated_at: string
         }
         Insert: {
+          checkin_at?: string | null
+          checkout_at?: string | null
           client_id: string
           created_at?: string
+          deviation?: string | null
           ends_at: string
           id?: string
           note?: string | null
@@ -724,11 +732,16 @@ export type Database = {
           starts_at: string
           status?: string
           title?: string | null
+          travel_meters?: number | null
+          travel_seconds?: number | null
           updated_at?: string
         }
         Update: {
+          checkin_at?: string | null
+          checkout_at?: string | null
           client_id?: string
           created_at?: string
+          deviation?: string | null
           ends_at?: string
           id?: string
           note?: string | null
@@ -738,6 +751,8 @@ export type Database = {
           starts_at?: string
           status?: string
           title?: string | null
+          travel_meters?: number | null
+          travel_seconds?: number | null
           updated_at?: string
         }
         Relationships: [
