@@ -128,7 +128,8 @@ function ReportsPage() {
     URL.revokeObjectURL(url);
   };
 
-  const totals = q.data?.totals;
+  const data = q.data;
+  const totals = data?.totals;
   const maxDay = Math.max(1, ...(q.data?.days ?? []).map((d) => d.visits));
 
   return (
