@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { StatGrid, StatLine, emptyStat, type CareStat } from "@/components/care/CareStats";
 import { getAdminOrg, saveClient } from "@/lib/care-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/v/f/$slug/brukare/")({
