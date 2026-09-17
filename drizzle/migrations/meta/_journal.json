@@ -15,6 +15,13 @@
       "when": 1789659225822,
       "tag": "0001_care_client_messages",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789667937504,
+      "tag": "0002_care_relative_consent_and_demo_data",
+      "breakpoints": true
     }
   ]
 }

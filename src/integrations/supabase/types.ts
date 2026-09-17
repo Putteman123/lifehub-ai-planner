@@ -592,6 +592,7 @@ export type Database = {
       care_relatives: {
         Row: {
           client_id: string
+          consent: Json
           created_at: string
           email: string | null
           id: string
@@ -605,6 +606,7 @@ export type Database = {
         }
         Insert: {
           client_id: string
+          consent?: Json
           created_at?: string
           email?: string | null
           id?: string
@@ -618,6 +620,7 @@ export type Database = {
         }
         Update: {
           client_id?: string
+          consent?: Json
           created_at?: string
           email?: string | null
           id?: string
