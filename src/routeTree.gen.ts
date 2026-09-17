@@ -52,8 +52,10 @@ import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/l
 import { Route as AuthenticatedVFSlugIndexRouteImport } from './routes/_authenticated/v.f.$slug.index'
 import { Route as AuthenticatedVFSlugInsatserRouteImport } from './routes/_authenticated/v.f.$slug.insatser'
 import { Route as AuthenticatedVFSlugKartaRouteImport } from './routes/_authenticated/v.f.$slug.karta'
+import { Route as AuthenticatedVFSlugMedicinRouteImport } from './routes/_authenticated/v.f.$slug.medicin'
 import { Route as AuthenticatedVFSlugRapporterRouteImport } from './routes/_authenticated/v.f.$slug.rapporter'
 import { Route as AuthenticatedVFSlugSchemaRouteImport } from './routes/_authenticated/v.f.$slug.schema'
+import { Route as AuthenticatedVFSlugBrukareIndexRouteImport } from './routes/_authenticated/v.f.$slug.brukare.index'
 import { Route as AuthenticatedVFSlugBrukareClientIdRouteImport } from './routes/_authenticated/v.f.$slug.brukare.$clientId'
 import { Route as AuthenticatedVFSlugPersonalMemberIdRouteImport } from './routes/_authenticated/v.f.$slug.personal.$memberId'
 
@@ -279,6 +281,12 @@ const AuthenticatedVFSlugKartaRoute =
     path: '/karta',
     getParentRoute: () => AuthenticatedVFSlugRoute,
   } as any)
+const AuthenticatedVFSlugMedicinRoute =
+  AuthenticatedVFSlugMedicinRouteImport.update({
+    id: '/medicin',
+    path: '/medicin',
+    getParentRoute: () => AuthenticatedVFSlugRoute,
+  } as any)
 const AuthenticatedVFSlugRapporterRoute =
   AuthenticatedVFSlugRapporterRouteImport.update({
     id: '/rapporter',
@@ -289,6 +297,12 @@ const AuthenticatedVFSlugSchemaRoute =
   AuthenticatedVFSlugSchemaRouteImport.update({
     id: '/schema',
     path: '/schema',
+    getParentRoute: () => AuthenticatedVFSlugRoute,
+  } as any)
+const AuthenticatedVFSlugBrukareIndexRoute =
+  AuthenticatedVFSlugBrukareIndexRouteImport.update({
+    id: '/brukare/',
+    path: '/brukare/',
     getParentRoute: () => AuthenticatedVFSlugRoute,
   } as any)
 const AuthenticatedVFSlugBrukareClientIdRoute =
@@ -346,11 +360,13 @@ export interface FileRoutesByFullPath {
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/v/f/$slug/insatser': typeof AuthenticatedVFSlugInsatserRoute
   '/v/f/$slug/karta': typeof AuthenticatedVFSlugKartaRoute
+  '/v/f/$slug/medicin': typeof AuthenticatedVFSlugMedicinRoute
   '/v/f/$slug/rapporter': typeof AuthenticatedVFSlugRapporterRoute
   '/v/f/$slug/schema': typeof AuthenticatedVFSlugSchemaRoute
   '/v/f/$slug/': typeof AuthenticatedVFSlugIndexRoute
   '/v/f/$slug/brukare/$clientId': typeof AuthenticatedVFSlugBrukareClientIdRoute
   '/v/f/$slug/personal/$memberId': typeof AuthenticatedVFSlugPersonalMemberIdRoute
+  '/v/f/$slug/brukare/': typeof AuthenticatedVFSlugBrukareIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -391,11 +407,13 @@ export interface FileRoutesByTo {
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/v/f/$slug/insatser': typeof AuthenticatedVFSlugInsatserRoute
   '/v/f/$slug/karta': typeof AuthenticatedVFSlugKartaRoute
+  '/v/f/$slug/medicin': typeof AuthenticatedVFSlugMedicinRoute
   '/v/f/$slug/rapporter': typeof AuthenticatedVFSlugRapporterRoute
   '/v/f/$slug/schema': typeof AuthenticatedVFSlugSchemaRoute
   '/v/f/$slug': typeof AuthenticatedVFSlugIndexRoute
   '/v/f/$slug/brukare/$clientId': typeof AuthenticatedVFSlugBrukareClientIdRoute
   '/v/f/$slug/personal/$memberId': typeof AuthenticatedVFSlugPersonalMemberIdRoute
+  '/v/f/$slug/brukare': typeof AuthenticatedVFSlugBrukareIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -441,11 +459,13 @@ export interface FileRoutesById {
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/_authenticated/v/f/$slug/insatser': typeof AuthenticatedVFSlugInsatserRoute
   '/_authenticated/v/f/$slug/karta': typeof AuthenticatedVFSlugKartaRoute
+  '/_authenticated/v/f/$slug/medicin': typeof AuthenticatedVFSlugMedicinRoute
   '/_authenticated/v/f/$slug/rapporter': typeof AuthenticatedVFSlugRapporterRoute
   '/_authenticated/v/f/$slug/schema': typeof AuthenticatedVFSlugSchemaRoute
   '/_authenticated/v/f/$slug/': typeof AuthenticatedVFSlugIndexRoute
   '/_authenticated/v/f/$slug/brukare/$clientId': typeof AuthenticatedVFSlugBrukareClientIdRoute
   '/_authenticated/v/f/$slug/personal/$memberId': typeof AuthenticatedVFSlugPersonalMemberIdRoute
+  '/_authenticated/v/f/$slug/brukare/': typeof AuthenticatedVFSlugBrukareIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -491,11 +511,13 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/preview'
     | '/v/f/$slug/insatser'
     | '/v/f/$slug/karta'
+    | '/v/f/$slug/medicin'
     | '/v/f/$slug/rapporter'
     | '/v/f/$slug/schema'
     | '/v/f/$slug/'
     | '/v/f/$slug/brukare/$clientId'
     | '/v/f/$slug/personal/$memberId'
+    | '/v/f/$slug/brukare/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -536,11 +558,13 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/preview'
     | '/v/f/$slug/insatser'
     | '/v/f/$slug/karta'
+    | '/v/f/$slug/medicin'
     | '/v/f/$slug/rapporter'
     | '/v/f/$slug/schema'
     | '/v/f/$slug'
     | '/v/f/$slug/brukare/$clientId'
     | '/v/f/$slug/personal/$memberId'
+    | '/v/f/$slug/brukare'
   id:
     | '__root__'
     | '/'
@@ -585,11 +609,13 @@ export interface FileRouteTypes {
     | '/lovable/email/transactional/preview'
     | '/_authenticated/v/f/$slug/insatser'
     | '/_authenticated/v/f/$slug/karta'
+    | '/_authenticated/v/f/$slug/medicin'
     | '/_authenticated/v/f/$slug/rapporter'
     | '/_authenticated/v/f/$slug/schema'
     | '/_authenticated/v/f/$slug/'
     | '/_authenticated/v/f/$slug/brukare/$clientId'
     | '/_authenticated/v/f/$slug/personal/$memberId'
+    | '/_authenticated/v/f/$slug/brukare/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -914,6 +940,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVFSlugKartaRouteImport
       parentRoute: typeof AuthenticatedVFSlugRoute
     }
+    '/_authenticated/v/f/$slug/medicin': {
+      id: '/_authenticated/v/f/$slug/medicin'
+      path: '/medicin'
+      fullPath: '/v/f/$slug/medicin'
+      preLoaderRoute: typeof AuthenticatedVFSlugMedicinRouteImport
+      parentRoute: typeof AuthenticatedVFSlugRoute
+    }
     '/_authenticated/v/f/$slug/rapporter': {
       id: '/_authenticated/v/f/$slug/rapporter'
       path: '/rapporter'
@@ -926,6 +959,13 @@ declare module '@tanstack/react-router' {
       path: '/schema'
       fullPath: '/v/f/$slug/schema'
       preLoaderRoute: typeof AuthenticatedVFSlugSchemaRouteImport
+      parentRoute: typeof AuthenticatedVFSlugRoute
+    }
+    '/_authenticated/v/f/$slug/brukare/': {
+      id: '/_authenticated/v/f/$slug/brukare/'
+      path: '/brukare'
+      fullPath: '/v/f/$slug/brukare/'
+      preLoaderRoute: typeof AuthenticatedVFSlugBrukareIndexRouteImport
       parentRoute: typeof AuthenticatedVFSlugRoute
     }
     '/_authenticated/v/f/$slug/brukare/$clientId': {
@@ -948,16 +988,19 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedVFSlugRouteChildren {
   AuthenticatedVFSlugInsatserRoute: typeof AuthenticatedVFSlugInsatserRoute
   AuthenticatedVFSlugKartaRoute: typeof AuthenticatedVFSlugKartaRoute
+  AuthenticatedVFSlugMedicinRoute: typeof AuthenticatedVFSlugMedicinRoute
   AuthenticatedVFSlugRapporterRoute: typeof AuthenticatedVFSlugRapporterRoute
   AuthenticatedVFSlugSchemaRoute: typeof AuthenticatedVFSlugSchemaRoute
   AuthenticatedVFSlugIndexRoute: typeof AuthenticatedVFSlugIndexRoute
   AuthenticatedVFSlugBrukareClientIdRoute: typeof AuthenticatedVFSlugBrukareClientIdRoute
   AuthenticatedVFSlugPersonalMemberIdRoute: typeof AuthenticatedVFSlugPersonalMemberIdRoute
+  AuthenticatedVFSlugBrukareIndexRoute: typeof AuthenticatedVFSlugBrukareIndexRoute
 }
 
 const AuthenticatedVFSlugRouteChildren: AuthenticatedVFSlugRouteChildren = {
   AuthenticatedVFSlugInsatserRoute: AuthenticatedVFSlugInsatserRoute,
   AuthenticatedVFSlugKartaRoute: AuthenticatedVFSlugKartaRoute,
+  AuthenticatedVFSlugMedicinRoute: AuthenticatedVFSlugMedicinRoute,
   AuthenticatedVFSlugRapporterRoute: AuthenticatedVFSlugRapporterRoute,
   AuthenticatedVFSlugSchemaRoute: AuthenticatedVFSlugSchemaRoute,
   AuthenticatedVFSlugIndexRoute: AuthenticatedVFSlugIndexRoute,
@@ -965,6 +1008,7 @@ const AuthenticatedVFSlugRouteChildren: AuthenticatedVFSlugRouteChildren = {
     AuthenticatedVFSlugBrukareClientIdRoute,
   AuthenticatedVFSlugPersonalMemberIdRoute:
     AuthenticatedVFSlugPersonalMemberIdRoute,
+  AuthenticatedVFSlugBrukareIndexRoute: AuthenticatedVFSlugBrukareIndexRoute,
 }
 
 const AuthenticatedVFSlugRouteWithChildren =

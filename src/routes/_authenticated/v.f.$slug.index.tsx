@@ -23,20 +23,20 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { moduleLabel } from "@/lib/care";
-import { getAdminOrg, removeStaff, saveClient, saveStaff } from "@/lib/care-admin.functions";
+import { getAdminOrg, removeStaff, saveStaff } from "@/lib/care-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/v/f/$slug/")({
   head: () => ({
     meta: [
-      { title: "Personal och brukare – LifeHub Vård" },
+      { title: "Personal – LifeHub Vård" },
       {
         name: "description",
-        content: "Verksamhetens personal, brukare och aktiva moduler på ett ställe.",
+        content: "Verksamhetens personal, roller och arbetstider på ett ställe.",
       },
-      { property: "og:title", content: "Personal och brukare – LifeHub Vård" },
+      { property: "og:title", content: "Personal – LifeHub Vård" },
       {
         property: "og:description",
-        content: "Verksamhetens personal, brukare och aktiva moduler på ett ställe.",
+        content: "Verksamhetens personal, roller och arbetstider på ett ställe.",
       },
     ],
   }),
@@ -55,16 +55,6 @@ type Staff = {
   notes: string | null;
 };
 
-type Client = {
-  id: string;
-  name: string;
-  address: string | null;
-  phone: string | null;
-  is_active: boolean;
-  personal_number: string | null;
-  door_code: string | null;
-};
-
 const emptyStaff = {
   id: undefined as string | undefined,
   display_name: "",
@@ -76,24 +66,12 @@ const emptyStaff = {
   notes: "",
 };
 
-const emptyClient = {
-  id: undefined as string | undefined,
-  name: "",
-  personal_number: "",
-  address: "",
-  phone: "",
-  door_code: "",
-  key_info: "",
-  notes: "",
-};
-
 function CompanyHome() {
   const { slug } = Route.useParams();
   const qc = useQueryClient();
   const fetchOrg = useServerFn(getAdminOrg);
   const persistStaff = useServerFn(saveStaff);
   const deleteStaff = useServerFn(removeStaff);
-  const persistClient = useServerFn(saveClient);
 
   const q = useQuery({
     queryKey: ["care-admin-org", slug],
@@ -103,8 +81,6 @@ function CompanyHome() {
   const [search, setSearch] = useState("");
   const [staffOpen, setStaffOpen] = useState(false);
   const [staffForm, setStaffForm] = useState({ ...emptyStaff });
-  const [clientOpen, setClientOpen] = useState(false);
-  const [clientForm, setClientForm] = useState({ ...emptyClient });
 
   const invalidate = () => void qc.invalidateQueries({ queryKey: ["care-admin-org", slug] });
 
@@ -127,28 +103,11 @@ function CompanyHome() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const clientMutation = useMutation({
-    mutationFn: () => persistClient({ data: { slug, ...clientForm } }),
-    onSuccess: () => {
-      toast.success("Brukaren är sparad.");
-      setClientOpen(false);
-      invalidate();
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
   const needle = search.trim().toLowerCase();
   const staff = useMemo(
     () =>
       ((q.data?.members ?? []) as Staff[]).filter((m) =>
         needle ? m.display_name.toLowerCase().includes(needle) : true,
-      ),
-    [q.data, needle],
-  );
-  const clients = useMemo(
-    () =>
-      ((q.data?.clients ?? []) as Client[]).filter((c) =>
-        needle ? c.name.toLowerCase().includes(needle) : true,
       ),
     [q.data, needle],
   );
@@ -158,19 +117,20 @@ function CompanyHome() {
 
   const org = q.data!.org;
   const modules = q.data?.modules ?? [];
+  const clientCount = (q.data?.clients ?? []).length;
 
   return (
     <div className="space-y-8">
       <header>
         <h1 className="font-display text-2xl font-semibold tracking-tight">{org.name}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {staff.length} i personalen · {clients.length} brukare
+          {staff.length} i personalen · {clientCount} brukare
           {modules.length > 0 ? ` · ${modules.map(moduleLabel).join(", ")}` : ""}
         </p>
       </header>
 
       <Input
-        placeholder="Sök personal eller brukare"
+        placeholder="Sök personal"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
@@ -193,7 +153,10 @@ function CompanyHome() {
         ) : (
           <ul className="space-y-2">
             {staff.map((m) => (
-              <li key={m.id} className="flex items-center gap-3 rounded-2xl border border-border/70 bg-card p-4">
+              <li
+                key={m.id}
+                className="flex items-center gap-3 rounded-2xl border border-border/70 bg-card p-4"
+              >
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">{m.display_name}</p>
                   <p className="truncate text-sm text-muted-foreground">
@@ -228,43 +191,6 @@ function CompanyHome() {
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => staffDelete.mutate(m.id)}>
                   Ta bort
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-semibold">Brukare</h2>
-          <Button
-            size="sm"
-            onClick={() => {
-              setClientForm({ ...emptyClient });
-              setClientOpen(true);
-            }}
-          >
-            Lägg till
-          </Button>
-        </div>
-        {clients.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Inga brukare upplagda ännu.</p>
-        ) : (
-          <ul className="space-y-2">
-            {clients.map((c) => (
-              <li key={c.id} className="flex items-center gap-3 rounded-2xl border border-border/70 bg-card p-4">
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium">{c.name}</p>
-                  <p className="truncate text-sm text-muted-foreground">
-                    {c.address ?? "Ingen adress"}
-                    {c.phone ? ` · ${c.phone}` : ""}
-                  </p>
-                </div>
-                <Button asChild variant="ghost" size="sm">
-                  <Link to="/v/f/$slug/brukare/$clientId" params={{ slug, clientId: c.id }}>
-                    Öppna
-                  </Link>
                 </Button>
               </li>
             ))}
@@ -341,72 +267,6 @@ function CompanyHome() {
             <Button
               disabled={staffForm.display_name.trim().length < 2 || staffMutation.isPending}
               onClick={() => staffMutation.mutate()}
-            >
-              Spara
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={clientOpen} onOpenChange={setClientOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Ny brukare</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <Field label="Namn">
-              <Input
-                value={clientForm.name}
-                onChange={(e) => setClientForm({ ...clientForm, name: e.target.value })}
-              />
-            </Field>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Personnummer">
-                <Input
-                  value={clientForm.personal_number}
-                  onChange={(e) =>
-                    setClientForm({ ...clientForm, personal_number: e.target.value })
-                  }
-                />
-              </Field>
-              <Field label="Telefon">
-                <Input
-                  value={clientForm.phone}
-                  onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })}
-                />
-              </Field>
-            </div>
-            <Field label="Adress">
-              <Input
-                value={clientForm.address}
-                onChange={(e) => setClientForm({ ...clientForm, address: e.target.value })}
-              />
-            </Field>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Portkod">
-                <Input
-                  value={clientForm.door_code}
-                  onChange={(e) => setClientForm({ ...clientForm, door_code: e.target.value })}
-                />
-              </Field>
-              <Field label="Nyckelinfo">
-                <Input
-                  value={clientForm.key_info}
-                  onChange={(e) => setClientForm({ ...clientForm, key_info: e.target.value })}
-                />
-              </Field>
-            </div>
-            <Field label="Anteckningar">
-              <Textarea
-                value={clientForm.notes}
-                onChange={(e) => setClientForm({ ...clientForm, notes: e.target.value })}
-              />
-            </Field>
-          </div>
-          <DialogFooter>
-            <Button
-              disabled={clientForm.name.trim().length < 2 || clientMutation.isPending}
-              onClick={() => clientMutation.mutate()}
             >
               Spara
             </Button>
