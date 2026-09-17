@@ -121,7 +121,23 @@ export function CareClientChat({ clientId, title }: { clientId: string; title?: 
                     {m.author_name} · {ROLE_LABEL[m.author_role] ?? m.author_role} ·{" "}
                     {timeLabel(m.created_at)}
                   </p>
-                  <p className="mt-0.5 whitespace-pre-wrap text-sm">{m.body}</p>
+                  <p className="mt-0.5 whitespace-pre-wrap text-sm">
+                    {m.body.split(/(https?:\/\/\S+)/g).map((part, i) =>
+                      /^https?:\/\//.test(part) ? (
+                        <a
+                          key={i}
+                          href={part}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline underline-offset-2"
+                        >
+                          {part}
+                        </a>
+                      ) : (
+                        part
+                      ),
+                    )}
+                  </p>
                 </div>
               </div>
             );
