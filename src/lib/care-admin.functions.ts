@@ -233,7 +233,7 @@ export const getClientDetail = createServerFn({ method: "GET" })
       .limit(50);
 
     const medIds = (medications ?? []).map((m: { id: string }) => m.id);
-    let events: unknown[] = [];
+    let events: { id: string; medication_id: string; given_at: string; note: string | null }[] = [];
     if (medIds.length > 0) {
       const { data: rows } = await context.supabase
         .from("care_medication_events")
