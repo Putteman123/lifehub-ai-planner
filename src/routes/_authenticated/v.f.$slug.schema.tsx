@@ -453,10 +453,6 @@ function SchedulePage() {
           );
         })}
       </div>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }
