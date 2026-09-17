@@ -116,6 +116,45 @@ function SchedulePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const runCheckIn = useServerFn(checkInVisit);
+  const runCheckOut = useServerFn(checkOutVisit);
+  const runStatus = useServerFn(setVisitStatus);
+  const runSuggest = useServerFn(suggestSchedule);
+  const runApply = useServerFn(applySchedule);
+
+  const checkIn = useMutation({
+    mutationFn: (visitId: string) => runCheckIn({ data: { slug, visitId } }),
+    onSuccess: invalidate,
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const checkOut = useMutation({
+    mutationFn: (visitId: string) => runCheckOut({ data: { slug, visitId } }),
+    onSuccess: invalidate,
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const markMissed = useMutation({
+    mutationFn: (visitId: string) =>
+      runStatus({ data: { slug, visitId, status: "uteblivet" as const } }),
+    onSuccess: invalidate,
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const [suggestDay, setSuggestDay] = useState(() => isoDay(new Date()));
+  const suggest = useMutation({
+    mutationFn: () => runSuggest({ data: { slug, date: suggestDay } }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const apply = useMutation({
+    mutationFn: (assignments: Array<{ visitId: string; staffId: string }>) =>
+      runApply({ data: { slug, assignments } }),
+    onSuccess: (res) => {
+      toast.success(`${res.saved} besök fördelade.`);
+      suggest.reset();
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   if (q.isLoading) return <p className="text-sm text-muted-foreground">Hämtar…</p>;
   if (q.error) return <p className="text-sm text-destructive">{(q.error as Error).message}</p>;
 
@@ -128,6 +167,10 @@ function SchedulePage() {
     ends_at: string;
     client_id: string;
     staff_id: string | null;
+    status: string;
+    checkin_at: string | null;
+    checkout_at: string | null;
+    travel_meters: number | null;
   }[];
 
   const nameOfClient = (id: string) => clients.find((c) => c.id === id)?.name ?? "Brukare";
