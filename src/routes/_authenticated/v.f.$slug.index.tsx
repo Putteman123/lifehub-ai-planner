@@ -166,9 +166,11 @@ function CompanyHome() {
                   <p className="font-medium">{m.display_name}</p>
                   <p className="truncate text-sm text-muted-foreground">
                     {m.role === "org_admin" ? "Verksamhetsadmin" : "Personal"}
+                    {m.employment ? ` · ${m.employment}` : ""}
+                    {m.work_hours ? ` · ${m.work_hours}` : ""}
                     {m.phone ? ` · ${m.phone}` : ""}
-                    {m.email ? ` · ${m.email}` : ""}
                   </p>
+                  <StatLine stat={staffStats[m.id] ?? emptyStat} />
                 </div>
                 <Button asChild variant="ghost" size="sm">
                   <Link to="/v/f/$slug/personal/$memberId" params={{ slug, memberId: m.id }}>
