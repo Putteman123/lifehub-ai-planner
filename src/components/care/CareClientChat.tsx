@@ -55,6 +55,16 @@ export function CareClientChat({ clientId, title }: { clientId: string; title?: 
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const meet = useMutation({
+    mutationFn: () => startMeet({ data: { clientId } }),
+    onSuccess: (res: { link: string }) => {
+      void qc.invalidateQueries({ queryKey: ["care-messages", clientId] });
+      window.open(res.link, "_blank", "noopener");
+      toast.success("Videosamtalet är startat och länken ligger i tråden.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const messages = (q.data?.messages ?? []) as {
     id: string;
     body: string;
@@ -67,12 +77,25 @@ export function CareClientChat({ clientId, title }: { clientId: string; title?: 
 
   return (
     <section className="space-y-3">
-      <h2 className="flex items-center gap-2 font-display text-lg font-semibold">
-        <MessageCircle className="size-4" /> {title ?? "Meddelanden"}
-      </h2>
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="flex items-center gap-2 font-display text-lg font-semibold">
+          <MessageCircle className="size-4" /> {title ?? "Meddelanden"}
+        </h2>
+        <Button
+          size="sm"
+          variant="secondary"
+          className="ml-auto"
+          disabled={meet.isPending}
+          onClick={() => meet.mutate()}
+        >
+          <Video className="mr-1.5 size-4" />
+          {meet.isPending ? "Startar…" : "Starta videosamtal"}
+        </Button>
+      </div>
       <p className="text-sm text-muted-foreground">
         Personal, brukare och anhöriga skriver i samma tråd. Allt sparas hos verksamheten.
       </p>
+
 
       <div className="max-h-96 space-y-2 overflow-y-auto rounded-3xl border border-border/70 bg-card p-4">
         {q.isLoading ? (
