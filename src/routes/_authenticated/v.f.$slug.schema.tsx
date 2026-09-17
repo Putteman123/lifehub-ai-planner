@@ -15,6 +15,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { listSchedule, removeVisit, saveVisit } from "@/lib/care-admin.functions";
+import {
+  applySchedule,
+  checkInVisit,
+  checkOutVisit,
+  setVisitStatus,
+  suggestSchedule,
+} from "@/lib/care-places.functions";
+import { formatDistance } from "@/lib/geo";
 
 export const Route = createFileRoute("/_authenticated/v/f/$slug/schema")({
   head: () => ({
