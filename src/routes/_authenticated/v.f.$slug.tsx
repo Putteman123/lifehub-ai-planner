@@ -44,7 +44,7 @@ function CompanyAdminLayout() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <nav className="flex flex-wrap items-center gap-1 overflow-x-auto rounded-3xl border border-border/70 bg-card p-1">
           {TABS.filter((tab) => allowed.includes(tab.key)).map((tab) => (
-            <Tab key={tab.key} to={tab.to} slug={slug} label={tab.label} exact={tab.exact} />
+            <Tab key={tab.key} to={tab.to} slug={slug} label={tab.label} exact={tab.exact === true} />
           ))}
         </nav>
         <DemoRoleSwitcher />
