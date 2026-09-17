@@ -232,11 +232,24 @@ export const getClientDetail = createServerFn({ method: "GET" })
       .order("starts_at", { ascending: true })
       .limit(50);
 
+    const medIds = (medications ?? []).map((m: { id: string }) => m.id);
+    let events: unknown[] = [];
+    if (medIds.length > 0) {
+      const { data: rows } = await context.supabase
+        .from("care_medication_events")
+        .select("id, medication_id, given_at, note")
+        .in("medication_id", medIds)
+        .order("given_at", { ascending: false })
+        .limit(30);
+      events = rows ?? [];
+    }
+
     return {
       org,
       client,
       relatives: relatives ?? [],
       medications: medications ?? [],
+      medicationEvents: events,
       visits: visits ?? [],
     };
   });
