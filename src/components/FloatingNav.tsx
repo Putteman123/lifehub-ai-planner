@@ -78,7 +78,7 @@ export function MobileNav({
           }}
         >
           <SheetHeader className="px-5 pb-2 pt-5 text-left">
-            <SheetTitle className="text-lg">LifeHub AI</SheetTitle>
+            <SheetTitle className="text-lg">LifeHub AI · {APP_NAME}</SheetTitle>
           </SheetHeader>
 
           <nav aria-label="Huvudmeny" className="flex-1 space-y-4 overflow-y-auto px-3 pb-3">

@@ -74,3 +74,6 @@ export const CARE_SUBNAV: readonly { to: string; label: string }[] = [
 
 /** Appens version, visas i inställningar. */
 export const APP_VERSION = "Alfa 1.0";
+
+/** Systemets namn – visas i menyer och sidhuvuden. */
+export const APP_NAME = "Alfa 1.0";

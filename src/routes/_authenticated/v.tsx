@@ -24,9 +24,9 @@ function CareAppLayout() {
       <header className="border-b border-border/70 bg-background/85 backdrop-blur">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3 px-4 py-3">
           <img src={careLogo} alt="" width={32} height={32} className="size-8" />
-          <span className="font-display font-semibold">LifeHub Vård</span>
+          <span className="font-display font-semibold">{APP_NAME} Vård</span>
           <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-secondary-foreground">
-            Alfa 1.0
+            {APP_VERSION}
           </span>
           <nav className="ml-auto flex flex-wrap items-center gap-1">
             <Item to="/v" label="Översikt" exact />
