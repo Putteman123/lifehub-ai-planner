@@ -200,7 +200,7 @@ function ReportsPage() {
         <p className="text-sm text-muted-foreground">Hämtar…</p>
       ) : q.error ? (
         <p className="text-sm text-destructive">{(q.error as Error).message}</p>
-      ) : !totals ? null : (
+      ) : !totals || !data ? null : (
         <>
           <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Stat label="Besök" value={String(totals.visits)} hint={`${totals.done} utförda · ${totals.missed} uteblivna`} />
