@@ -1,12 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { MessageCircle, Send } from "lucide-react";
+import { MessageCircle, Send, Video } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { listCareMessages, sendCareMessage } from "@/lib/care-messages.functions";
+import {
+  listCareMessages,
+  sendCareMessage,
+  startCareMeet,
+} from "@/lib/care-messages.functions";
 
 const ROLE_LABEL: Record<string, string> = {
   personal: "Personal",
@@ -29,6 +33,7 @@ export function CareClientChat({ clientId, title }: { clientId: string; title?: 
   const qc = useQueryClient();
   const fetchMessages = useServerFn(listCareMessages);
   const send = useServerFn(sendCareMessage);
+  const startMeet = useServerFn(startCareMeet);
   const [body, setBody] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -51,6 +56,16 @@ export function CareClientChat({ clientId, title }: { clientId: string; title?: 
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const meet = useMutation({
+    mutationFn: () => startMeet({ data: { clientId } }),
+    onSuccess: (res: { link: string }) => {
+      void qc.invalidateQueries({ queryKey: ["care-messages", clientId] });
+      window.open(res.link, "_blank", "noopener");
+      toast.success("Videosamtalet är startat och länken ligger i tråden.");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const messages = (q.data?.messages ?? []) as {
     id: string;
     body: string;
@@ -63,12 +78,25 @@ export function CareClientChat({ clientId, title }: { clientId: string; title?: 
 
   return (
     <section className="space-y-3">
-      <h2 className="flex items-center gap-2 font-display text-lg font-semibold">
-        <MessageCircle className="size-4" /> {title ?? "Meddelanden"}
-      </h2>
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="flex items-center gap-2 font-display text-lg font-semibold">
+          <MessageCircle className="size-4" /> {title ?? "Meddelanden"}
+        </h2>
+        <Button
+          size="sm"
+          variant="secondary"
+          className="ml-auto"
+          disabled={meet.isPending}
+          onClick={() => meet.mutate()}
+        >
+          <Video className="mr-1.5 size-4" />
+          {meet.isPending ? "Startar…" : "Starta videosamtal"}
+        </Button>
+      </div>
       <p className="text-sm text-muted-foreground">
         Personal, brukare och anhöriga skriver i samma tråd. Allt sparas hos verksamheten.
       </p>
+
 
       <div className="max-h-96 space-y-2 overflow-y-auto rounded-3xl border border-border/70 bg-card p-4">
         {q.isLoading ? (
@@ -93,7 +121,23 @@ export function CareClientChat({ clientId, title }: { clientId: string; title?: 
                     {m.author_name} · {ROLE_LABEL[m.author_role] ?? m.author_role} ·{" "}
                     {timeLabel(m.created_at)}
                   </p>
-                  <p className="mt-0.5 whitespace-pre-wrap text-sm">{m.body}</p>
+                  <p className="mt-0.5 whitespace-pre-wrap text-sm">
+                    {m.body.split(/(https?:\/\/\S+)/g).map((part, i) =>
+                      /^https?:\/\//.test(part) ? (
+                        <a
+                          key={i}
+                          href={part}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline underline-offset-2"
+                        >
+                          {part}
+                        </a>
+                      ) : (
+                        part
+                      ),
+                    )}
+                  </p>
                 </div>
               </div>
             );
