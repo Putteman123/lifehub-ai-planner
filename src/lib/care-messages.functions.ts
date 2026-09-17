@@ -113,3 +113,70 @@ export const listMyCareThreads = createServerFn({ method: "GET" })
       slug: (c.organizations?.slug as string) ?? "",
     }));
   });
+
+/** Startar ett Google Meet-videosamtal för brukaren och delar länken i tråden. */
+export const startCareMeet = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ clientId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const ctx = context as Ctx;
+    const author = await describeAuthor(ctx, data.clientId);
+
+    const lovableKey = process.env["LOVABLE_API_KEY"];
+    const connectionKey = process.env["GOOGLE_CALENDAR_API_KEY"];
+    if (!lovableKey || !connectionKey) {
+      throw new Error("Google-kalendern är inte kopplad ännu.");
+    }
+
+    const start = new Date();
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    const res = await fetch(
+      "https://connector-gateway.lovable.dev/google_calendar/calendar/v3/calendars/primary/events?conferenceDataVersion=1",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${lovableKey}`,
+          "X-Connection-Api-Key": connectionKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          summary: `Videosamtal – ${author.name}`,
+          start: { dateTime: start.toISOString(), timeZone: "Europe/Stockholm" },
+          end: { dateTime: end.toISOString(), timeZone: "Europe/Stockholm" },
+          conferenceData: {
+            createRequest: {
+              requestId: crypto.randomUUID(),
+              conferenceSolutionKey: { type: "hangoutsMeet" },
+            },
+          },
+        }),
+      },
+    );
+
+    if (!res.ok) {
+      const body = await res.text();
+      console.error(`Google Meet-anrop misslyckades [${res.status}]: ${body}`);
+      throw new Error(`Kunde inte skapa videomötet [${res.status}]: ${body}`);
+    }
+
+    const event = (await res.json()) as {
+      hangoutLink?: string;
+      conferenceData?: { entryPoints?: { uri?: string; entryPointType?: string }[] };
+    };
+    const link =
+      event.hangoutLink ??
+      event.conferenceData?.entryPoints?.find((e) => e.entryPointType === "video")?.uri;
+    if (!link) throw new Error("Google gav ingen möteslänk.");
+
+    const { error } = await ctx.supabase.from("care_messages").insert({
+      org_id: author.orgId,
+      client_id: data.clientId,
+      author_id: ctx.userId,
+      author_name: author.name,
+      author_role: author.role,
+      body: `Videosamtal startat: ${link}`,
+    });
+    if (error) throw new Error(error.message);
+
+    return { link };
+  });
