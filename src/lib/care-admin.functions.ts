@@ -217,7 +217,7 @@ export const getClientDetail = createServerFn({ method: "GET" })
 
     const { data: relatives } = await context.supabase
       .from("care_relatives")
-      .select("id, name, relation, email, phone, notes")
+      .select("id, name, relation, email, phone, notes, consent")
       .eq("client_id", data.clientId)
       .order("name");
     const { data: medications } = await context.supabase
@@ -232,11 +232,24 @@ export const getClientDetail = createServerFn({ method: "GET" })
       .order("starts_at", { ascending: true })
       .limit(50);
 
+    const medIds = (medications ?? []).map((m: { id: string }) => m.id);
+    let events: { id: string; medication_id: string; given_at: string; note: string | null }[] = [];
+    if (medIds.length > 0) {
+      const { data: rows } = await context.supabase
+        .from("care_medication_events")
+        .select("id, medication_id, given_at, note")
+        .in("medication_id", medIds)
+        .order("given_at", { ascending: false })
+        .limit(30);
+      events = rows ?? [];
+    }
+
     return {
       org,
       client,
       relatives: relatives ?? [],
       medications: medications ?? [],
+      medicationEvents: events,
       visits: visits ?? [],
     };
   });
@@ -537,6 +550,112 @@ export const removeVisitTask = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await requireOrg(context as Ctx, data.slug);
     const { error } = await context.supabase.from("care_visit_tasks").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/* ---------------- Personalkort ---------------- */
+
+export const getStaffDetail = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ slug: z.string(), memberId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const org = await requireOrg(context as Ctx, data.slug);
+    const { data: member } = await context.supabase
+      .from("org_members")
+      .select("id, display_name, email, phone, role, is_active, employment, work_hours, notes")
+      .eq("id", data.memberId)
+      .eq("org_id", org.id)
+      .maybeSingle();
+    if (!member) throw new Error("Personalen hittades inte.");
+
+    const { data: visits } = await context.supabase
+      .from("care_visits")
+      .select("id, title, starts_at, ends_at, status, client_id")
+      .eq("org_id", org.id)
+      .eq("staff_id", data.memberId)
+      .gte("starts_at", new Date(Date.now() - 7 * 86400000).toISOString())
+      .order("starts_at")
+      .limit(50);
+    const { data: clients } = await context.supabase
+      .from("care_clients")
+      .select("id, name")
+      .eq("org_id", org.id);
+
+    return { org, member, visits: visits ?? [], clients: clients ?? [] };
+  });
+
+export const setStaffActive = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ slug: z.string(), id: z.string().uuid(), is_active: z.boolean() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const org = await requireOrg(context as Ctx, data.slug);
+    const { error } = await context.supabase
+      .from("org_members")
+      .update({ is_active: data.is_active })
+      .eq("id", data.id)
+      .eq("org_id", org.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/* ---------------- Samtycke för anhörig ---------------- */
+
+export const CONSENT_SCOPES = [
+  { key: "schema", label: "Schema och besök" },
+  { key: "insatser", label: "Insatser och checklistor" },
+  { key: "medicin", label: "Medicinlista" },
+  { key: "anteckningar", label: "Anteckningar" },
+] as const;
+
+export const setRelativeConsent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        slug: z.string(),
+        id: z.string().uuid(),
+        consent: z.record(z.string(), z.boolean()),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const org = await requireOrg(context as Ctx, data.slug);
+    const { error } = await context.supabase
+      .from("care_relatives")
+      .update({ consent: data.consent })
+      .eq("id", data.id)
+      .eq("org_id", org.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/* ---------------- Medicinlogg ---------------- */
+
+export const logMedicationEvent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        slug: z.string(),
+        medicationId: z.string().uuid(),
+        note: z.string().max(500).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const org = await requireOrg(context as Ctx, data.slug);
+    const { error } = await context.supabase.from("care_medication_events").insert({
+      org_id: org.id,
+      medication_id: data.medicationId,
+      given_at: new Date().toISOString(),
+      given_by: context.userId,
+      note: blank(data.note),
+    });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
