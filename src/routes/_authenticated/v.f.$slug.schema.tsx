@@ -52,6 +52,18 @@ function localInput(d: Date) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function isoDay(d: Date) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  planerad: "Planerat",
+  pagar: "Pågår",
+  utfort: "Utfört",
+  uteblivet: "Uteblivet",
+};
+
 function SchedulePage() {
   const { slug } = Route.useParams();
   const qc = useQueryClient();
