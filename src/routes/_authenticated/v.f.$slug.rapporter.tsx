@@ -130,7 +130,7 @@ function ReportsPage() {
 
   const data = q.data;
   const totals = data?.totals;
-  const maxDay = Math.max(1, ...(q.data?.days ?? []).map((d) => d.visits));
+  const maxDay = Math.max(1, ...(data?.days ?? []).map((d) => d.visits));
 
   return (
     <div className="space-y-6">
