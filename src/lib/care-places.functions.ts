@@ -337,11 +337,16 @@ export const setVisitStatus = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const org = await requireOrg(context as Ctx, data.slug);
-    const patch: Record<string, unknown> = { status: data.status };
-    if (data.deviation !== undefined) patch['deviation'] = data.deviation.trim() || null;
+    const patch: {
+      status: string;
+      deviation?: string | null;
+      checkin_at?: string | null;
+      checkout_at?: string | null;
+    } = { status: data.status };
+    if (data.deviation !== undefined) patch.deviation = data.deviation.trim() || null;
     if (data.status === "planerad") {
-      patch['checkin_at'] = null;
-      patch['checkout_at'] = null;
+      patch.checkin_at = null;
+      patch.checkout_at = null;
     }
     const { error } = await context.supabase
       .from("care_visits")
