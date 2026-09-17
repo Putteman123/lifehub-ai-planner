@@ -51,7 +51,14 @@ export function CareClientChat({ clientId, title }: { clientId: string; title?: 
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const messages = q.data?.messages ?? [];
+  const messages = (q.data?.messages ?? []) as {
+    id: string;
+    body: string;
+    author_id: string;
+    author_name: string;
+    author_role: string;
+    created_at: string;
+  }[];
   const me = q.data?.me;
 
   return (

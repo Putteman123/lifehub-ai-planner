@@ -36,7 +36,7 @@ function CareThreads() {
     queryFn: () => fetchThreads({}),
   });
 
-  const threads = q.data ?? [];
+  const threads = (q.data ?? []) as { id: string; name: string; orgName: string; slug: string }[];
   const current = threads.find((t) => t.id === active) ?? threads[0];
 
   return (
