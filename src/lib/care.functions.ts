@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Database } from "@/integrations/supabase/types";
 import type { CareRole } from "@/lib/care";
+import { slugify } from "@/lib/care-admin.functions";
 
 const leadSchema = z.object({
   org_name: z.string().min(2).max(160),
@@ -119,7 +120,7 @@ export const listOrganizations = createServerFn({ method: "GET" })
     const { data: orgs, error } = await context.supabase
       .from("organizations")
       .select(
-        "id, name, org_number, contact_email, contact_phone, is_active, created_at, segment, address, website, contact_name, contact_role, billing_address, billing_email, billing_reference, contract_start, contract_type, status, seats, internal_notes",
+        "id, name, slug, org_number, contact_email, contact_phone, is_active, created_at, segment, address, website, contact_name, contact_role, billing_address, billing_email, billing_reference, contract_start, contract_type, status, seats, internal_notes",
       )
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -229,9 +230,19 @@ export const createCustomer = createServerFn({ method: "POST" })
     });
     if (ownerFlag !== true) throw new Error("Endast superadmin kan lägga upp kunder.");
 
+    const base = slugify(data.customer.name) || "kund";
+    const { data: taken } = await context.supabase
+      .from("organizations")
+      .select("slug")
+      .like("slug", `${base}%`);
+    const used = new Set((taken ?? []).map((t: { slug: string | null }) => t.slug));
+    let slug = base;
+    let n = 2;
+    while (used.has(slug)) slug = `${base}-${n++}`;
+
     const { data: org, error } = await context.supabase
       .from("organizations")
-      .insert({ ...customerRow(data.customer), created_by: context.userId })
+      .insert({ ...customerRow(data.customer), slug, created_by: context.userId })
       .select("id")
       .single();
     if (error || !org) throw new Error(error?.message ?? "Kunde inte skapa kunden.");

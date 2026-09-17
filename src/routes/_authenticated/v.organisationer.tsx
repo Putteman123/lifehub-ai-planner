@@ -176,14 +176,18 @@ function CustomerList() {
 
       <section className="grid gap-4 sm:grid-cols-2">
         {(orgs.data ?? []).map((o) => (
-          <Link
+          <div
             key={o.id}
-            to="/v/kund/$orgId"
-            params={{ orgId: o.id }}
             className="rounded-3xl border border-border/70 bg-card p-6 transition-colors hover:border-primary"
           >
             <div className="flex items-start justify-between gap-3">
-              <h2 className="font-display text-lg font-semibold">{o.name}</h2>
+              <Link
+                to="/v/kund/$orgId"
+                params={{ orgId: o.id }}
+                className="font-display text-lg font-semibold hover:underline"
+              >
+                {o.name}
+              </Link>
               <span className="rounded-full bg-secondary px-3 py-1 text-xs">
                 {ORG_STATUS.find((s) => s.key === o.status)?.label ?? o.status}
               </span>
@@ -202,7 +206,16 @@ function CustomerList() {
                 ))
               )}
             </div>
-          </Link>
+            {o.slug ? (
+              <Link
+                to="/v/f/$slug"
+                params={{ slug: o.slug }}
+                className="mt-4 inline-block text-sm font-medium text-primary hover:underline"
+              >
+                Öppna verksamheten →
+              </Link>
+            ) : null}
+          </div>
         ))}
         {orgs.isLoading ? <p className="text-sm text-muted-foreground">Hämtar…</p> : null}
         {!orgs.isLoading && (orgs.data ?? []).length === 0 ? (

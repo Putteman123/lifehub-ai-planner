@@ -44,9 +44,14 @@ import { Route as AuthenticatedVIndexRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedVOrganisationerRouteImport } from './routes/_authenticated/v.organisationer'
 import { Route as ApiPublicOtrcRouteImport } from './routes/api/public/otrc'
 import { Route as ApiPublicPlatsRouteImport } from './routes/api/public/plats'
+import { Route as AuthenticatedVFSlugRouteImport } from './routes/_authenticated/v.f.$slug'
 import { Route as AuthenticatedVKundOrgIdRouteImport } from './routes/_authenticated/v.kund.$orgId'
 import { Route as ApiPublicHooksEpostRouteImport } from './routes/api/public/hooks/epost'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
+import { Route as AuthenticatedVFSlugIndexRouteImport } from './routes/_authenticated/v.f.$slug.index'
+import { Route as AuthenticatedVFSlugInsatserRouteImport } from './routes/_authenticated/v.f.$slug.insatser'
+import { Route as AuthenticatedVFSlugSchemaRouteImport } from './routes/_authenticated/v.f.$slug.schema'
+import { Route as AuthenticatedVFSlugBrukareClientIdRouteImport } from './routes/_authenticated/v.f.$slug.brukare.$clientId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -226,6 +231,11 @@ const ApiPublicPlatsRoute = ApiPublicPlatsRouteImport.update({
   path: '/api/public/plats',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedVFSlugRoute = AuthenticatedVFSlugRouteImport.update({
+  id: '/f/$slug',
+  path: '/f/$slug',
+  getParentRoute: () => AuthenticatedVRoute,
+} as any)
 const AuthenticatedVKundOrgIdRoute = AuthenticatedVKundOrgIdRouteImport.update({
   id: '/kund/$orgId',
   path: '/kund/$orgId',
@@ -241,6 +251,30 @@ const LovableEmailTransactionalPreviewRoute =
     id: '/lovable/email/transactional/preview',
     path: '/lovable/email/transactional/preview',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const AuthenticatedVFSlugIndexRoute =
+  AuthenticatedVFSlugIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedVFSlugRoute,
+  } as any)
+const AuthenticatedVFSlugInsatserRoute =
+  AuthenticatedVFSlugInsatserRouteImport.update({
+    id: '/insatser',
+    path: '/insatser',
+    getParentRoute: () => AuthenticatedVFSlugRoute,
+  } as any)
+const AuthenticatedVFSlugSchemaRoute =
+  AuthenticatedVFSlugSchemaRouteImport.update({
+    id: '/schema',
+    path: '/schema',
+    getParentRoute: () => AuthenticatedVFSlugRoute,
+  } as any)
+const AuthenticatedVFSlugBrukareClientIdRoute =
+  AuthenticatedVFSlugBrukareClientIdRouteImport.update({
+    id: '/brukare/$clientId',
+    path: '/brukare/$clientId',
+    getParentRoute: () => AuthenticatedVFSlugRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -278,9 +312,14 @@ export interface FileRoutesByFullPath {
   '/api/public/otrc': typeof ApiPublicOtrcRoute
   '/api/public/plats': typeof ApiPublicPlatsRoute
   '/v/': typeof AuthenticatedVIndexRoute
+  '/v/f/$slug': typeof AuthenticatedVFSlugRouteWithChildren
   '/v/kund/$orgId': typeof AuthenticatedVKundOrgIdRoute
   '/api/public/hooks/epost': typeof ApiPublicHooksEpostRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/v/f/$slug/insatser': typeof AuthenticatedVFSlugInsatserRoute
+  '/v/f/$slug/schema': typeof AuthenticatedVFSlugSchemaRoute
+  '/v/f/$slug/': typeof AuthenticatedVFSlugIndexRoute
+  '/v/f/$slug/brukare/$clientId': typeof AuthenticatedVFSlugBrukareClientIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -318,6 +357,10 @@ export interface FileRoutesByTo {
   '/v/kund/$orgId': typeof AuthenticatedVKundOrgIdRoute
   '/api/public/hooks/epost': typeof ApiPublicHooksEpostRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/v/f/$slug/insatser': typeof AuthenticatedVFSlugInsatserRoute
+  '/v/f/$slug/schema': typeof AuthenticatedVFSlugSchemaRoute
+  '/v/f/$slug': typeof AuthenticatedVFSlugIndexRoute
+  '/v/f/$slug/brukare/$clientId': typeof AuthenticatedVFSlugBrukareClientIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -356,9 +399,14 @@ export interface FileRoutesById {
   '/api/public/otrc': typeof ApiPublicOtrcRoute
   '/api/public/plats': typeof ApiPublicPlatsRoute
   '/_authenticated/v/': typeof AuthenticatedVIndexRoute
+  '/_authenticated/v/f/$slug': typeof AuthenticatedVFSlugRouteWithChildren
   '/_authenticated/v/kund/$orgId': typeof AuthenticatedVKundOrgIdRoute
   '/api/public/hooks/epost': typeof ApiPublicHooksEpostRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/_authenticated/v/f/$slug/insatser': typeof AuthenticatedVFSlugInsatserRoute
+  '/_authenticated/v/f/$slug/schema': typeof AuthenticatedVFSlugSchemaRoute
+  '/_authenticated/v/f/$slug/': typeof AuthenticatedVFSlugIndexRoute
+  '/_authenticated/v/f/$slug/brukare/$clientId': typeof AuthenticatedVFSlugBrukareClientIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -397,9 +445,14 @@ export interface FileRouteTypes {
     | '/api/public/otrc'
     | '/api/public/plats'
     | '/v/'
+    | '/v/f/$slug'
     | '/v/kund/$orgId'
     | '/api/public/hooks/epost'
     | '/lovable/email/transactional/preview'
+    | '/v/f/$slug/insatser'
+    | '/v/f/$slug/schema'
+    | '/v/f/$slug/'
+    | '/v/f/$slug/brukare/$clientId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -437,6 +490,10 @@ export interface FileRouteTypes {
     | '/v/kund/$orgId'
     | '/api/public/hooks/epost'
     | '/lovable/email/transactional/preview'
+    | '/v/f/$slug/insatser'
+    | '/v/f/$slug/schema'
+    | '/v/f/$slug'
+    | '/v/f/$slug/brukare/$clientId'
   id:
     | '__root__'
     | '/'
@@ -474,9 +531,14 @@ export interface FileRouteTypes {
     | '/api/public/otrc'
     | '/api/public/plats'
     | '/_authenticated/v/'
+    | '/_authenticated/v/f/$slug'
     | '/_authenticated/v/kund/$orgId'
     | '/api/public/hooks/epost'
     | '/lovable/email/transactional/preview'
+    | '/_authenticated/v/f/$slug/insatser'
+    | '/_authenticated/v/f/$slug/schema'
+    | '/_authenticated/v/f/$slug/'
+    | '/_authenticated/v/f/$slug/brukare/$clientId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -745,6 +807,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPlatsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/v/f/$slug': {
+      id: '/_authenticated/v/f/$slug'
+      path: '/f/$slug'
+      fullPath: '/v/f/$slug'
+      preLoaderRoute: typeof AuthenticatedVFSlugRouteImport
+      parentRoute: typeof AuthenticatedVRoute
+    }
     '/_authenticated/v/kund/$orgId': {
       id: '/_authenticated/v/kund/$orgId'
       path: '/kund/$orgId'
@@ -766,18 +835,66 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/v/f/$slug/': {
+      id: '/_authenticated/v/f/$slug/'
+      path: '/'
+      fullPath: '/v/f/$slug/'
+      preLoaderRoute: typeof AuthenticatedVFSlugIndexRouteImport
+      parentRoute: typeof AuthenticatedVFSlugRoute
+    }
+    '/_authenticated/v/f/$slug/insatser': {
+      id: '/_authenticated/v/f/$slug/insatser'
+      path: '/insatser'
+      fullPath: '/v/f/$slug/insatser'
+      preLoaderRoute: typeof AuthenticatedVFSlugInsatserRouteImport
+      parentRoute: typeof AuthenticatedVFSlugRoute
+    }
+    '/_authenticated/v/f/$slug/schema': {
+      id: '/_authenticated/v/f/$slug/schema'
+      path: '/schema'
+      fullPath: '/v/f/$slug/schema'
+      preLoaderRoute: typeof AuthenticatedVFSlugSchemaRouteImport
+      parentRoute: typeof AuthenticatedVFSlugRoute
+    }
+    '/_authenticated/v/f/$slug/brukare/$clientId': {
+      id: '/_authenticated/v/f/$slug/brukare/$clientId'
+      path: '/brukare/$clientId'
+      fullPath: '/v/f/$slug/brukare/$clientId'
+      preLoaderRoute: typeof AuthenticatedVFSlugBrukareClientIdRouteImport
+      parentRoute: typeof AuthenticatedVFSlugRoute
+    }
   }
 }
+
+interface AuthenticatedVFSlugRouteChildren {
+  AuthenticatedVFSlugInsatserRoute: typeof AuthenticatedVFSlugInsatserRoute
+  AuthenticatedVFSlugSchemaRoute: typeof AuthenticatedVFSlugSchemaRoute
+  AuthenticatedVFSlugIndexRoute: typeof AuthenticatedVFSlugIndexRoute
+  AuthenticatedVFSlugBrukareClientIdRoute: typeof AuthenticatedVFSlugBrukareClientIdRoute
+}
+
+const AuthenticatedVFSlugRouteChildren: AuthenticatedVFSlugRouteChildren = {
+  AuthenticatedVFSlugInsatserRoute: AuthenticatedVFSlugInsatserRoute,
+  AuthenticatedVFSlugSchemaRoute: AuthenticatedVFSlugSchemaRoute,
+  AuthenticatedVFSlugIndexRoute: AuthenticatedVFSlugIndexRoute,
+  AuthenticatedVFSlugBrukareClientIdRoute:
+    AuthenticatedVFSlugBrukareClientIdRoute,
+}
+
+const AuthenticatedVFSlugRouteWithChildren =
+  AuthenticatedVFSlugRoute._addFileChildren(AuthenticatedVFSlugRouteChildren)
 
 interface AuthenticatedVRouteChildren {
   AuthenticatedVOrganisationerRoute: typeof AuthenticatedVOrganisationerRoute
   AuthenticatedVIndexRoute: typeof AuthenticatedVIndexRoute
+  AuthenticatedVFSlugRoute: typeof AuthenticatedVFSlugRouteWithChildren
   AuthenticatedVKundOrgIdRoute: typeof AuthenticatedVKundOrgIdRoute
 }
 
 const AuthenticatedVRouteChildren: AuthenticatedVRouteChildren = {
   AuthenticatedVOrganisationerRoute: AuthenticatedVOrganisationerRoute,
   AuthenticatedVIndexRoute: AuthenticatedVIndexRoute,
+  AuthenticatedVFSlugRoute: AuthenticatedVFSlugRouteWithChildren,
   AuthenticatedVKundOrgIdRoute: AuthenticatedVKundOrgIdRoute,
 }
 

@@ -26,6 +26,7 @@
 - [x] Databas: organisationer, medlemmar, moduler, inbjudningar, brukare, samtycken, intresseanmälningar
 - [x] Publik landningssida /vard med undersidor och kontaktformulär
 - [x] Inloggad vy /v med översikt och organisationsadministration
-- [ ] Schema, medicin och uppgifter per besök
+- [x] Verksamhetsadmin /v/f/<kortnamn>: personal, brukare, schema, besök, medicinlista, insatsmallar
+- [ ] Subdomän <kortnamn>.mellberg.online som pekar på verksamhetsadmin
 - [ ] Brukar- och anhörigvy med samtyckesstyrning
 - [ ] ICA-näthandel
