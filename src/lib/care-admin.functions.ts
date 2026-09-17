@@ -16,10 +16,10 @@ export function slugify(name: string): string {
     .slice(0, 40);
 }
 
-type Ctx = { supabase: any; userId: string };
+export type Ctx = { supabase: any; userId: string };
 
 /** Hämtar organisationen via kortnamn och kontrollerar att användaren får administrera den. */
-async function requireOrg(context: Ctx, slug: string) {
+export async function requireOrg(context: Ctx, slug: string) {
   const { data: org, error } = await context.supabase
     .from("organizations")
     .select("id, name, slug, status, contract_type, seats")
