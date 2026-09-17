@@ -217,7 +217,7 @@ export const getClientDetail = createServerFn({ method: "GET" })
 
     const { data: relatives } = await context.supabase
       .from("care_relatives")
-      .select("id, name, relation, email, phone, notes")
+      .select("id, name, relation, email, phone, notes, consent")
       .eq("client_id", data.clientId)
       .order("name");
     const { data: medications } = await context.supabase
