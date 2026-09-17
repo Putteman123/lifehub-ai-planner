@@ -65,6 +65,12 @@ export const NAV_GROUPS: readonly { title: string; items: readonly NavItem[] }[]
 ] as const;
 
 
+/** Undermeny för vårddelen – visas under "Vård" i mobilmenyn. */
+export const CARE_SUBNAV: readonly { to: string; label: string }[] = [
+  { to: "/v", label: "Översikt" },
+  { to: "/v/organisationer", label: "Kunder" },
+  { to: "/v/samtal", label: "Samtal" },
+] as const;
 
 /** Appens version, visas i inställningar. */
-export const APP_VERSION = "2.0";
+export const APP_VERSION = "Alfa 1.0";

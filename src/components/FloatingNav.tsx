@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Lock } from "lucide-react";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { NAV_GROUPS, NAV_ITEMS } from "@/lib/nav-theme";
+import { CARE_SUBNAV, NAV_GROUPS, NAV_ITEMS } from "@/lib/nav-theme";
 
 /** Flytande vertikal meny längs vänsterkanten – endast surfplatta och dator. */
 export function FloatingNav({ onLock }: { onLock: () => void }) {
@@ -101,6 +101,22 @@ export function MobileNav({
                         <item.icon className={`size-5 shrink-0 ${item.color}`} />
                         <span className="truncate">{item.label}</span>
                       </Link>
+                      {item.to === "/v" ? (
+                        <ul className="mb-1 ml-9 space-y-0.5 border-l border-border/70 pl-3">
+                          {CARE_SUBNAV.filter((s) => s.to !== "/v").map((sub) => (
+                            <li key={sub.to}>
+                              <Link
+                                to={sub.to}
+                                onClick={() => onOpenChange(false)}
+                                className="flex min-h-[40px] items-center rounded-xl px-2 text-[14px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                                activeProps={{ className: "text-primary" }}
+                              >
+                                {sub.label}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
                     </li>
                   ))}
                 </ul>

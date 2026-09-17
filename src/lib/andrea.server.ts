@@ -79,6 +79,76 @@ function bucketLabel(iso: string, now: Date) {
   return weekdayLocal(iso).toUpperCase();
 }
 
+/**
+ * Underlag från vårddelen: dagens besök, avvikelser och mediciner
+ * i de verksamheter användaren arbetar i eller äger.
+ */
+export async function buildCareContext(userId: string): Promise<string[]> {
+  const [ownerRes, memberRes] = await Promise.all([
+    supabaseAdmin.from("app_owner").select("user_id").eq("user_id", userId).maybeSingle(),
+    supabaseAdmin
+      .from("org_members")
+      .select("org_id")
+      .eq("user_id", userId)
+      .eq("is_active", true),
+  ]);
+
+  let orgIds: string[] = (memberRes.data ?? []).map((m) => m.org_id);
+  if (ownerRes.data) {
+    const { data: allOrgs } = await supabaseAdmin.from("organizations").select("id");
+    orgIds = (allOrgs ?? []).map((o) => o.id);
+  }
+  orgIds = Array.from(new Set(orgIds));
+  if (orgIds.length === 0) return [];
+
+  const now = new Date();
+  const dayStart = startOfDay(now);
+  const dayEnd = new Date(dayStart.getTime() + 86400000);
+
+  const [visitsRes, clientsRes, medsRes, staffRes] = await Promise.all([
+    supabaseAdmin
+      .from("care_visits")
+      .select("id, org_id, client_id, staff_id, title, starts_at, ends_at, status, deviation")
+      .in("org_id", orgIds)
+      .gte("starts_at", dayStart.toISOString())
+      .lt("starts_at", dayEnd.toISOString())
+      .order("starts_at"),
+    supabaseAdmin.from("care_clients").select("id, name, address").in("org_id", orgIds),
+    supabaseAdmin
+      .from("care_medications")
+      .select("id, client_id, name, dose, times, requires_delegation")
+      .in("org_id", orgIds)
+      .eq("is_active", true),
+    supabaseAdmin.from("org_members").select("id, display_name").in("org_id", orgIds),
+  ]);
+
+  const clientName = new Map((clientsRes.data ?? []).map((c) => [c.id, c.name]));
+  const staffName = new Map((staffRes.data ?? []).map((s) => [s.id, s.display_name]));
+  const visits = visitsRes.data ?? [];
+
+  return [
+    "",
+    "Vårddelen (LifeHub Vård) – dagens besök:",
+    ...(visits.length
+      ? visits.map(
+          (v) =>
+            `- ${timeLocal(v.starts_at)}–${timeLocal(v.ends_at)} ${clientName.get(v.client_id) ?? "okänd brukare"}` +
+            ` | ${v.title ?? "Besök"} | ${v.status}` +
+            `${v.staff_id ? ` | ${staffName.get(v.staff_id) ?? "personal"}` : ""}` +
+            `${v.deviation ? ` | avvikelse: ${v.deviation}` : ""}`,
+        )
+      : ["- inga besök inplanerade idag"]),
+    "Aktiva mediciner:",
+    ...((medsRes.data ?? []).length
+      ? (medsRes.data ?? []).map(
+          (m) =>
+            `- ${clientName.get(m.client_id) ?? "okänd brukare"}: ${m.name}${m.dose ? ` ${m.dose}` : ""}` +
+            `${m.times ? ` (${m.times})` : ""}${m.requires_delegation ? " [delegering]" : ""}`,
+        )
+      : ["- inga mediciner registrerade"]),
+  ];
+}
+
 export async function buildAndreaContext(userId: string) {
   const now = new Date();
   const until = new Date(now.getTime() + 21 * 86400000);
@@ -183,6 +253,8 @@ export async function buildAndreaContext(userId: string) {
     (memory) => `- [${memory.kind}] ${memory.content} (säkerhet ${Math.round(memory.confidence * 100)} %)`,
   );
 
+  const careLines = await buildCareContext(userId);
+
   return [
     `Nu: ${weekdayLocal(now)} ${timeLocal(now)} (${fmtLocal(now)}, tidszon Europe/Stockholm)`,
     `Barn: ${(childrenRes.data ?? []).map((c) => `${c.name} [id=${c.id}]`).join(", ") || "inga registrerade"}`,
@@ -233,6 +305,7 @@ export async function buildAndreaContext(userId: string) {
       ? `- Nästa lediga timme: ${weekdayLocal(freeSlot.start)} ${timeLocal(freeSlot.start)}`
       : "- Ingen ledig timme hittad de närmaste 7 dagarna",
     ...profileLines,
+    ...careLines,
     "",
     "Det Andrea minns om Patrick:",
     ...(memoryLines.length ? memoryLines : ["- inga sparade långtidsminnen ännu"]),

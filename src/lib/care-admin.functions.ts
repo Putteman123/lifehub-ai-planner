@@ -659,3 +659,48 @@ export const logMedicationEvent = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/* ---------------- Medicinöversikt för hela verksamheten ---------------- */
+
+export const listOrgMedications = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => slugInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const org = await requireOrg(context as Ctx, data.slug);
+    const { data: meds } = await context.supabase
+      .from("care_medications")
+      .select("id, client_id, name, dose, times, instructions, requires_delegation, is_active")
+      .eq("org_id", org.id)
+      .order("name");
+    const { data: clients } = await context.supabase
+      .from("care_clients")
+      .select("id, name")
+      .eq("org_id", org.id)
+      .order("name");
+    const { data: events } = await context.supabase
+      .from("care_medication_events")
+      .select("id, medication_id, given_at, note")
+      .eq("org_id", org.id)
+      .order("given_at", { ascending: false })
+      .limit(200);
+    return {
+      org,
+      clients: (clients ?? []) as { id: string; name: string }[],
+      medications: (meds ?? []) as {
+        id: string;
+        client_id: string;
+        name: string;
+        dose: string | null;
+        times: string | null;
+        instructions: string | null;
+        requires_delegation: boolean;
+        is_active: boolean;
+      }[],
+      events: (events ?? []) as {
+        id: string;
+        medication_id: string;
+        given_at: string;
+        note: string | null;
+      }[],
+    };
+  });
