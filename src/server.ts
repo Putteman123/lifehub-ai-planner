@@ -44,11 +44,32 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+const ROOT_DOMAIN = "mellberg.online";
+const RESERVED_SUBDOMAINS = new Set(["www", "app", "api", "notify", "mail", "id-preview"]);
+const PASSTHROUGH_PREFIXES = ["/api", "/_", "/assets", "/favicon", "/manifest", "/sw.js", "/v/f/"];
+
+/** <kortnamn>.mellberg.online serves the company admin view at /v/f/<kortnamn>. */
+function rewriteCompanySubdomain(request: Request): Request {
+  const url = new URL(request.url);
+  const host = url.hostname.toLowerCase();
+  if (!host.endsWith(`.${ROOT_DOMAIN}`)) return request;
+
+  const slug = host.slice(0, -1 * (ROOT_DOMAIN.length + 1));
+  if (!slug || slug.includes(".") || RESERVED_SUBDOMAINS.has(slug)) return request;
+  if (!/^[a-z0-9-]+$/.test(slug)) return request;
+  if (PASSTHROUGH_PREFIXES.some((p) => url.pathname.startsWith(p))) return request;
+  if (/\.[a-z0-9]+$/i.test(url.pathname)) return request;
+
+  const rest = url.pathname === "/" ? "" : url.pathname;
+  url.pathname = `/v/f/${slug}${rest}`;
+  return new Request(url, request);
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const handler = await getServerEntry();
-      const response = await handler.fetch(request, env, ctx);
+      const response = await handler.fetch(rewriteCompanySubdomain(request), env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
     } catch (error) {
       console.error(error);
