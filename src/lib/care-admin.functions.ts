@@ -94,7 +94,7 @@ export const listMyAdminOrgs = createServerFn({ method: "GET" })
       .eq("role", "org_admin")
       .eq("is_active", true);
     return (members ?? [])
-      .map((m: { organizations: { id: string; name: string; slug: string; status: string } | null }) => m.organizations)
+      .map((m) => m.organizations as { id: string; name: string; slug: string | null; status: string } | null)
       .filter(Boolean);
   });
 

@@ -1,0 +1,422 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { moduleLabel } from "@/lib/care";
+import { getAdminOrg, removeStaff, saveClient, saveStaff } from "@/lib/care-admin.functions";
+
+export const Route = createFileRoute("/_authenticated/v/f/$slug/")({
+  head: () => ({
+    meta: [
+      { title: "Personal och brukare – LifeHub Vård" },
+      {
+        name: "description",
+        content: "Verksamhetens personal, brukare och aktiva moduler på ett ställe.",
+      },
+      { property: "og:title", content: "Personal och brukare – LifeHub Vård" },
+      {
+        property: "og:description",
+        content: "Verksamhetens personal, brukare och aktiva moduler på ett ställe.",
+      },
+    ],
+  }),
+  component: CompanyHome,
+});
+
+type Staff = {
+  id: string;
+  display_name: string;
+  email: string | null;
+  phone: string | null;
+  role: string;
+  is_active: boolean;
+  employment: string | null;
+  work_hours: string | null;
+  notes: string | null;
+};
+
+type Client = {
+  id: string;
+  name: string;
+  address: string | null;
+  phone: string | null;
+  is_active: boolean;
+  personal_number: string | null;
+  door_code: string | null;
+};
+
+const emptyStaff = {
+  id: undefined as string | undefined,
+  display_name: "",
+  email: "",
+  phone: "",
+  role: "caregiver" as "caregiver" | "org_admin",
+  employment: "",
+  work_hours: "",
+  notes: "",
+};
+
+const emptyClient = {
+  id: undefined as string | undefined,
+  name: "",
+  personal_number: "",
+  address: "",
+  phone: "",
+  door_code: "",
+  key_info: "",
+  notes: "",
+};
+
+function CompanyHome() {
+  const { slug } = Route.useParams();
+  const qc = useQueryClient();
+  const fetchOrg = useServerFn(getAdminOrg);
+  const persistStaff = useServerFn(saveStaff);
+  const deleteStaff = useServerFn(removeStaff);
+  const persistClient = useServerFn(saveClient);
+
+  const q = useQuery({
+    queryKey: ["care-admin-org", slug],
+    queryFn: () => fetchOrg({ data: { slug } }),
+  });
+
+  const [search, setSearch] = useState("");
+  const [staffOpen, setStaffOpen] = useState(false);
+  const [staffForm, setStaffForm] = useState({ ...emptyStaff });
+  const [clientOpen, setClientOpen] = useState(false);
+  const [clientForm, setClientForm] = useState({ ...emptyClient });
+
+  const invalidate = () => void qc.invalidateQueries({ queryKey: ["care-admin-org", slug] });
+
+  const staffMutation = useMutation({
+    mutationFn: () => persistStaff({ data: { slug, ...staffForm } }),
+    onSuccess: () => {
+      toast.success("Personalen är sparad.");
+      setStaffOpen(false);
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const staffDelete = useMutation({
+    mutationFn: (id: string) => deleteStaff({ data: { slug, id } }),
+    onSuccess: () => {
+      toast.success("Personalen är borttagen.");
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const clientMutation = useMutation({
+    mutationFn: () => persistClient({ data: { slug, ...clientForm } }),
+    onSuccess: () => {
+      toast.success("Brukaren är sparad.");
+      setClientOpen(false);
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const needle = search.trim().toLowerCase();
+  const staff = useMemo(
+    () =>
+      ((q.data?.members ?? []) as Staff[]).filter((m) =>
+        needle ? m.display_name.toLowerCase().includes(needle) : true,
+      ),
+    [q.data, needle],
+  );
+  const clients = useMemo(
+    () =>
+      ((q.data?.clients ?? []) as Client[]).filter((c) =>
+        needle ? c.name.toLowerCase().includes(needle) : true,
+      ),
+    [q.data, needle],
+  );
+
+  if (q.isLoading) return <p className="text-sm text-muted-foreground">Hämtar…</p>;
+  if (q.error) return <p className="text-sm text-destructive">{(q.error as Error).message}</p>;
+
+  const org = q.data!.org;
+  const modules = q.data?.modules ?? [];
+
+  return (
+    <div className="space-y-8">
+      <header>
+        <h1 className="font-display text-2xl font-semibold tracking-tight">{org.name}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {staff.length} i personalen · {clients.length} brukare
+          {modules.length > 0 ? ` · ${modules.map(moduleLabel).join(", ")}` : ""}
+        </p>
+      </header>
+
+      <Input
+        placeholder="Sök personal eller brukare"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-lg font-semibold">Personal</h2>
+          <Button
+            size="sm"
+            onClick={() => {
+              setStaffForm({ ...emptyStaff });
+              setStaffOpen(true);
+            }}
+          >
+            Lägg till
+          </Button>
+        </div>
+        {staff.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Ingen personal upplagd ännu.</p>
+        ) : (
+          <ul className="space-y-2">
+            {staff.map((m) => (
+              <li key={m.id} className="flex items-center gap-3 rounded-2xl border border-border/70 bg-card p-4">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">{m.display_name}</p>
+                  <p className="truncate text-sm text-muted-foreground">
+                    {m.role === "org_admin" ? "Verksamhetsadmin" : "Personal"}
+                    {m.phone ? ` · ${m.phone}` : ""}
+                    {m.email ? ` · ${m.email}` : ""}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setStaffForm({
+                      id: m.id,
+                      display_name: m.display_name,
+                      email: m.email ?? "",
+                      phone: m.phone ?? "",
+                      role: m.role === "org_admin" ? "org_admin" : "caregiver",
+                      employment: m.employment ?? "",
+                      work_hours: m.work_hours ?? "",
+                      notes: m.notes ?? "",
+                    });
+                    setStaffOpen(true);
+                  }}
+                >
+                  Ändra
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => staffDelete.mutate(m.id)}>
+                  Ta bort
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-lg font-semibold">Brukare</h2>
+          <Button
+            size="sm"
+            onClick={() => {
+              setClientForm({ ...emptyClient });
+              setClientOpen(true);
+            }}
+          >
+            Lägg till
+          </Button>
+        </div>
+        {clients.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Inga brukare upplagda ännu.</p>
+        ) : (
+          <ul className="space-y-2">
+            {clients.map((c) => (
+              <li key={c.id} className="flex items-center gap-3 rounded-2xl border border-border/70 bg-card p-4">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">{c.name}</p>
+                  <p className="truncate text-sm text-muted-foreground">
+                    {c.address ?? "Ingen adress"}
+                    {c.phone ? ` · ${c.phone}` : ""}
+                  </p>
+                </div>
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/v/f/$slug/brukare/$clientId" params={{ slug, clientId: c.id }}>
+                    Öppna
+                  </Link>
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <Dialog open={staffOpen} onOpenChange={setStaffOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{staffForm.id ? "Ändra personal" : "Ny personal"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Field label="Namn">
+              <Input
+                value={staffForm.display_name}
+                onChange={(e) => setStaffForm({ ...staffForm, display_name: e.target.value })}
+              />
+            </Field>
+            <Field label="Roll">
+              <Select
+                value={staffForm.role}
+                onValueChange={(v) =>
+                  setStaffForm({ ...staffForm, role: v as "caregiver" | "org_admin" })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="caregiver">Personal</SelectItem>
+                  <SelectItem value="org_admin">Verksamhetsadmin</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="E-post">
+                <Input
+                  value={staffForm.email}
+                  onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
+                />
+              </Field>
+              <Field label="Telefon">
+                <Input
+                  value={staffForm.phone}
+                  onChange={(e) => setStaffForm({ ...staffForm, phone: e.target.value })}
+                />
+              </Field>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Anställning">
+                <Input
+                  placeholder="Tillsvidare, timmar…"
+                  value={staffForm.employment}
+                  onChange={(e) => setStaffForm({ ...staffForm, employment: e.target.value })}
+                />
+              </Field>
+              <Field label="Arbetstider">
+                <Input
+                  placeholder="Vardagar 07–16"
+                  value={staffForm.work_hours}
+                  onChange={(e) => setStaffForm({ ...staffForm, work_hours: e.target.value })}
+                />
+              </Field>
+            </div>
+            <Field label="Anteckningar">
+              <Textarea
+                value={staffForm.notes}
+                onChange={(e) => setStaffForm({ ...staffForm, notes: e.target.value })}
+              />
+            </Field>
+          </div>
+          <DialogFooter>
+            <Button
+              disabled={staffForm.display_name.trim().length < 2 || staffMutation.isPending}
+              onClick={() => staffMutation.mutate()}
+            >
+              Spara
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={clientOpen} onOpenChange={setClientOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ny brukare</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Field label="Namn">
+              <Input
+                value={clientForm.name}
+                onChange={(e) => setClientForm({ ...clientForm, name: e.target.value })}
+              />
+            </Field>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Personnummer">
+                <Input
+                  value={clientForm.personal_number}
+                  onChange={(e) =>
+                    setClientForm({ ...clientForm, personal_number: e.target.value })
+                  }
+                />
+              </Field>
+              <Field label="Telefon">
+                <Input
+                  value={clientForm.phone}
+                  onChange={(e) => setClientForm({ ...clientForm, phone: e.target.value })}
+                />
+              </Field>
+            </div>
+            <Field label="Adress">
+              <Input
+                value={clientForm.address}
+                onChange={(e) => setClientForm({ ...clientForm, address: e.target.value })}
+              />
+            </Field>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Portkod">
+                <Input
+                  value={clientForm.door_code}
+                  onChange={(e) => setClientForm({ ...clientForm, door_code: e.target.value })}
+                />
+              </Field>
+              <Field label="Nyckelinfo">
+                <Input
+                  value={clientForm.key_info}
+                  onChange={(e) => setClientForm({ ...clientForm, key_info: e.target.value })}
+                />
+              </Field>
+            </div>
+            <Field label="Anteckningar">
+              <Textarea
+                value={clientForm.notes}
+                onChange={(e) => setClientForm({ ...clientForm, notes: e.target.value })}
+              />
+            </Field>
+          </div>
+          <DialogFooter>
+            <Button
+              disabled={clientForm.name.trim().length < 2 || clientMutation.isPending}
+              onClick={() => clientMutation.mutate()}
+            >
+              Spara
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      {children}
+    </div>
+  );
+}
