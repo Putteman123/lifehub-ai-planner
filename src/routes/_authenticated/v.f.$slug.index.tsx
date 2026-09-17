@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { moduleLabel } from "@/lib/care";
+import { StatGrid, StatLine, emptyStat, type CareStat } from "@/components/care/CareStats";
 import { getAdminOrg, removeStaff, saveStaff } from "@/lib/care-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/v/f/$slug/")({
@@ -118,6 +119,8 @@ function CompanyHome() {
   const org = q.data!.org;
   const modules = q.data?.modules ?? [];
   const clientCount = (q.data?.clients ?? []).length;
+  const stats = q.data?.stats;
+  const staffStats = (stats?.staff ?? {}) as Record<string, CareStat>;
 
   return (
     <div className="space-y-8">
@@ -128,6 +131,8 @@ function CompanyHome() {
           {modules.length > 0 ? ` · ${modules.map(moduleLabel).join(", ")}` : ""}
         </p>
       </header>
+
+      {stats ? <StatGrid stat={stats.total as CareStat} days={stats.days} /> : null}
 
       <Input
         placeholder="Sök personal"
