@@ -50,6 +50,8 @@ import { Route as ApiPublicHooksEpostRouteImport } from './routes/api/public/hoo
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as AuthenticatedVFSlugIndexRouteImport } from './routes/_authenticated/v.f.$slug.index'
 import { Route as AuthenticatedVFSlugInsatserRouteImport } from './routes/_authenticated/v.f.$slug.insatser'
+import { Route as AuthenticatedVFSlugKartaRouteImport } from './routes/_authenticated/v.f.$slug.karta'
+import { Route as AuthenticatedVFSlugRapporterRouteImport } from './routes/_authenticated/v.f.$slug.rapporter'
 import { Route as AuthenticatedVFSlugSchemaRouteImport } from './routes/_authenticated/v.f.$slug.schema'
 import { Route as AuthenticatedVFSlugBrukareClientIdRouteImport } from './routes/_authenticated/v.f.$slug.brukare.$clientId'
 
@@ -264,6 +266,18 @@ const AuthenticatedVFSlugInsatserRoute =
     path: '/insatser',
     getParentRoute: () => AuthenticatedVFSlugRoute,
   } as any)
+const AuthenticatedVFSlugKartaRoute =
+  AuthenticatedVFSlugKartaRouteImport.update({
+    id: '/karta',
+    path: '/karta',
+    getParentRoute: () => AuthenticatedVFSlugRoute,
+  } as any)
+const AuthenticatedVFSlugRapporterRoute =
+  AuthenticatedVFSlugRapporterRouteImport.update({
+    id: '/rapporter',
+    path: '/rapporter',
+    getParentRoute: () => AuthenticatedVFSlugRoute,
+  } as any)
 const AuthenticatedVFSlugSchemaRoute =
   AuthenticatedVFSlugSchemaRouteImport.update({
     id: '/schema',
@@ -317,6 +331,8 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/epost': typeof ApiPublicHooksEpostRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/v/f/$slug/insatser': typeof AuthenticatedVFSlugInsatserRoute
+  '/v/f/$slug/karta': typeof AuthenticatedVFSlugKartaRoute
+  '/v/f/$slug/rapporter': typeof AuthenticatedVFSlugRapporterRoute
   '/v/f/$slug/schema': typeof AuthenticatedVFSlugSchemaRoute
   '/v/f/$slug/': typeof AuthenticatedVFSlugIndexRoute
   '/v/f/$slug/brukare/$clientId': typeof AuthenticatedVFSlugBrukareClientIdRoute
@@ -358,6 +374,8 @@ export interface FileRoutesByTo {
   '/api/public/hooks/epost': typeof ApiPublicHooksEpostRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/v/f/$slug/insatser': typeof AuthenticatedVFSlugInsatserRoute
+  '/v/f/$slug/karta': typeof AuthenticatedVFSlugKartaRoute
+  '/v/f/$slug/rapporter': typeof AuthenticatedVFSlugRapporterRoute
   '/v/f/$slug/schema': typeof AuthenticatedVFSlugSchemaRoute
   '/v/f/$slug': typeof AuthenticatedVFSlugIndexRoute
   '/v/f/$slug/brukare/$clientId': typeof AuthenticatedVFSlugBrukareClientIdRoute
@@ -404,6 +422,8 @@ export interface FileRoutesById {
   '/api/public/hooks/epost': typeof ApiPublicHooksEpostRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/_authenticated/v/f/$slug/insatser': typeof AuthenticatedVFSlugInsatserRoute
+  '/_authenticated/v/f/$slug/karta': typeof AuthenticatedVFSlugKartaRoute
+  '/_authenticated/v/f/$slug/rapporter': typeof AuthenticatedVFSlugRapporterRoute
   '/_authenticated/v/f/$slug/schema': typeof AuthenticatedVFSlugSchemaRoute
   '/_authenticated/v/f/$slug/': typeof AuthenticatedVFSlugIndexRoute
   '/_authenticated/v/f/$slug/brukare/$clientId': typeof AuthenticatedVFSlugBrukareClientIdRoute
@@ -450,6 +470,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/epost'
     | '/lovable/email/transactional/preview'
     | '/v/f/$slug/insatser'
+    | '/v/f/$slug/karta'
+    | '/v/f/$slug/rapporter'
     | '/v/f/$slug/schema'
     | '/v/f/$slug/'
     | '/v/f/$slug/brukare/$clientId'
@@ -491,6 +513,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/epost'
     | '/lovable/email/transactional/preview'
     | '/v/f/$slug/insatser'
+    | '/v/f/$slug/karta'
+    | '/v/f/$slug/rapporter'
     | '/v/f/$slug/schema'
     | '/v/f/$slug'
     | '/v/f/$slug/brukare/$clientId'
@@ -536,6 +560,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/epost'
     | '/lovable/email/transactional/preview'
     | '/_authenticated/v/f/$slug/insatser'
+    | '/_authenticated/v/f/$slug/karta'
+    | '/_authenticated/v/f/$slug/rapporter'
     | '/_authenticated/v/f/$slug/schema'
     | '/_authenticated/v/f/$slug/'
     | '/_authenticated/v/f/$slug/brukare/$clientId'
@@ -849,6 +875,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVFSlugInsatserRouteImport
       parentRoute: typeof AuthenticatedVFSlugRoute
     }
+    '/_authenticated/v/f/$slug/karta': {
+      id: '/_authenticated/v/f/$slug/karta'
+      path: '/karta'
+      fullPath: '/v/f/$slug/karta'
+      preLoaderRoute: typeof AuthenticatedVFSlugKartaRouteImport
+      parentRoute: typeof AuthenticatedVFSlugRoute
+    }
+    '/_authenticated/v/f/$slug/rapporter': {
+      id: '/_authenticated/v/f/$slug/rapporter'
+      path: '/rapporter'
+      fullPath: '/v/f/$slug/rapporter'
+      preLoaderRoute: typeof AuthenticatedVFSlugRapporterRouteImport
+      parentRoute: typeof AuthenticatedVFSlugRoute
+    }
     '/_authenticated/v/f/$slug/schema': {
       id: '/_authenticated/v/f/$slug/schema'
       path: '/schema'
@@ -868,6 +908,8 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedVFSlugRouteChildren {
   AuthenticatedVFSlugInsatserRoute: typeof AuthenticatedVFSlugInsatserRoute
+  AuthenticatedVFSlugKartaRoute: typeof AuthenticatedVFSlugKartaRoute
+  AuthenticatedVFSlugRapporterRoute: typeof AuthenticatedVFSlugRapporterRoute
   AuthenticatedVFSlugSchemaRoute: typeof AuthenticatedVFSlugSchemaRoute
   AuthenticatedVFSlugIndexRoute: typeof AuthenticatedVFSlugIndexRoute
   AuthenticatedVFSlugBrukareClientIdRoute: typeof AuthenticatedVFSlugBrukareClientIdRoute
@@ -875,6 +917,8 @@ interface AuthenticatedVFSlugRouteChildren {
 
 const AuthenticatedVFSlugRouteChildren: AuthenticatedVFSlugRouteChildren = {
   AuthenticatedVFSlugInsatserRoute: AuthenticatedVFSlugInsatserRoute,
+  AuthenticatedVFSlugKartaRoute: AuthenticatedVFSlugKartaRoute,
+  AuthenticatedVFSlugRapporterRoute: AuthenticatedVFSlugRapporterRoute,
   AuthenticatedVFSlugSchemaRoute: AuthenticatedVFSlugSchemaRoute,
   AuthenticatedVFSlugIndexRoute: AuthenticatedVFSlugIndexRoute,
   AuthenticatedVFSlugBrukareClientIdRoute:

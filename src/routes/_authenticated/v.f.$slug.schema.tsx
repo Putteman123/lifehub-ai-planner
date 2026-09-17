@@ -15,6 +15,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { listSchedule, removeVisit, saveVisit } from "@/lib/care-admin.functions";
+import {
+  applySchedule,
+  checkInVisit,
+  checkOutVisit,
+  setVisitStatus,
+  suggestSchedule,
+} from "@/lib/care-places.functions";
+import { formatDistance } from "@/lib/geo";
 
 export const Route = createFileRoute("/_authenticated/v/f/$slug/schema")({
   head: () => ({
@@ -43,6 +51,18 @@ function localInput(d: Date) {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+
+function isoDay(d: Date) {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  planerad: "Planerat",
+  pagar: "Pågår",
+  utfort: "Utfört",
+  uteblivet: "Uteblivet",
+};
 
 function SchedulePage() {
   const { slug } = Route.useParams();
@@ -108,6 +128,45 @@ function SchedulePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const runCheckIn = useServerFn(checkInVisit);
+  const runCheckOut = useServerFn(checkOutVisit);
+  const runStatus = useServerFn(setVisitStatus);
+  const runSuggest = useServerFn(suggestSchedule);
+  const runApply = useServerFn(applySchedule);
+
+  const checkIn = useMutation({
+    mutationFn: (visitId: string) => runCheckIn({ data: { slug, visitId } }),
+    onSuccess: invalidate,
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const checkOut = useMutation({
+    mutationFn: (visitId: string) => runCheckOut({ data: { slug, visitId } }),
+    onSuccess: invalidate,
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const markMissed = useMutation({
+    mutationFn: (visitId: string) =>
+      runStatus({ data: { slug, visitId, status: "uteblivet" as const } }),
+    onSuccess: invalidate,
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const [suggestDay, setSuggestDay] = useState(() => isoDay(new Date()));
+  const suggest = useMutation({
+    mutationFn: () => runSuggest({ data: { slug, date: suggestDay } }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const apply = useMutation({
+    mutationFn: (assignments: Array<{ visitId: string; staffId: string }>) =>
+      runApply({ data: { slug, assignments } }),
+    onSuccess: (res) => {
+      toast.success(`${res.saved} besök fördelade.`);
+      suggest.reset();
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   if (q.isLoading) return <p className="text-sm text-muted-foreground">Hämtar…</p>;
   if (q.error) return <p className="text-sm text-destructive">{(q.error as Error).message}</p>;
 
@@ -120,6 +179,10 @@ function SchedulePage() {
     ends_at: string;
     client_id: string;
     staff_id: string | null;
+    status: string;
+    checkin_at: string | null;
+    checkout_at: string | null;
+    travel_meters: number | null;
   }[];
 
   const nameOfClient = (id: string) => clients.find((c) => c.id === id)?.name ?? "Brukare";
@@ -236,6 +299,77 @@ function SchedulePage() {
         ) : null}
       </div>
 
+      <section className="rounded-3xl border border-border/70 bg-card p-5">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex-1">
+            <h2 className="font-display text-lg font-semibold">Smart fördelning</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Föreslår vem som tar de obemannade besöken – kort körsträcka och samma personal
+              hos samma brukare.
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Dag</Label>
+            <Input
+              type="date"
+              value={suggestDay}
+              onChange={(e) => setSuggestDay(e.target.value)}
+            />
+          </div>
+          <Button size="sm" disabled={suggest.isPending} onClick={() => suggest.mutate()}>
+            {suggest.isPending ? "Räknar…" : "Föreslå fördelning"}
+          </Button>
+        </div>
+
+        {suggest.data ? (
+          suggest.data.proposals.length === 0 ? (
+            <p className="mt-3 text-sm text-muted-foreground">
+              Inga obemannade besök att fördela den dagen
+              {suggest.data.unassignable
+                ? ` (${suggest.data.unassignable} besök får inte plats hos någon).`
+                : "."}
+            </p>
+          ) : (
+            <>
+              <ul className="mt-3 space-y-2">
+                {suggest.data.proposals.map((p) => (
+                  <li key={p.visitId} className="rounded-2xl bg-secondary/50 p-3 text-sm">
+                    <p className="font-medium">
+                      {new Date(p.starts_at).toLocaleTimeString("sv-SE", { timeStyle: "short" })}{" "}
+                      {p.clientName} → {p.staffName}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {p.reason}
+                      {p.extraMeters ? ` · ${formatDistance(p.extraMeters)} från förra besöket` : ""}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+              <Button
+                className="mt-3"
+                size="sm"
+                disabled={apply.isPending}
+                onClick={() =>
+                  apply.mutate(
+                    suggest.data!.proposals.map((p) => ({
+                      visitId: p.visitId,
+                      staffId: p.staffId,
+                    })),
+                  )
+                }
+              >
+                Godkänn fördelningen
+              </Button>
+              {suggest.data.unassignable ? (
+                <p className="mt-2 text-sm text-destructive">
+                  {suggest.data.unassignable} besök får inte plats hos någon medarbetare.
+                </p>
+              ) : null}
+            </>
+          )
+        ) : null}
+      </section>
+
       <div className="space-y-4">
         {DAYS.map((day, i) => {
           const dayStart = new Date(weekStart);
@@ -259,23 +393,58 @@ function SchedulePage() {
               ) : (
                 <ul className="mt-2 space-y-2">
                   {dayVisits.map((v) => (
-                    <li key={v.id} className="flex items-center gap-3 rounded-2xl bg-secondary/50 p-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium">
-                          {new Date(v.starts_at).toLocaleTimeString("sv-SE", { timeStyle: "short" })}
-                          {"–"}
-                          {new Date(v.ends_at).toLocaleTimeString("sv-SE", { timeStyle: "short" })}{" "}
-                          {nameOfClient(v.client_id)}
-                        </p>
-                        <p className="truncate text-sm text-muted-foreground">
-                          {v.title ? `${v.title} · ` : ""}
-                          {nameOfStaff(v.staff_id) ?? "Obemannat besök"}
-                          {overlapping.has(v.id) ? " · krockar med annat besök" : ""}
-                        </p>
+                    <li key={v.id} className="rounded-2xl bg-secondary/50 p-3">
+                      <div className="flex items-start gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium">
+                            {new Date(v.starts_at).toLocaleTimeString("sv-SE", { timeStyle: "short" })}
+                            {"–"}
+                            {new Date(v.ends_at).toLocaleTimeString("sv-SE", { timeStyle: "short" })}{" "}
+                            {nameOfClient(v.client_id)}
+                          </p>
+                          <p className="truncate text-sm text-muted-foreground">
+                            {v.title ? `${v.title} · ` : ""}
+                            {nameOfStaff(v.staff_id) ?? "Obemannat besök"}
+                            {overlapping.has(v.id) ? " · krockar med annat besök" : ""}
+                            {v.travel_meters ? ` · ${formatDistance(v.travel_meters)} resa` : ""}
+                          </p>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-background px-2 py-1 text-[11px] font-medium">
+                          {STATUS_LABEL[v.status] ?? "Planerat"}
+                        </span>
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => del.mutate(v.id)}>
-                        Ta bort
-                      </Button>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {v.status === "planerad" ? (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => checkIn.mutate(v.id)}
+                          >
+                            Checka in
+                          </Button>
+                        ) : null}
+                        {v.status === "pagar" ? (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => checkOut.mutate(v.id)}
+                          >
+                            Checka ut
+                          </Button>
+                        ) : null}
+                        {v.status !== "uteblivet" && v.status !== "utfort" ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => markMissed.mutate(v.id)}
+                          >
+                            Uteblivet
+                          </Button>
+                        ) : null}
+                        <Button variant="ghost" size="sm" onClick={() => del.mutate(v.id)}>
+                          Ta bort
+                        </Button>
+                      </div>
                     </li>
                   ))}
                 </ul>

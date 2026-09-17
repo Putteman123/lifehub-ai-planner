@@ -16,10 +16,10 @@ export function slugify(name: string): string {
     .slice(0, 40);
 }
 
-type Ctx = { supabase: any; userId: string };
+export type Ctx = { supabase: any; userId: string };
 
 /** Hämtar organisationen via kortnamn och kontrollerar att användaren får administrera den. */
-async function requireOrg(context: Ctx, slug: string) {
+export async function requireOrg(context: Ctx, slug: string) {
   const { data: org, error } = await context.supabase
     .from("organizations")
     .select("id, name, slug, status, contract_type, seats")
@@ -407,7 +407,9 @@ export const listSchedule = createServerFn({ method: "GET" })
     const org = await requireOrg(context as Ctx, data.slug);
     const { data: visits } = await context.supabase
       .from("care_visits")
-      .select("id, title, starts_at, ends_at, status, note, client_id, staff_id")
+      .select(
+        "id, title, starts_at, ends_at, status, note, client_id, staff_id, checkin_at, checkout_at, travel_meters, deviation",
+      )
       .eq("org_id", org.id)
       .gte("starts_at", data.from)
       .lt("starts_at", data.to)
