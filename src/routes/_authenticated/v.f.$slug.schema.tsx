@@ -299,6 +299,77 @@ function SchedulePage() {
         ) : null}
       </div>
 
+      <section className="rounded-3xl border border-border/70 bg-card p-5">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex-1">
+            <h2 className="font-display text-lg font-semibold">Smart fördelning</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Föreslår vem som tar de obemannade besöken – kort körsträcka och samma personal
+              hos samma brukare.
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Dag</Label>
+            <Input
+              type="date"
+              value={suggestDay}
+              onChange={(e) => setSuggestDay(e.target.value)}
+            />
+          </div>
+          <Button size="sm" disabled={suggest.isPending} onClick={() => suggest.mutate()}>
+            {suggest.isPending ? "Räknar…" : "Föreslå fördelning"}
+          </Button>
+        </div>
+
+        {suggest.data ? (
+          suggest.data.proposals.length === 0 ? (
+            <p className="mt-3 text-sm text-muted-foreground">
+              Inga obemannade besök att fördela den dagen
+              {suggest.data.unassignable
+                ? ` (${suggest.data.unassignable} besök får inte plats hos någon).`
+                : "."}
+            </p>
+          ) : (
+            <>
+              <ul className="mt-3 space-y-2">
+                {suggest.data.proposals.map((p) => (
+                  <li key={p.visitId} className="rounded-2xl bg-secondary/50 p-3 text-sm">
+                    <p className="font-medium">
+                      {new Date(p.starts_at).toLocaleTimeString("sv-SE", { timeStyle: "short" })}{" "}
+                      {p.clientName} → {p.staffName}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {p.reason}
+                      {p.extraMeters ? ` · ${formatDistance(p.extraMeters)} från förra besöket` : ""}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+              <Button
+                className="mt-3"
+                size="sm"
+                disabled={apply.isPending}
+                onClick={() =>
+                  apply.mutate(
+                    suggest.data!.proposals.map((p) => ({
+                      visitId: p.visitId,
+                      staffId: p.staffId,
+                    })),
+                  )
+                }
+              >
+                Godkänn fördelningen
+              </Button>
+              {suggest.data.unassignable ? (
+                <p className="mt-2 text-sm text-destructive">
+                  {suggest.data.unassignable} besök får inte plats hos någon medarbetare.
+                </p>
+              ) : null}
+            </>
+          )
+        ) : null}
+      </section>
+
       <div className="space-y-4">
         {DAYS.map((day, i) => {
           const dayStart = new Date(weekStart);
@@ -322,27 +393,66 @@ function SchedulePage() {
               ) : (
                 <ul className="mt-2 space-y-2">
                   {dayVisits.map((v) => (
-                    <li key={v.id} className="flex items-center gap-3 rounded-2xl bg-secondary/50 p-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium">
-                          {new Date(v.starts_at).toLocaleTimeString("sv-SE", { timeStyle: "short" })}
-                          {"–"}
-                          {new Date(v.ends_at).toLocaleTimeString("sv-SE", { timeStyle: "short" })}{" "}
-                          {nameOfClient(v.client_id)}
-                        </p>
-                        <p className="truncate text-sm text-muted-foreground">
-                          {v.title ? `${v.title} · ` : ""}
-                          {nameOfStaff(v.staff_id) ?? "Obemannat besök"}
-                          {overlapping.has(v.id) ? " · krockar med annat besök" : ""}
-                        </p>
+                    <li key={v.id} className="rounded-2xl bg-secondary/50 p-3">
+                      <div className="flex items-start gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium">
+                            {new Date(v.starts_at).toLocaleTimeString("sv-SE", { timeStyle: "short" })}
+                            {"–"}
+                            {new Date(v.ends_at).toLocaleTimeString("sv-SE", { timeStyle: "short" })}{" "}
+                            {nameOfClient(v.client_id)}
+                          </p>
+                          <p className="truncate text-sm text-muted-foreground">
+                            {v.title ? `${v.title} · ` : ""}
+                            {nameOfStaff(v.staff_id) ?? "Obemannat besök"}
+                            {overlapping.has(v.id) ? " · krockar med annat besök" : ""}
+                            {v.travel_meters ? ` · ${formatDistance(v.travel_meters)} resa` : ""}
+                          </p>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-background px-2 py-1 text-[11px] font-medium">
+                          {STATUS_LABEL[v.status] ?? "Planerat"}
+                        </span>
                       </div>
-                      <Button variant="ghost" size="sm" onClick={() => del.mutate(v.id)}>
-                        Ta bort
-                      </Button>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {v.status === "planerad" ? (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => checkIn.mutate(v.id)}
+                          >
+                            Checka in
+                          </Button>
+                        ) : null}
+                        {v.status === "pagar" ? (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => checkOut.mutate(v.id)}
+                          >
+                            Checka ut
+                          </Button>
+                        ) : null}
+                        {v.status !== "uteblivet" && v.status !== "utfort" ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => markMissed.mutate(v.id)}
+                          >
+                            Uteblivet
+                          </Button>
+                        ) : null}
+                        <Button variant="ghost" size="sm" onClick={() => del.mutate(v.id)}>
+                          Ta bort
+                        </Button>
+                      </div>
                     </li>
                   ))}
                 </ul>
               )}
+            </div>
+          );
+        })}
+      </div>
             </div>
           );
         })}
