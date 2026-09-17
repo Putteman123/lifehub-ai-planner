@@ -407,7 +407,9 @@ export const listSchedule = createServerFn({ method: "GET" })
     const org = await requireOrg(context as Ctx, data.slug);
     const { data: visits } = await context.supabase
       .from("care_visits")
-      .select("id, title, starts_at, ends_at, status, note, client_id, staff_id")
+      .select(
+        "id, title, starts_at, ends_at, status, note, client_id, staff_id, checkin_at, checkout_at, travel_meters, deviation",
+      )
       .eq("org_id", org.id)
       .gte("starts_at", data.from)
       .lt("starts_at", data.to)
