@@ -221,17 +221,17 @@ function ReportsPage() {
                   ? `${Math.round(100 - (totals.lateStarts / totals.visits) * 100)} %`
                   : "–"
               }
-              hint={`${totals.lateStarts} sena starter · ${q.data.deviations} avvikelser`}
+              hint={`${totals.lateStarts} sena starter · ${data.deviations} avvikelser`}
             />
           </section>
 
           <section className="rounded-3xl border border-border/70 bg-card p-5">
             <h2 className="font-display text-lg font-semibold">Besök per dag</h2>
-            {q.data.days.length === 0 ? (
+            {data.days.length === 0 ? (
               <p className="mt-2 text-sm text-muted-foreground">Inga besök i perioden.</p>
             ) : (
               <div className="mt-3 flex h-32 items-end gap-1">
-                {q.data.days.map((d) => (
+                {data.days.map((d) => (
                   <div key={d.day} className="flex-1" title={`${d.day}: ${d.visits} besök`}>
                     <div
                       className="rounded-t bg-primary/70"
@@ -243,8 +243,8 @@ function ReportsPage() {
             )}
           </section>
 
-          <ReportTable title="Per medarbetare" rows={q.data.staff} />
-          <ReportTable title="Per brukare" rows={q.data.clients} />
+          <ReportTable title="Per medarbetare" rows={data.staff} />
+          <ReportTable title="Per brukare" rows={data.clients} />
         </>
       )}
     </div>
