@@ -64,12 +64,66 @@ export const getAdminOrg = createServerFn({ method: "GET" })
       .eq("org_id", org.id)
       .eq("status", "pending");
 
+    // Mätbara siffror för demo och uppföljning: senaste 30 dagarna.
+    const since = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString();
+    const { data: visitRows } = await context.supabase
+      .from("care_visits")
+      .select("id, client_id, staff_id, starts_at, ends_at, status, travel_meters, deviation")
+      .eq("org_id", org.id)
+      .gte("starts_at", since);
+
+    type VisitRow = {
+      id: string;
+      client_id: string | null;
+      staff_id: string | null;
+      starts_at: string;
+      ends_at: string;
+      status: string;
+      travel_meters: number | null;
+      deviation: string | null;
+    };
+    const visits = (visitRows ?? []) as VisitRow[];
+
+    const blank = () => ({
+      visits: 0,
+      done: 0,
+      missed: 0,
+      planned: 0,
+      minutes: 0,
+      meters: 0,
+      deviations: 0,
+    });
+    type Stat = ReturnType<typeof blank>;
+    const staffStats: Record<string, Stat> = {};
+    const clientStats: Record<string, Stat> = {};
+    const total = blank();
+
+    for (const v of visits) {
+      const minutes = Math.max(
+        0,
+        Math.round((new Date(v.ends_at).getTime() - new Date(v.starts_at).getTime()) / 60000),
+      );
+      const apply = (s: Stat) => {
+        s.visits += 1;
+        s.minutes += minutes;
+        s.meters += v.travel_meters ?? 0;
+        if (v.status === "utfort") s.done += 1;
+        else if (v.status === "uteblivet") s.missed += 1;
+        else s.planned += 1;
+        if (v.deviation) s.deviations += 1;
+      };
+      apply(total);
+      if (v.staff_id) apply((staffStats[v.staff_id] ??= blank()));
+      if (v.client_id) apply((clientStats[v.client_id] ??= blank()));
+    }
+
     return {
       org,
       modules: (modules ?? []).filter((m: { enabled: boolean }) => m.enabled).map((m: { module: string }) => m.module),
       members: members ?? [],
       clients: clients ?? [],
       invites: invites ?? [],
+      stats: { total, staff: staffStats, clients: clientStats, days: 30 },
     };
   });
 

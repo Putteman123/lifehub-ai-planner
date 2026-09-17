@@ -5,3 +5,8 @@
 - [ ] Introfilm som laddningssida
 - [ ] Andrea med vårdkontext
 - [ ] Buggtest + versionsmärkning Alfa 1.0
+
+## Alfa 1.0 demo
+- [x] Systemnamn Alfa 1.0 genomgående
+- [x] Mätbara siffror på personal, brukare och besök i verksamhetsfliken
+- [x] Delbar demolänk till Alfa Demo med pinkod 0000

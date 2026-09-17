@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { StatGrid, StatLine, emptyStat, type CareStat } from "@/components/care/CareStats";
 import { getAdminOrg, saveClient } from "@/lib/care-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/v/f/$slug/brukare/")({
@@ -90,6 +91,9 @@ function ClientsPage() {
   if (q.isLoading) return <p className="text-sm text-muted-foreground">Hämtar…</p>;
   if (q.error) return <p className="text-sm text-destructive">{(q.error as Error).message}</p>;
 
+  const stats = q.data?.stats;
+  const clientStats = (stats?.clients ?? {}) as Record<string, CareStat>;
+
   return (
     <div className="space-y-6">
       <header className="flex items-center justify-between gap-3">
@@ -107,6 +111,8 @@ function ClientsPage() {
           Lägg till
         </Button>
       </header>
+
+      {stats ? <StatGrid stat={stats.total as CareStat} days={stats.days} /> : null}
 
       <Input
         placeholder="Sök brukare"
@@ -129,6 +135,7 @@ function ClientsPage() {
                   {c.address ?? "Ingen adress"}
                   {c.phone ? ` · ${c.phone}` : ""}
                 </p>
+                <StatLine stat={clientStats[c.id] ?? emptyStat} />
               </div>
               <Button asChild variant="ghost" size="sm">
                 <Link to="/v/f/$slug/brukare/$clientId" params={{ slug, clientId: c.id }}>

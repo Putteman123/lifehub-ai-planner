@@ -31,6 +31,7 @@ import { Route as AuthenticatedPlatserRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedVRouteImport } from './routes/_authenticated/v'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiTtsRouteImport } from './routes/api/tts'
+import { Route as DemoSlugRouteImport } from './routes/demo.$slug'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as VardIndexRouteImport } from './routes/vard.index'
 import { Route as VardBrukareRouteImport } from './routes/vard.brukare'
@@ -168,6 +169,11 @@ const ApiChatRoute = ApiChatRouteImport.update({
 const ApiTtsRoute = ApiTtsRouteImport.update({
   id: '/api/tts',
   path: '/api/tts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoSlugRoute = DemoSlugRouteImport.update({
+  id: '/demo/$slug',
+  path: '/demo/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
@@ -340,6 +346,7 @@ export interface FileRoutesByFullPath {
   '/v': typeof AuthenticatedVRouteWithChildren
   '/api/chat': typeof ApiChatRoute
   '/api/tts': typeof ApiTtsRoute
+  '/demo/$slug': typeof DemoSlugRoute
   '/invite/$token': typeof InviteTokenRoute
   '/vard/brukare': typeof VardBrukareRoute
   '/vard/kommun': typeof VardKommunRoute
@@ -388,6 +395,7 @@ export interface FileRoutesByTo {
   '/platser': typeof AuthenticatedPlatserRoute
   '/api/chat': typeof ApiChatRoute
   '/api/tts': typeof ApiTtsRoute
+  '/demo/$slug': typeof DemoSlugRoute
   '/invite/$token': typeof InviteTokenRoute
   '/vard/brukare': typeof VardBrukareRoute
   '/vard/kommun': typeof VardKommunRoute
@@ -439,6 +447,7 @@ export interface FileRoutesById {
   '/_authenticated/v': typeof AuthenticatedVRouteWithChildren
   '/api/chat': typeof ApiChatRoute
   '/api/tts': typeof ApiTtsRoute
+  '/demo/$slug': typeof DemoSlugRoute
   '/invite/$token': typeof InviteTokenRoute
   '/vard/brukare': typeof VardBrukareRoute
   '/vard/kommun': typeof VardKommunRoute
@@ -491,6 +500,7 @@ export interface FileRouteTypes {
     | '/v'
     | '/api/chat'
     | '/api/tts'
+    | '/demo/$slug'
     | '/invite/$token'
     | '/vard/brukare'
     | '/vard/kommun'
@@ -539,6 +549,7 @@ export interface FileRouteTypes {
     | '/platser'
     | '/api/chat'
     | '/api/tts'
+    | '/demo/$slug'
     | '/invite/$token'
     | '/vard/brukare'
     | '/vard/kommun'
@@ -589,6 +600,7 @@ export interface FileRouteTypes {
     | '/_authenticated/v'
     | '/api/chat'
     | '/api/tts'
+    | '/demo/$slug'
     | '/invite/$token'
     | '/vard/brukare'
     | '/vard/kommun'
@@ -628,6 +640,7 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiTtsRoute: typeof ApiTtsRoute
+  DemoSlugRoute: typeof DemoSlugRoute
   InviteTokenRoute: typeof InviteTokenRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -791,6 +804,13 @@ declare module '@tanstack/react-router' {
       path: '/api/tts'
       fullPath: '/api/tts'
       preLoaderRoute: typeof ApiTtsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/$slug': {
+      id: '/demo/$slug'
+      path: '/demo/$slug'
+      fullPath: '/demo/$slug'
+      preLoaderRoute: typeof DemoSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invite/$token': {
@@ -1100,6 +1120,7 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   ApiChatRoute: ApiChatRoute,
   ApiTtsRoute: ApiTtsRoute,
+  DemoSlugRoute: DemoSlugRoute,
   InviteTokenRoute: InviteTokenRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,

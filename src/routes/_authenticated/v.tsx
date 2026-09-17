@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 
 import careLogo from "@/assets/care-logo.png";
-import { APP_VERSION } from "@/lib/nav-theme";
+import { APP_NAME, APP_VERSION } from "@/lib/nav-theme";
 import { listMyAdminOrgs } from "@/lib/care-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/v")({
@@ -24,9 +24,9 @@ function CareAppLayout() {
       <header className="border-b border-border/70 bg-background/85 backdrop-blur">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3 px-4 py-3">
           <img src={careLogo} alt="" width={32} height={32} className="size-8" />
-          <span className="font-display font-semibold">LifeHub Vård</span>
+          <span className="font-display font-semibold">{APP_NAME} Vård</span>
           <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-secondary-foreground">
-            Alfa 1.0
+            {APP_VERSION}
           </span>
           <nav className="ml-auto flex flex-wrap items-center gap-1">
             <Item to="/v" label="Översikt" exact />
@@ -49,7 +49,7 @@ function CareAppLayout() {
         <Outlet />
       </main>
       <footer className="mx-auto max-w-5xl px-4 pb-10 text-xs text-muted-foreground">
-        LifeHub Vård · version {APP_VERSION}
+        Alfa Vård · version {APP_VERSION}
       </footer>
     </div>
   );

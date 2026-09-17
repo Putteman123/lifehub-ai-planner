@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Lock } from "lucide-react";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { CARE_SUBNAV, NAV_GROUPS, NAV_ITEMS } from "@/lib/nav-theme";
+import { APP_NAME, CARE_SUBNAV, NAV_GROUPS, NAV_ITEMS } from "@/lib/nav-theme";
 
 /** Flytande vertikal meny längs vänsterkanten – endast surfplatta och dator. */
 export function FloatingNav({ onLock }: { onLock: () => void }) {
@@ -78,7 +78,7 @@ export function MobileNav({
           }}
         >
           <SheetHeader className="px-5 pb-2 pt-5 text-left">
-            <SheetTitle className="text-lg">LifeHub AI</SheetTitle>
+            <SheetTitle className="text-lg">LifeHub AI · {APP_NAME}</SheetTitle>
           </SheetHeader>
 
           <nav aria-label="Huvudmeny" className="flex-1 space-y-4 overflow-y-auto px-3 pb-3">

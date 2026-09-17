@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { moduleLabel } from "@/lib/care";
+import { StatGrid, StatLine, emptyStat, type CareStat } from "@/components/care/CareStats";
 import { getAdminOrg, removeStaff, saveStaff } from "@/lib/care-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/v/f/$slug/")({
@@ -118,6 +119,8 @@ function CompanyHome() {
   const org = q.data!.org;
   const modules = q.data?.modules ?? [];
   const clientCount = (q.data?.clients ?? []).length;
+  const stats = q.data?.stats;
+  const staffStats = (stats?.staff ?? {}) as Record<string, CareStat>;
 
   return (
     <div className="space-y-8">
@@ -128,6 +131,8 @@ function CompanyHome() {
           {modules.length > 0 ? ` · ${modules.map(moduleLabel).join(", ")}` : ""}
         </p>
       </header>
+
+      {stats ? <StatGrid stat={stats.total as CareStat} days={stats.days} /> : null}
 
       <Input
         placeholder="Sök personal"
@@ -161,9 +166,11 @@ function CompanyHome() {
                   <p className="font-medium">{m.display_name}</p>
                   <p className="truncate text-sm text-muted-foreground">
                     {m.role === "org_admin" ? "Verksamhetsadmin" : "Personal"}
+                    {m.employment ? ` · ${m.employment}` : ""}
+                    {m.work_hours ? ` · ${m.work_hours}` : ""}
                     {m.phone ? ` · ${m.phone}` : ""}
-                    {m.email ? ` · ${m.email}` : ""}
                   </p>
+                  <StatLine stat={staffStats[m.id] ?? emptyStat} />
                 </div>
                 <Button asChild variant="ghost" size="sm">
                   <Link to="/v/f/$slug/personal/$memberId" params={{ slug, memberId: m.id }}>

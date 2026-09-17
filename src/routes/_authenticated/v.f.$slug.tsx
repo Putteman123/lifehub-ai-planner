@@ -1,7 +1,28 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
 import { DemoRoleSwitcher } from "@/components/care/DemoRoleSwitcher";
 import { DEMO_ROLE_TABS, DemoRoleProvider, demoRoleLabel, useDemoRole } from "@/lib/demo-role";
+
+/** Kopierar den publika demolänken (pinkod 0000) till urklipp. */
+function ShareDemoButton({ slug }: { slug: string }) {
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => {
+        const url = `${window.location.origin}/demo/${slug}`;
+        void navigator.clipboard
+          .writeText(url)
+          .then(() => toast.success("Demolänk kopierad – pinkod 0000."))
+          .catch(() => toast.error(url));
+      }}
+    >
+      Dela demo
+    </Button>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/v/f/$slug")({
   component: CompanyAdminLayoutWrapper,
@@ -47,7 +68,10 @@ function CompanyAdminLayout() {
             <Tab key={tab.key} to={tab.to} slug={slug} label={tab.label} exact={tab.exact === true} />
           ))}
         </nav>
-        <DemoRoleSwitcher />
+        <div className="flex items-center gap-2">
+          {slug === "alfa-demo" ? <ShareDemoButton slug={slug} /> : null}
+          <DemoRoleSwitcher />
+        </div>
       </div>
 
       {role !== "admin" ? (
