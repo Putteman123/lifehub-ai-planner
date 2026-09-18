@@ -12,7 +12,12 @@ function ShareDemoButton({ slug }: { slug: string }) {
       variant="outline"
       size="sm"
       onClick={() => {
-        const url = `${window.location.origin}/demo/${slug}`;
+        // På en företagssubdomän pekar origin fel – använd alltid huvuddomänen.
+        const { protocol, host } = window.location;
+        const base = host.endsWith(".mellberg.online")
+          ? `${protocol}//mellberg.online`
+          : `${protocol}//${host}`;
+        const url = `${base}/demo/${slug}`;
         void navigator.clipboard
           .writeText(url)
           .then(() => toast.success("Demolänk kopierad – pinkod 0000."))
