@@ -10,5 +10,5 @@
 - [x] Systemnamn Alfa 1.0 genomgående
 - [x] Mätbara siffror på personal, brukare och besök i verksamhetsfliken
 - [x] Delbar demolänk till Alfa Demo med pinkod 0000
-- [ ] AI-snabbval med ikoner: nästa besök, dagens schema, kalenderbesök och ring kontoret
-- [ ] Besöksrapport per brukare med planerade, utförda och uteblivna besök
+- [x] AI-snabbval med ikoner: nästa besök, dagens schema, kalenderbesök och ring kontoret
+- [x] Besöksrapport per brukare med planerade, utförda och uteblivna besök
