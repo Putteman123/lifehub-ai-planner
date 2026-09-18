@@ -304,7 +304,7 @@ function ClientVisitReport({ visits }: { visits: VisitReportRow[] }) {
                 </h3>
                 <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                   <span className="inline-flex items-center gap-1"><Clock3 className="size-3.5" />{planned} planerade</span>
-                  <span className="inline-flex items-center gap-1 text-success"><CheckCircle2 className="size-3.5" />{done} utförda</span>
+                  <span className="inline-flex items-center gap-1 text-primary"><CheckCircle2 className="size-3.5" />{done} utförda</span>
                   <span className="inline-flex items-center gap-1 text-destructive"><XCircle className="size-3.5" />{missed} uteblivna</span>
                 </div>
               </header>
