@@ -19,7 +19,7 @@ export type GoogleService = keyof typeof GOOGLE_CONNECTORS;
 
 /** Egen Google Maps-nyckel (fungerar på alla domäner, t.ex. mellberg.online). */
 export function ownMapsKey() {
-  return process.env["GOOGLE_MAPS_OWN_KEY"] ?? null;
+  return process.env["GOOGLE_MAPS_OWN_KEY"] ?? process.env["GOOGLE_API_KEY"] ?? null;
 }
 
 export function hasGoogle(service: GoogleService) {
