@@ -1,6 +1,6 @@
 /**
  * Firebase AI (Andrea) – använder samma Google-nyckel som kartorna.
- * Nyckeln ligger i Project Settings som GOOGLE_MAPS_OWN_KEY och hämtas
+ * Nyckeln ligger i Project Settings (GOOGLE_API_KEY eller GOOGLE_MAPS_OWN_KEY) och hämtas
  * säkert från servern första gången Andrea används.
  */
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
@@ -21,7 +21,7 @@ async function resolveApiKey(): Promise<string> {
   const shared = await ensureOwnMapsKey();
   if (!shared) {
     throw new Error(
-      "Ingen Google-nyckel hittades. Lägg in din nyckel som GOOGLE_MAPS_OWN_KEY i projektinställningarna.",
+      "Ingen Google-nyckel hittades. Lägg in din nyckel som GOOGLE_API_KEY i projektinställningarna.",
     );
   }
   return shared;
