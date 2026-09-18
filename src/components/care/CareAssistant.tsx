@@ -1,19 +1,23 @@
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Loader2, Send, Sparkles, Video } from "lucide-react";
+import { CalendarCheck, CalendarClock, CalendarDays, HeartPulse, Loader2, PhoneCall, Send } from "lucide-react";
 import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
 import { askCareAssistant } from "@/lib/care-assistant.functions";
 import { startCareMeet } from "@/lib/care-messages.functions";
 import { demoRoleLabel, useDemoRole } from "@/lib/demo-role";
 
 const QUICK = [
-  "När kommer nästa besök?",
-  "Hur ser min dag ut?",
-  "Vilka mediciner ska tas idag?",
-  "Vad hände vid senaste besöket?",
-];
+  { label: "Nästa besök", question: "När kommer nästa besök?", icon: CalendarClock },
+  { label: "Dagens schema", question: "Hur ser min dag ut med besök och mediciner?", icon: CalendarDays },
+  {
+    label: "Besök i kalender",
+    question: "Vilka besök finns i min kalender de kommande sju dagarna?",
+    icon: CalendarCheck,
+  },
+] as const;
 
 /**
  * Andrea i vårddelen – svarar på frågor om besök, dag och mediciner
@@ -55,41 +59,40 @@ export function CareAssistant({ slug, clientId }: { slug: string; clientId?: str
   return (
     <section className="rounded-3xl border border-border/70 bg-card p-4">
       <header className="mb-3 flex items-center gap-2">
-        <span className="flex size-9 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-          <Sparkles className="size-4" />
+        <span className="flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <HeartPulse className="size-4" />
         </span>
         <div className="flex-1">
           <h2 className="font-display text-base font-semibold">Fråga Andrea</h2>
           <p className="text-xs text-muted-foreground">Besök, dagens plan och mediciner.</p>
         </div>
-        {clientId ? (
-          <button
-            type="button"
-            onClick={() => meetM.mutate()}
-            disabled={meetM.isPending}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-secondary px-3 text-xs font-medium text-secondary-foreground"
-          >
-            {meetM.isPending ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Video className="size-4" />
-            )}
-            Ring kontoret
-          </button>
-        ) : null}
       </header>
 
-      <div className="mb-3 flex flex-wrap gap-2">
-        {QUICK.map((q) => (
-          <button
-            key={q}
+      <div className="mb-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
+        {QUICK.map(({ label, question: quickQuestion, icon: Icon }) => (
+          <Button
+            key={label}
             type="button"
-            onClick={() => submit(q)}
-            className="rounded-full border border-border/70 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-secondary"
+            variant="outline"
+            onClick={() => submit(quickQuestion)}
+            disabled={askM.isPending}
+            className="h-auto min-h-16 whitespace-normal px-3 py-3 text-left"
           >
-            {q}
-          </button>
+            <Icon className="size-5 text-primary" />
+            <span className="leading-tight">{label}</span>
+          </Button>
         ))}
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => meetM.mutate()}
+          disabled={!clientId || meetM.isPending}
+          className="h-auto min-h-16 whitespace-normal px-3 py-3 text-left"
+          title={clientId ? "Starta videosamtal med kontoret" : "Välj en brukare först"}
+        >
+          {meetM.isPending ? <Loader2 className="size-5 animate-spin" /> : <PhoneCall className="size-5 text-primary" />}
+          <span className="leading-tight">Ring kontoret</span>
+        </Button>
       </div>
 
       <form
@@ -105,14 +108,14 @@ export function CareAssistant({ slug, clientId }: { slug: string; clientId?: str
           placeholder="Skriv din fråga…"
           className="min-h-10 flex-1 rounded-xl border border-border/70 bg-background px-3 text-sm"
         />
-        <button
+        <Button
           type="submit"
           disabled={askM.isPending}
-          className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-medium text-primary-foreground"
+          className="min-h-10 px-3"
         >
           {askM.isPending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
           Fråga
-        </button>
+        </Button>
       </form>
 
       {answer ? (

@@ -372,6 +372,16 @@ export type ReportRow = {
   lateStarts: number;
 };
 
+export type VisitReportRow = {
+  id: string;
+  clientId: string;
+  clientName: string;
+  title: string;
+  startsAt: string;
+  endsAt: string;
+  status: string;
+};
+
 function emptyRow(id: string, name: string): ReportRow {
   return {
     id,
@@ -410,7 +420,7 @@ export const getCareReports = createServerFn({ method: "GET" })
     let query = context.supabase
       .from("care_visits")
       .select(
-        "id, starts_at, ends_at, status, client_id, staff_id, checkin_at, checkout_at, travel_meters, travel_seconds, deviation",
+        "id, title, starts_at, ends_at, status, client_id, staff_id, checkin_at, checkout_at, travel_meters, travel_seconds, deviation",
       )
       .eq("org_id", org.id)
       .gte("starts_at", fromIso)
@@ -513,6 +523,17 @@ export const getCareReports = createServerFn({ method: "GET" })
       staff: [...byStaff.values()].sort((a, b) => b.visits - a.visits),
       clients: [...byClient.values()].sort((a, b) => b.visits - a.visits),
       days: [...byDay.values()].sort((a, b) => a.day.localeCompare(b.day)),
+      visitDetails: visits.map(
+        (visit): VisitReportRow => ({
+          id: String(visit['id']),
+          clientId: String(visit['client_id']),
+          clientName: clientName.get(String(visit['client_id'])) ?? "Okänd brukare",
+          title: String(visit['title'] ?? "Besök"),
+          startsAt: String(visit['starts_at']),
+          endsAt: String(visit['ends_at']),
+          status: String(visit['status'] ?? "planerad"),
+        }),
+      ),
       staffList: (staffRows ?? []) as Array<{ id: string; display_name: string | null }>,
       clientList: (clientRows ?? []) as Array<{ id: string; name: string }>,
     };
