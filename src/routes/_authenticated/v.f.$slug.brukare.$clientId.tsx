@@ -5,6 +5,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { CareClientChat } from "@/components/care/CareClientChat";
+import { CareAssistant } from "@/components/care/CareAssistant";
+import { CareAvatar, CareNavigateButton } from "@/components/care/CareUI";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -210,7 +212,9 @@ function ClientDetail() {
           ← Tillbaka
         </Link>
         <div className="mt-2 flex flex-wrap items-center gap-3">
+          <CareAvatar name={client.name} />
           <h1 className="font-display text-2xl font-semibold tracking-tight">{client.name}</h1>
+          <CareNavigateButton address={client.address} size="xs" />
           <Button
             variant="outline"
             size="sm"
