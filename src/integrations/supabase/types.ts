@@ -434,6 +434,7 @@ export type Database = {
           created_at: string
           given_at: string
           given_by: string | null
+          given_role: string | null
           id: string
           medication_id: string
           note: string | null
@@ -444,6 +445,7 @@ export type Database = {
           created_at?: string
           given_at?: string
           given_by?: string | null
+          given_role?: string | null
           id?: string
           medication_id: string
           note?: string | null
@@ -454,6 +456,7 @@ export type Database = {
           created_at?: string
           given_at?: string
           given_by?: string | null
+          given_role?: string | null
           id?: string
           medication_id?: string
           note?: string | null
@@ -694,6 +697,8 @@ export type Database = {
         Row: {
           created_at: string
           done_at: string | null
+          done_by: string | null
+          done_role: string | null
           id: string
           is_done: boolean
           org_id: string
@@ -706,6 +711,8 @@ export type Database = {
         Insert: {
           created_at?: string
           done_at?: string | null
+          done_by?: string | null
+          done_role?: string | null
           id?: string
           is_done?: boolean
           org_id: string
@@ -718,6 +725,8 @@ export type Database = {
         Update: {
           created_at?: string
           done_at?: string | null
+          done_by?: string | null
+          done_role?: string | null
           id?: string
           is_done?: boolean
           org_id?: string

@@ -6,6 +6,10 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CareSectionHeader } from "@/components/care/CareUI";
+import careMedicineImage from "@/assets/care-medicine.jpg";
+import { Check, Pill } from "lucide-react";
+import { demoRoleLabel, useDemoRole } from "@/lib/demo-role";
 import { listOrgMedications, logMedicationEvent } from "@/lib/care-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/v/f/$slug/medicin")({
@@ -37,6 +41,7 @@ function fmt(iso: string) {
 function MedicationPage() {
   const { slug } = Route.useParams();
   const qc = useQueryClient();
+  const { role } = useDemoRole();
   const fetchMeds = useServerFn(listOrgMedications);
   const logGiven = useServerFn(logMedicationEvent);
   const [search, setSearch] = useState("");
@@ -47,7 +52,8 @@ function MedicationPage() {
   });
 
   const give = useMutation({
-    mutationFn: (medicationId: string) => logGiven({ data: { slug, medicationId } }),
+    mutationFn: (medicationId: string) =>
+      logGiven({ data: { slug, medicationId, role: demoRoleLabel(role) } }),
     onSuccess: () => {
       toast.success("Noterat som given.");
       void qc.invalidateQueries({ queryKey: ["care-org-medications", slug] });
@@ -56,9 +62,15 @@ function MedicationPage() {
   });
 
   const lastGiven = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const e of q.data?.events ?? []) {
-      if (!map.has(e.medication_id)) map.set(e.medication_id, e.given_at);
+    const map = new Map<string, { at: string; role: string | null }>();
+    for (const e of (q.data?.events ?? []) as {
+      medication_id: string;
+      given_at: string;
+      given_role?: string | null;
+    }[]) {
+      if (!map.has(e.medication_id)) {
+        map.set(e.medication_id, { at: e.given_at, role: e.given_role ?? null });
+      }
     }
     return map;
   }, [q.data]);
@@ -77,12 +89,12 @@ function MedicationPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">Medicin</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {meds.length} mediciner hos {clients.length} brukare
-        </p>
-      </header>
+      <CareSectionHeader
+        icon={<Pill className="size-5" />}
+        title="Medicin"
+        subtitle={`${meds.length} mediciner hos ${clients.length} brukare`}
+        image={careMedicineImage}
+      />
 
       <Input
         placeholder="Sök medicin eller brukare"
@@ -124,11 +136,15 @@ function MedicationPage() {
                       {m.instructions ? ` · ${m.instructions}` : ""}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {lastGiven.has(m.id) ? `Senast given ${fmt(lastGiven.get(m.id)!)}` : "Ingen logg ännu"}
+                      {lastGiven.has(m.id)
+                        ? `Senast given ${fmt(lastGiven.get(m.id)!.at)}${
+                            lastGiven.get(m.id)!.role ? ` · ${lastGiven.get(m.id)!.role}` : ""
+                          }`
+                        : "Ingen logg ännu"}
                     </p>
                   </div>
                   <Button size="sm" disabled={give.isPending} onClick={() => give.mutate(m.id)}>
-                    Given nu
+                    <Check className="size-4" /> Given nu
                   </Button>
                 </li>
               ))}

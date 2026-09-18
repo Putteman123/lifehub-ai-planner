@@ -55,7 +55,7 @@ export const getAdminOrg = createServerFn({ method: "GET" })
       .order("display_name");
     const { data: clients } = await context.supabase
       .from("care_clients")
-      .select("id, name, address, phone, is_active, personal_number, door_code")
+      .select("id, name, address, phone, is_active, personal_number, door_code, lat, lng")
       .eq("org_id", org.id)
       .order("name");
     const { data: invites } = await context.supabase
@@ -291,7 +291,7 @@ export const getClientDetail = createServerFn({ method: "GET" })
     if (medIds.length > 0) {
       const { data: rows } = await context.supabase
         .from("care_medication_events")
-        .select("id, medication_id, given_at, note")
+        .select("id, medication_id, given_at, note, given_role")
         .in("medication_id", medIds)
         .order("given_at", { ascending: false })
         .limit(30);
@@ -568,10 +568,39 @@ export const listVisitTasks = createServerFn({ method: "GET" })
     await requireOrg(context as Ctx, data.slug);
     const { data: rows } = await context.supabase
       .from("care_visit_tasks")
-      .select("id, title, is_done, sort_order")
+      .select("id, title, is_done, sort_order, done_at, done_by, done_role")
       .eq("visit_id", data.visitId)
       .order("sort_order");
     return rows ?? [];
+  });
+
+/** Markerar en insats som utförd (eller ångrar den). Alla roller får kvittera. */
+export const setVisitTaskDone = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        slug: z.string(),
+        id: z.string().uuid(),
+        done: z.boolean(),
+        role: z.string().max(30).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const org = await requireOrg(context as Ctx, data.slug);
+    const { error } = await context.supabase
+      .from("care_visit_tasks")
+      .update({
+        is_done: data.done,
+        done_at: data.done ? new Date().toISOString() : null,
+        done_by: data.done ? context.userId : null,
+        done_role: data.done ? (data.role ?? null) : null,
+      })
+      .eq("id", data.id)
+      .eq("org_id", org.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
 
 export const addVisitTask = createServerFn({ method: "POST" })
@@ -697,6 +726,7 @@ export const logMedicationEvent = createServerFn({ method: "POST" })
       .object({
         slug: z.string(),
         medicationId: z.string().uuid(),
+        role: z.string().max(30).optional(),
         note: z.string().max(500).optional(),
       })
       .parse(d),
@@ -708,6 +738,7 @@ export const logMedicationEvent = createServerFn({ method: "POST" })
       medication_id: data.medicationId,
       given_at: new Date().toISOString(),
       given_by: context.userId,
+      given_role: data.role ?? null,
       note: blank(data.note),
     });
     if (error) throw new Error(error.message);
@@ -733,7 +764,7 @@ export const listOrgMedications = createServerFn({ method: "GET" })
       .order("name");
     const { data: events } = await context.supabase
       .from("care_medication_events")
-      .select("id, medication_id, given_at, note")
+      .select("id, medication_id, given_at, note, given_role")
       .eq("org_id", org.id)
       .order("given_at", { ascending: false })
       .limit(200);
