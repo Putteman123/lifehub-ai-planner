@@ -104,9 +104,9 @@ export function CareAvatar({ name, className = "" }: { name: string; className?:
 
 /** Bygger en Google Maps-navigering från koordinater eller adress. */
 export function careNavigationUrl(opts: {
-  lat?: number | null;
-  lng?: number | null;
-  address?: string | null;
+  lat?: number | null | undefined;
+  lng?: number | null | undefined;
+  address?: string | null | undefined;
 }) {
   const target =
     opts.lat != null && opts.lng != null
