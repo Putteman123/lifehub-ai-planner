@@ -79,6 +79,7 @@ function MedicationPage() {
   if (q.error) return <p className="text-sm text-destructive">{(q.error as Error).message}</p>;
 
   const clients = q.data?.clients ?? [];
+  const visibleClients = role === "client" || role === "relative" ? clients.slice(0, 1) : clients;
   const needle = search.trim().toLowerCase();
   const meds = (q.data?.medications ?? []).filter((m) =>
     needle
@@ -102,7 +103,7 @@ function MedicationPage() {
         onChange={(e) => setSearch(e.target.value)}
       />
 
-      {clients.map((client) => {
+      {visibleClients.map((client) => {
         const rows = meds.filter((m) => m.client_id === client.id);
         if (rows.length === 0) return null;
         return (
@@ -143,9 +144,11 @@ function MedicationPage() {
                         : "Ingen logg ännu"}
                     </p>
                   </div>
-                  <Button size="sm" disabled={give.isPending} onClick={() => give.mutate(m.id)}>
-                    <Check className="size-4" /> Given nu
-                  </Button>
+                  {role !== "relative" ? (
+                    <Button size="sm" disabled={give.isPending} onClick={() => give.mutate(m.id)}>
+                      <Check className="size-4" /> Given nu
+                    </Button>
+                  ) : null}
                 </li>
               ))}
             </ul>
