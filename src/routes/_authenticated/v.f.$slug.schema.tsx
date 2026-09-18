@@ -23,6 +23,9 @@ import {
   suggestSchedule,
 } from "@/lib/care-places.functions";
 import { formatDistance } from "@/lib/geo";
+import { CareStatusBadge } from "@/components/care/CareUI";
+import { CareVisitTasks } from "@/components/care/CareVisitTasks";
+import { ListChecks } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/v/f/$slug/schema")({
   head: () => ({
@@ -72,6 +75,7 @@ function SchedulePage() {
   const deleteVisit = useServerFn(removeVisit);
 
   const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
+  const [openTasks, setOpenTasks] = useState<string[]>([]);
   const weekEnd = useMemo(() => {
     const d = new Date(weekStart);
     d.setDate(d.getDate() + 7);
@@ -409,9 +413,7 @@ function SchedulePage() {
                             {v.travel_meters ? ` · ${formatDistance(v.travel_meters)} resa` : ""}
                           </p>
                         </div>
-                        <span className="shrink-0 rounded-full bg-background px-2 py-1 text-[11px] font-medium">
-                          {STATUS_LABEL[v.status] ?? "Planerat"}
-                        </span>
+                        <CareStatusBadge status={v.status} />
                       </div>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {v.status === "planerad" ? (
@@ -441,10 +443,29 @@ function SchedulePage() {
                             Uteblivet
                           </Button>
                         ) : null}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            setOpenTasks((prev) =>
+                              prev.includes(v.id)
+                                ? prev.filter((id) => id !== v.id)
+                                : [...prev, v.id],
+                            )
+                          }
+                        >
+                          <ListChecks className="size-4" />
+                          {openTasks.includes(v.id) ? "Dölj insatser" : "Insatser"}
+                        </Button>
                         <Button variant="ghost" size="sm" onClick={() => del.mutate(v.id)}>
                           Ta bort
                         </Button>
                       </div>
+                      {openTasks.includes(v.id) ? (
+                        <div className="mt-2">
+                          <CareVisitTasks slug={slug} visitId={v.id} />
+                        </div>
+                      ) : null}
                     </li>
                   ))}
                 </ul>
