@@ -46,7 +46,23 @@ function isH3SwallowedErrorBody(body: string): boolean {
 
 const ROOT_DOMAIN = "mellberg.online";
 const RESERVED_SUBDOMAINS = new Set(["www", "app", "api", "notify", "mail", "id-preview"]);
-const PASSTHROUGH_PREFIXES = ["/api", "/_", "/assets", "/favicon", "/manifest", "/sw.js", "/v/f/"];
+const PASSTHROUGH_PREFIXES = [
+  "/api",
+  "/_",
+  "/assets",
+  "/favicon",
+  "/manifest",
+  "/sw.js",
+  "/v/f/",
+  "/auth",
+  "/demo",
+  "/invite",
+  "/mcp",
+  "/.well-known",
+  "/.lovable",
+  "/lovable",
+  "/.mcp",
+];
 
 /** <kortnamn>.mellberg.online serves the company admin view at /v/f/<kortnamn>. */
 function rewriteCompanySubdomain(request: Request): Request {
