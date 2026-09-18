@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Check, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 
+import { Button } from "@/components/ui/button";
 import { listVisitTasks, setVisitTaskDone } from "@/lib/care-admin.functions";
 import { demoRoleLabel, useDemoRole } from "@/lib/demo-role";
 
@@ -72,19 +73,17 @@ export function CareVisitTasks({ slug, visitId }: { slug: string; visitId: strin
               </p>
             ) : null}
           </div>
-          <button
+          <Button
             type="button"
+            size="sm"
+            variant={t.is_done ? "secondary" : "default"}
             disabled={toggle.isPending}
             onClick={() => toggle.mutate(t)}
-            className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-xl px-3 text-xs font-medium transition-colors ${
-              t.is_done
-                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                : "bg-primary text-primary-foreground hover:opacity-90"
-            }`}
+            className="min-h-9 shrink-0"
           >
             <Check className="size-4" />
             {t.is_done ? "Utförd" : "Markera utförd"}
-          </button>
+          </Button>
         </li>
       ))}
     </ul>

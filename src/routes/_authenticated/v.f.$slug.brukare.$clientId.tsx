@@ -30,6 +30,7 @@ import {
   saveRelative,
   setRelativeConsent,
 } from "@/lib/care-admin.functions";
+import { useDemoRole } from "@/lib/demo-role";
 
 export const Route = createFileRoute("/_authenticated/v/f/$slug/brukare/$clientId")({
   head: () => ({
@@ -78,6 +79,7 @@ const emptyMed = { id: undefined as string | undefined, name: "", dose: "", time
 
 function ClientDetail() {
   const { slug, clientId } = Route.useParams();
+  const { role } = useDemoRole();
   const qc = useQueryClient();
   const fetchDetail = useServerFn(getClientDetail);
   const persistClient = useServerFn(saveClient);
@@ -215,7 +217,7 @@ function ClientDetail() {
           <CareAvatar name={client.name} />
           <h1 className="font-display text-2xl font-semibold tracking-tight">{client.name}</h1>
           <CareNavigateButton address={client.address} size="xs" />
-          <Button
+          {role === "admin" ? <Button
             variant="outline"
             size="sm"
             onClick={() => {
@@ -232,7 +234,7 @@ function ClientDetail() {
             }}
           >
             Ändra uppgifter
-          </Button>
+          </Button> : null}
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
           {[client.address, client.phone, client.personal_number].filter(Boolean).join(" · ") ||
@@ -250,7 +252,7 @@ function ClientDetail() {
 
       <CareClientChat clientId={clientId} />
 
-      <section className="space-y-3">
+      {role === "admin" ? <section className="space-y-3">
         <h2 className="font-display text-lg font-semibold">Anhöriga</h2>
         {relatives.length === 0 ? (
           <p className="text-sm text-muted-foreground">Inga anhöriga registrerade.</p>
@@ -340,7 +342,7 @@ function ClientDetail() {
             ) : null}
           </div>
         </div>
-      </section>
+      </section> : null}
 
       <section className="space-y-3">
         <h2 className="font-display text-lg font-semibold">Medicinlista</h2>
@@ -366,15 +368,15 @@ function ClientDetail() {
                       : "Ingen utdelning noterad"}
                   </p>
                 </div>
-                <Button
+                {role !== "relative" ? <Button
                   variant="outline"
                   size="sm"
                   disabled={givenMutation.isPending}
                   onClick={() => givenMutation.mutate(m.id)}
                 >
                   Given
-                </Button>
-                <Button
+                </Button> : null}
+                {role === "admin" ? <Button
                   variant="ghost"
                   size="sm"
                   onClick={() =>
@@ -388,15 +390,15 @@ function ClientDetail() {
                   }
                 >
                   Ändra
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => delMed.mutate(m.id)}>
+                </Button> : null}
+                {role === "admin" ? <Button variant="ghost" size="sm" onClick={() => delMed.mutate(m.id)}>
                   Ta bort
-                </Button>
+                </Button> : null}
               </li>
             ))}
           </ul>
         )}
-        <div className="grid gap-3 rounded-3xl border border-border/70 bg-card p-4 sm:grid-cols-2">
+        {role === "admin" ? <div className="grid gap-3 rounded-3xl border border-border/70 bg-card p-4 sm:grid-cols-2">
           <Input
             placeholder="Läkemedel"
             value={med.name}
@@ -430,7 +432,7 @@ function ClientDetail() {
               </Button>
             ) : null}
           </div>
-        </div>
+        </div> : null}
       </section>
 
       <section className="space-y-3">

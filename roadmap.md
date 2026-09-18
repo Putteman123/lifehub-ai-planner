@@ -12,3 +12,4 @@
 - [x] Delbar demolänk till Alfa Demo med pinkod 0000
 - [x] AI-snabbval med ikoner: nästa besök, dagens schema, kalenderbesök och ring kontoret
 - [x] Besöksrapport per brukare med planerade, utförda och uteblivna besök
+- [x] Säkerställ att alla byggda vårdfunktioner fungerar i Alfa Demo och i alla fyra demoroller

@@ -25,6 +25,8 @@ import {
 import { formatDistance } from "@/lib/geo";
 import { CareStatusBadge } from "@/components/care/CareUI";
 import { CareVisitTasks } from "@/components/care/CareVisitTasks";
+import { CareAssistant } from "@/components/care/CareAssistant";
+import { useDemoRole } from "@/lib/demo-role";
 import { ListChecks } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/v/f/$slug/schema")({
@@ -69,6 +71,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 function SchedulePage() {
   const { slug } = Route.useParams();
+  const { role } = useDemoRole();
   const qc = useQueryClient();
   const fetchSchedule = useServerFn(listSchedule);
   const persistVisit = useServerFn(saveVisit);
@@ -176,7 +179,7 @@ function SchedulePage() {
 
   const clients = (q.data?.clients ?? []) as { id: string; name: string }[];
   const staff = (q.data?.staff ?? []) as { id: string; display_name: string }[];
-  const visits = (q.data?.visits ?? []) as {
+  const allVisits = (q.data?.visits ?? []) as {
     id: string;
     title: string | null;
     starts_at: string;
@@ -188,6 +191,10 @@ function SchedulePage() {
     checkout_at: string | null;
     travel_meters: number | null;
   }[];
+  const demoClientId = clients[0]?.id;
+  const visits = role === "client" || role === "relative"
+    ? allVisits.filter((visit) => visit.client_id === demoClientId)
+    : allVisits;
 
   const nameOfClient = (id: string) => clients.find((c) => c.id === id)?.name ?? "Brukare";
   const nameOfStaff = (id: string | null) =>
@@ -230,7 +237,11 @@ function SchedulePage() {
         </Button>
       </header>
 
-      <div className="rounded-3xl border border-border/70 bg-card p-5">
+      {(role === "client" || role === "relative") && demoClientId ? (
+        <CareAssistant slug={slug} clientId={demoClientId} />
+      ) : null}
+
+      {role === "admin" ? <div className="rounded-3xl border border-border/70 bg-card p-5">
         <h2 className="font-display text-lg font-semibold">Nytt besök</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
@@ -301,9 +312,9 @@ function SchedulePage() {
             Lägg upp en brukare först under Personal & brukare.
           </p>
         ) : null}
-      </div>
+      </div> : null}
 
-      <section className="rounded-3xl border border-border/70 bg-card p-5">
+      {role === "admin" ? <section className="rounded-3xl border border-border/70 bg-card p-5">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1">
             <h2 className="font-display text-lg font-semibold">Smart fördelning</h2>
@@ -372,7 +383,7 @@ function SchedulePage() {
             </>
           )
         ) : null}
-      </section>
+      </section> : null}
 
       <div className="space-y-4">
         {DAYS.map((day, i) => {
@@ -416,7 +427,7 @@ function SchedulePage() {
                         <CareStatusBadge status={v.status} />
                       </div>
                       <div className="mt-2 flex flex-wrap gap-2">
-                        {v.status === "planerad" ? (
+                        {(role === "admin" || role === "staff") && v.status === "planerad" ? (
                           <Button
                             variant="secondary"
                             size="sm"
@@ -425,7 +436,7 @@ function SchedulePage() {
                             Checka in
                           </Button>
                         ) : null}
-                        {v.status === "pagar" ? (
+                        {(role === "admin" || role === "staff") && v.status === "pagar" ? (
                           <Button
                             variant="secondary"
                             size="sm"
@@ -434,7 +445,7 @@ function SchedulePage() {
                             Checka ut
                           </Button>
                         ) : null}
-                        {v.status !== "uteblivet" && v.status !== "utfort" ? (
+                        {(role === "admin" || role === "staff") && v.status !== "uteblivet" && v.status !== "utfort" ? (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -457,9 +468,11 @@ function SchedulePage() {
                           <ListChecks className="size-4" />
                           {openTasks.includes(v.id) ? "Dölj insatser" : "Insatser"}
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => del.mutate(v.id)}>
-                          Ta bort
-                        </Button>
+                        {role === "admin" ? (
+                          <Button variant="ghost" size="sm" onClick={() => del.mutate(v.id)}>
+                            Ta bort
+                          </Button>
+                        ) : null}
                       </div>
                       {openTasks.includes(v.id) ? (
                         <div className="mt-2">

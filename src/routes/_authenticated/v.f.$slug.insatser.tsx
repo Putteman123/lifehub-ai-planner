@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { listTemplates, removeTemplate, saveTemplate } from "@/lib/care-admin.functions";
+import { useDemoRole } from "@/lib/demo-role";
 
 export const Route = createFileRoute("/_authenticated/v/f/$slug/insatser")({
   head: () => ({
@@ -30,6 +31,7 @@ type Template = {
 
 function TemplatesPage() {
   const { slug } = Route.useParams();
+  const { role } = useDemoRole();
   const qc = useQueryClient();
   const fetchTemplates = useServerFn(listTemplates);
   const save = useServerFn(saveTemplate);
@@ -97,7 +99,7 @@ function TemplatesPage() {
         </p>
       </div>
 
-      <div className="rounded-3xl border border-border/70 bg-card p-5">
+      {role === "admin" ? <div className="rounded-3xl border border-border/70 bg-card p-5">
         <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
           <Input placeholder="Namn, t.ex. Dusch" value={title} onChange={(e) => setTitle(e.target.value)} />
           <Input
@@ -128,7 +130,7 @@ function TemplatesPage() {
             </Button>
           ) : null}
         </div>
-      </div>
+      </div> : null}
 
       {templates.length === 0 ? (
         <p className="text-sm text-muted-foreground">Inga insatser upplagda ännu.</p>
@@ -145,21 +147,25 @@ function TemplatesPage() {
                   {t.default_minutes} min{t.description ? ` · ${t.description}` : ""}
                 </p>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setEditId(t.id);
-                  setTitle(t.title);
-                  setDescription(t.description ?? "");
-                  setMinutes(String(t.default_minutes));
-                }}
-              >
-                Ändra
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => del.mutate(t.id)}>
-                Ta bort
-              </Button>
+              {role === "admin" ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setEditId(t.id);
+                      setTitle(t.title);
+                      setDescription(t.description ?? "");
+                      setMinutes(String(t.default_minutes));
+                    }}
+                  >
+                    Ändra
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => del.mutate(t.id)}>
+                    Ta bort
+                  </Button>
+                </>
+              ) : null}
             </li>
           ))}
         </ul>
