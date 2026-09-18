@@ -62,9 +62,15 @@ function MedicationPage() {
   });
 
   const lastGiven = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const e of q.data?.events ?? []) {
-      if (!map.has(e.medication_id)) map.set(e.medication_id, e.given_at);
+    const map = new Map<string, { at: string; role: string | null }>();
+    for (const e of (q.data?.events ?? []) as {
+      medication_id: string;
+      given_at: string;
+      given_role?: string | null;
+    }[]) {
+      if (!map.has(e.medication_id)) {
+        map.set(e.medication_id, { at: e.given_at, role: e.given_role ?? null });
+      }
     }
     return map;
   }, [q.data]);
@@ -83,12 +89,12 @@ function MedicationPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">Medicin</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {meds.length} mediciner hos {clients.length} brukare
-        </p>
-      </header>
+      <CareSectionHeader
+        icon={<Pill className="size-5" />}
+        title="Medicin"
+        subtitle={`${meds.length} mediciner hos ${clients.length} brukare`}
+        image={careMedicineImage}
+      />
 
       <Input
         placeholder="Sök medicin eller brukare"
