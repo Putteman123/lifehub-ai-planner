@@ -246,6 +246,8 @@ function ClientDetail() {
         {client.notes ? <p className="mt-3 text-sm">{client.notes}</p> : null}
       </header>
 
+      <CareAssistant slug={slug} clientId={clientId} />
+
       <CareClientChat clientId={clientId} />
 
       <section className="space-y-3">
