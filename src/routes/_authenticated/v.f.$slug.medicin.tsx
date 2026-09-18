@@ -6,6 +6,10 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CareSectionHeader } from "@/components/care/CareUI";
+import careMedicineImage from "@/assets/care-medicine.jpg";
+import { Check, Pill } from "lucide-react";
+import { demoRoleLabel, useDemoRole } from "@/lib/demo-role";
 import { listOrgMedications, logMedicationEvent } from "@/lib/care-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/v/f/$slug/medicin")({
@@ -37,6 +41,7 @@ function fmt(iso: string) {
 function MedicationPage() {
   const { slug } = Route.useParams();
   const qc = useQueryClient();
+  const { role } = useDemoRole();
   const fetchMeds = useServerFn(listOrgMedications);
   const logGiven = useServerFn(logMedicationEvent);
   const [search, setSearch] = useState("");
@@ -47,7 +52,8 @@ function MedicationPage() {
   });
 
   const give = useMutation({
-    mutationFn: (medicationId: string) => logGiven({ data: { slug, medicationId } }),
+    mutationFn: (medicationId: string) =>
+      logGiven({ data: { slug, medicationId, role: demoRoleLabel(role) } }),
     onSuccess: () => {
       toast.success("Noterat som given.");
       void qc.invalidateQueries({ queryKey: ["care-org-medications", slug] });
