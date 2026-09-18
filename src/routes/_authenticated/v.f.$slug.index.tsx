@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { moduleLabel } from "@/lib/care";
 import { StatGrid, StatLine, emptyStat, type CareStat } from "@/components/care/CareStats";
 import { getAdminOrg, removeStaff, saveStaff } from "@/lib/care-admin.functions";
+import { useDemoRole } from "@/lib/demo-role";
 
 export const Route = createFileRoute("/_authenticated/v/f/$slug/")({
   head: () => ({
@@ -69,6 +70,7 @@ const emptyStaff = {
 
 function CompanyHome() {
   const { slug } = Route.useParams();
+  const { role } = useDemoRole();
   const qc = useQueryClient();
   const fetchOrg = useServerFn(getAdminOrg);
   const persistStaff = useServerFn(saveStaff);
@@ -143,7 +145,7 @@ function CompanyHome() {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-lg font-semibold">Personal</h2>
-          <Button
+          {role === "admin" ? <Button
             size="sm"
             onClick={() => {
               setStaffForm({ ...emptyStaff });
@@ -151,7 +153,7 @@ function CompanyHome() {
             }}
           >
             Lägg till
-          </Button>
+          </Button> : null}
         </div>
         {staff.length === 0 ? (
           <p className="text-sm text-muted-foreground">Ingen personal upplagd ännu.</p>
@@ -177,7 +179,7 @@ function CompanyHome() {
                     Öppna
                   </Link>
                 </Button>
-                <Button
+                {role === "admin" ? <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => {
@@ -195,10 +197,10 @@ function CompanyHome() {
                   }}
                 >
                   Ändra
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => staffDelete.mutate(m.id)}>
+                </Button> : null}
+                {role === "admin" ? <Button variant="ghost" size="sm" onClick={() => staffDelete.mutate(m.id)}>
                   Ta bort
-                </Button>
+                </Button> : null}
               </li>
             ))}
           </ul>

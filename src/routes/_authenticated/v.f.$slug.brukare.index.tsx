@@ -21,6 +21,7 @@ import { CareAssistant } from "@/components/care/CareAssistant";
 import careClientsImage from "@/assets/care-clients.jpg";
 import { Users } from "lucide-react";
 import { getAdminOrg, saveClient } from "@/lib/care-admin.functions";
+import { useDemoRole } from "@/lib/demo-role";
 
 export const Route = createFileRoute("/_authenticated/v/f/$slug/brukare/")({
   head: () => ({
@@ -62,6 +63,7 @@ const emptyClient = {
 
 function ClientsPage() {
   const { slug } = Route.useParams();
+  const { role } = useDemoRole();
   const qc = useQueryClient();
   const fetchOrg = useServerFn(getAdminOrg);
   const persistClient = useServerFn(saveClient);
@@ -107,7 +109,7 @@ function ClientsPage() {
         title="Brukare"
         subtitle={`${clients.length} brukare i verksamheten`}
         image={careClientsImage}
-        action={
+        action={role === "admin" ? (
           <Button
             size="sm"
             onClick={() => {
@@ -117,7 +119,7 @@ function ClientsPage() {
           >
             Lägg till
           </Button>
-        }
+        ) : undefined}
       />
 
       {stats ? <StatGrid stat={stats.total as CareStat} days={stats.days} /> : null}
