@@ -19,6 +19,35 @@ function clock(iso: string) {
   });
 }
 
+function demoAnswer(
+  question: string,
+  visits: Array<{ title: string | null; starts_at: string; status: string }>,
+  medications: Array<{ name: string; dose: string | null; times: string | null }>,
+) {
+  const upcoming = visits.filter((visit) => new Date(visit.starts_at).getTime() >= Date.now());
+  const next = upcoming[0];
+  const q = question.toLocaleLowerCase("sv-SE");
+  if (q.includes("nästa besök") || q.includes("nasta besok")) {
+    return next
+      ? `Ditt nästa besök är ${clock(next.starts_at)}. Då är ${next.title ?? "ett hemtjänstbesök"} planerat. Du behöver inte förbereda något särskilt.`
+      : "Du har inget nytt besök registrerat den kommande veckan. Kontakta gärna kontoret om du vill dubbelkolla.";
+  }
+  if (q.includes("kalender") || q.includes("sju dag")) {
+    return upcoming.length
+      ? `Kommande besök:\n${upcoming.slice(0, 7).map((visit) => `• ${clock(visit.starts_at)} – ${visit.title ?? "Besök"}`).join("\n")}`
+      : "Det finns inga planerade besök i kalendern de kommande sju dagarna.";
+  }
+  if (q.includes("dag") || q.includes("schema")) {
+    const today = upcoming.filter((visit) => new Date(visit.starts_at).toLocaleDateString("sv-SE", { timeZone: "Europe/Stockholm" }) === new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Stockholm" }));
+    const visitText = today.length ? today.map((visit) => `• ${clock(visit.starts_at)} – ${visit.title ?? "Besök"}`).join("\n") : "• Inga fler besök idag";
+    const medText = medications.slice(0, 4).map((med) => `• ${med.times ?? "Enligt ordination"} – ${med.name}${med.dose ? ` ${med.dose}` : ""}`).join("\n");
+    return `Din dag:\n${visitText}${medText ? `\n\nMediciner enligt listan:\n${medText}` : ""}`;
+  }
+  return next
+    ? `Jag hjälper gärna till. Nästa registrerade besök är ${clock(next.starts_at)} (${next.title ?? "besök"}). Du kan också välja Dagens schema eller Besök i kalender ovan.`
+    : "Jag hjälper gärna till med besök, dagens schema och medicinlistan. Kontakta kontoret om något behöver ändras.";
+}
+
 /**
  * Andrea för vårddelen: svarar på frågor om besök, dagens plan,
  * insatser och mediciner för en brukare (eller hela verksamheten).
@@ -109,6 +138,16 @@ export const askCareAssistant = createServerFn({ method: "POST" })
           )
         : ["- inga aktiva mediciner"]),
     ].filter(Boolean);
+
+    if (data.slug === "alfa-demo") {
+      return {
+        answer: demoAnswer(
+          data.question,
+          (visitsRes.data ?? []) as Array<{ title: string | null; starts_at: string; status: string }>,
+          (medsRes.data ?? []) as Array<{ name: string; dose: string | null; times: string | null }>,
+        ),
+      };
+    }
 
     const answer = await completeText({
       system: SYSTEM,

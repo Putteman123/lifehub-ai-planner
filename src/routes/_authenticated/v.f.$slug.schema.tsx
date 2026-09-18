@@ -237,7 +237,7 @@ function SchedulePage() {
         </Button>
       </header>
 
-      {role === "client" || role === "relative" ? (
+      {(role === "client" || role === "relative") && demoClientId ? (
         <CareAssistant slug={slug} clientId={demoClientId} />
       ) : null}
 

@@ -122,6 +122,10 @@ export const startCareMeet = createServerFn({ method: "POST" })
     const ctx = context as Ctx;
     const author = await describeAuthor(ctx, data.clientId);
 
+    if (author.orgId === "a1f00000-0000-4000-8000-000000000001") {
+      return { link: "https://meet.google.com/new" };
+    }
+
     const lovableKey = process.env["LOVABLE_API_KEY"];
     const connectionKey = process.env["GOOGLE_CALENDAR_API_KEY"];
     if (!lovableKey || !connectionKey) {
