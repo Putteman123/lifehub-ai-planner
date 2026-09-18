@@ -16,6 +16,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { StatGrid, StatLine, emptyStat, type CareStat } from "@/components/care/CareStats";
+import { CareAvatar, CareNavigateButton, CareSectionHeader } from "@/components/care/CareUI";
+import { CareAssistant } from "@/components/care/CareAssistant";
+import careClientsImage from "@/assets/care-clients.jpg";
+import { Users } from "lucide-react";
 import { getAdminOrg, saveClient } from "@/lib/care-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/v/f/$slug/brukare/")({
@@ -41,6 +45,8 @@ type Client = {
   is_active: boolean;
   personal_number: string | null;
   door_code: string | null;
+  lat: number | null;
+  lng: number | null;
 };
 
 const emptyClient = {
@@ -96,21 +102,23 @@ function ClientsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Brukare</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{clients.length} brukare</p>
-        </div>
-        <Button
-          size="sm"
-          onClick={() => {
-            setForm({ ...emptyClient });
-            setOpen(true);
-          }}
-        >
-          Lägg till
-        </Button>
-      </header>
+      <CareSectionHeader
+        icon={<Users className="size-5" />}
+        title="Brukare"
+        subtitle={`${clients.length} brukare i verksamheten`}
+        image={careClientsImage}
+        action={
+          <Button
+            size="sm"
+            onClick={() => {
+              setForm({ ...emptyClient });
+              setOpen(true);
+            }}
+          >
+            Lägg till
+          </Button>
+        }
+      />
 
       {stats ? <StatGrid stat={stats.total as CareStat} days={stats.days} /> : null}
 
@@ -127,8 +135,9 @@ function ClientsPage() {
           {clients.map((c) => (
             <li
               key={c.id}
-              className="flex items-center gap-3 rounded-2xl border border-border/70 bg-card p-4"
+              className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/70 bg-card p-4"
             >
+              <CareAvatar name={c.name} />
               <div className="min-w-0 flex-1">
                 <p className="font-medium">{c.name}</p>
                 <p className="truncate text-sm text-muted-foreground">
@@ -137,6 +146,7 @@ function ClientsPage() {
                 </p>
                 <StatLine stat={clientStats[c.id] ?? emptyStat} />
               </div>
+              <CareNavigateButton lat={c.lat} lng={c.lng} address={c.address} size="xs" />
               <Button asChild variant="ghost" size="sm">
                 <Link to="/v/f/$slug/brukare/$clientId" params={{ slug, clientId: c.id }}>
                   Öppna
@@ -146,6 +156,8 @@ function ClientsPage() {
           ))}
         </ul>
       )}
+
+      <CareAssistant slug={slug} />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
