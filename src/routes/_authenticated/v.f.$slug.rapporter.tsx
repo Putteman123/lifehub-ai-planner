@@ -2,8 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
+import { CalendarDays, CheckCircle2, Clock3, UserRound, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { CareStatusBadge } from "@/components/care/CareUI";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -14,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatDistance } from "@/lib/geo";
-import { getCareReports, type ReportRow } from "@/lib/care-places.functions";
+import { getCareReports, type ReportRow, type VisitReportRow } from "@/lib/care-places.functions";
 
 export const Route = createFileRoute("/_authenticated/v/f/$slug/rapporter")({
   head: () => ({
@@ -116,6 +118,22 @@ function ReportsPage() {
       ...q.data.staff.map((r) => line("Personal", r)),
       ...q.data.clients.map((r) => line("Brukare", r)),
       line("Totalt", q.data.totals),
+      "",
+      "Besöksrapport per brukare",
+      "Brukare;Datum;Start;Slut;Besök;Status",
+      ...q.data.visitDetails.map((visit) => {
+        const start = new Date(visit.startsAt);
+        const end = new Date(visit.endsAt);
+        const safe = (value: string) => `"${value.replaceAll('"', '""')}"`;
+        return [
+          safe(visit.clientName),
+          isoDate(start),
+          start.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" }),
+          end.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" }),
+          safe(visit.title),
+          visit.status,
+        ].join(";");
+      }),
     ];
     const blob = new Blob(["\uFEFF" + rows.join("\n")], {
       type: "text/csv;charset=utf-8",
@@ -246,9 +264,73 @@ function ReportsPage() {
 
           <ReportTable title="Per medarbetare" rows={data.staff} />
           <ReportTable title="Per brukare" rows={data.clients} />
+          <ClientVisitReport visits={data.visitDetails} />
         </>
       )}
     </div>
+  );
+}
+
+function ClientVisitReport({ visits }: { visits: VisitReportRow[] }) {
+  const groups = new Map<string, { name: string; visits: VisitReportRow[] }>();
+  for (const visit of visits) {
+    const group = groups.get(visit.clientId) ?? { name: visit.clientName, visits: [] };
+    group.visits.push(visit);
+    groups.set(visit.clientId, group);
+  }
+
+  return (
+    <section className="space-y-3">
+      <div>
+        <h2 className="flex items-center gap-2 font-display text-lg font-semibold">
+          <CalendarDays className="size-5 text-primary" />
+          Besöksrapport per brukare
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">Planerade, utförda och uteblivna besök under vald period.</p>
+      </div>
+      {groups.size === 0 ? (
+        <p className="text-sm text-muted-foreground">Inga besök i perioden.</p>
+      ) : (
+        [...groups.entries()].map(([clientId, group]) => {
+          const done = group.visits.filter((visit) => visit.status === "utfort").length;
+          const missed = group.visits.filter((visit) => visit.status === "uteblivet").length;
+          const planned = group.visits.length - done - missed;
+          return (
+            <article key={clientId} className="rounded-lg border border-border/70 bg-card">
+              <header className="flex flex-col gap-3 border-b border-border/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <h3 className="flex items-center gap-2 font-medium">
+                  <UserRound className="size-4 text-primary" />
+                  {group.name}
+                </h3>
+                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                  <span className="inline-flex items-center gap-1"><Clock3 className="size-3.5" />{planned} planerade</span>
+                  <span className="inline-flex items-center gap-1 text-success"><CheckCircle2 className="size-3.5" />{done} utförda</span>
+                  <span className="inline-flex items-center gap-1 text-destructive"><XCircle className="size-3.5" />{missed} uteblivna</span>
+                </div>
+              </header>
+              <div className="divide-y divide-border/60">
+                {group.visits.map((visit) => {
+                  const start = new Date(visit.startsAt);
+                  const end = new Date(visit.endsAt);
+                  return (
+                    <div key={visit.id} className="grid gap-2 p-4 sm:grid-cols-[9rem_1fr_auto] sm:items-center">
+                      <div className="text-sm">
+                        <p className="font-medium">{start.toLocaleDateString("sv-SE", { day: "numeric", month: "short" })}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {start.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" })}–{end.toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      </div>
+                      <p className="text-sm">{visit.title}</p>
+                      <CareStatusBadge status={visit.status} />
+                    </div>
+                  );
+                })}
+              </div>
+            </article>
+          );
+        })
+      )}
+    </section>
   );
 }
 
