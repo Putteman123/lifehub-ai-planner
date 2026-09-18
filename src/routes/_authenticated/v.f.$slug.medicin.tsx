@@ -136,11 +136,15 @@ function MedicationPage() {
                       {m.instructions ? ` · ${m.instructions}` : ""}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {lastGiven.has(m.id) ? `Senast given ${fmt(lastGiven.get(m.id)!)}` : "Ingen logg ännu"}
+                      {lastGiven.has(m.id)
+                        ? `Senast given ${fmt(lastGiven.get(m.id)!.at)}${
+                            lastGiven.get(m.id)!.role ? ` · ${lastGiven.get(m.id)!.role}` : ""
+                          }`
+                        : "Ingen logg ännu"}
                     </p>
                   </div>
                   <Button size="sm" disabled={give.isPending} onClick={() => give.mutate(m.id)}>
-                    Given nu
+                    <Check className="size-4" /> Given nu
                   </Button>
                 </li>
               ))}
