@@ -119,7 +119,7 @@ async function completeViaOpenAI(
   }
 }
 
-/** Andrahandsval: användarens Google AI Studio-konto (GEMINI_API_KEY). */
+/** Andrahandsval: användarens Google-konto (GEMINI_API_KEY, annars den delade GOOGLE_API_KEY). */
 async function completeViaGemini(
   messages: Message[],
   jsonSchema: JsonSchema | undefined,
