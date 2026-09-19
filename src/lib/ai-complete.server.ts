@@ -1,5 +1,5 @@
 import { ANDREA_FAST_MODEL, ANDREA_GATEWAY_MODEL } from "@/lib/ai-models";
-import { createGoogleAiStudioFetch } from "@/lib/google-ai.server";
+import { createGoogleAiStudioFetch, googleAiKey } from "@/lib/google-ai.server";
 
 type JsonSchema = { name: string; schema: Record<string, unknown> };
 
@@ -126,11 +126,8 @@ async function completeViaGemini(
   model: string,
   apiKeyOverride?: string,
 ): Promise<string | null> {
-  const apiKey =
-    apiKeyOverride ??
-    process.env["GEMINI_API_KEY"] ??
-    process.env["GOOGLE_API_KEY"] ??
-    process.env["GOOGLE_MAPS_OWN_KEY"];
+  const apiKey = apiKeyOverride ?? googleAiKey();
+
   if (!apiKey) return null;
   try {
     const googleFetch = createGoogleAiStudioFetch();
@@ -226,10 +223,8 @@ export async function completeVision(opts: {
   }
 
   // Förstahandsval för bilder: användarens eget Google-konto.
-  const geminiKey =
-    process.env["GEMINI_API_KEY"] ??
-    process.env["GOOGLE_API_KEY"] ??
-    process.env["GOOGLE_MAPS_OWN_KEY"];
+  const geminiKey = googleAiKey();
+
   if (imagesOnly && geminiKey) {
     try {
       const googleFetch = createGoogleAiStudioFetch();

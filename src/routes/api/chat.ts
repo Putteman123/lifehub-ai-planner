@@ -158,10 +158,12 @@ export const Route = createFileRoute("/api/chat")({
           return new Response("messages required", { status: 400 });
         }
 
+        // Andrea kör på din egen Google-nyckel i första hand.
         const geminiKey =
-          process.env["GEMINI_API_KEY"] ??
           process.env["GOOGLE_API_KEY"] ??
+          process.env["GEMINI_API_KEY"] ??
           process.env["GOOGLE_MAPS_OWN_KEY"];
+
         const lovableKey = process.env["LOVABLE_API_KEY"];
         if (!geminiKey && !lovableKey) {
           return new Response("Ingen AI-tjänst är konfigurerad.", { status: 500 });
