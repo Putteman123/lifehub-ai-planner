@@ -99,9 +99,9 @@ function ShoppingPage() {
   return (
     <div className="space-y-6">
       <CareSectionHeader
-        icon={ShoppingCart}
+        icon={<ShoppingCart className="h-5 w-5" aria-hidden />}
         title="Handla"
-        description="Inköpslista per brukare. Anhöriga kan önska, personal bockar av när varan är köpt."
+        subtitle="Inköpslista per brukare. Anhöriga kan önska, personal bockar av när varan är köpt."
       />
 
       {q.isLoading ? (
