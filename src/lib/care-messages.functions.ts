@@ -184,3 +184,119 @@ export const startCareMeet = createServerFn({ method: "POST" })
 
     return { link };
   });
+
+/* ---------------- Kontakter och oläst ---------------- */
+
+export type CareContact = {
+  clientId: string;
+  clientName: string;
+  name: string;
+  role: string;
+  phone: string | null;
+  orgName: string;
+  slug: string;
+  unread: number;
+  lastAt: string | null;
+  lastBody: string | null;
+};
+
+/** Alla personer den inloggade får kontakta – personal, brukare och anhöriga. */
+export const listCareContacts = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const ctx = context as Ctx;
+    await linkRelativeByEmail(ctx);
+
+    const { data: clients } = await ctx.supabase
+      .from("care_clients")
+      .select("id, name, phone, org_id, organizations(name, slug)")
+      .eq("is_active", true)
+      .order("name");
+    const list = (clients ?? []) as any[];
+    if (list.length === 0) return { contacts: [] as CareContact[], unread: 0 };
+
+    const clientIds = list.map((c) => c.id as string);
+    const orgIds = [...new Set(list.map((c) => c.org_id as string))];
+
+    const { data: reads } = await ctx.supabase
+      .from("care_message_reads")
+      .select("client_id, read_at")
+      .eq("user_id", ctx.userId);
+    const readAt = new Map<string, string>(
+      (reads ?? []).map((r: any) => [r.client_id as string, r.read_at as string]),
+    );
+
+    const { data: messages } = await ctx.supabase
+      .from("care_messages")
+      .select("client_id, body, created_at, author_id")
+      .in("client_id", clientIds)
+      .order("created_at", { ascending: false })
+      .limit(500);
+
+    const { data: relatives } = await ctx.supabase
+      .from("care_relatives")
+      .select("client_id, name, relation, phone")
+      .in("client_id", clientIds);
+    const { data: staff } = await ctx.supabase
+      .from("org_members")
+      .select("org_id, display_name, role, phone, is_active")
+      .in("org_id", orgIds);
+
+    const contacts: CareContact[] = [];
+    let unreadTotal = 0;
+
+    for (const c of list) {
+      const since = readAt.get(c.id as string);
+      const mine = (messages ?? []).filter((m: any) => m.client_id === c.id);
+      const unread = mine.filter(
+        (m: any) => m.author_id !== ctx.userId && (!since || m.created_at > since),
+      ).length;
+      unreadTotal += unread;
+      const last = mine[0];
+      const base = {
+        clientId: c.id as string,
+        clientName: c.name as string,
+        orgName: (c.organizations?.name as string) ?? "",
+        slug: (c.organizations?.slug as string) ?? "",
+        unread,
+        lastAt: (last?.created_at as string) ?? null,
+        lastBody: (last?.body as string) ?? null,
+      };
+
+      contacts.push({ ...base, name: c.name as string, role: "Brukare", phone: c.phone ?? null });
+
+      for (const r of (relatives ?? []).filter((r: any) => r.client_id === c.id)) {
+        contacts.push({
+          ...base,
+          name: r.name as string,
+          role: `Anhörig${r.relation ? ` – ${r.relation}` : ""}`,
+          phone: (r.phone as string) ?? null,
+        });
+      }
+
+      for (const s of (staff ?? []).filter((s: any) => s.org_id === c.org_id && s.is_active)) {
+        contacts.push({
+          ...base,
+          name: s.display_name as string,
+          role: s.role === "org_admin" ? "Verksamhetsadmin" : "Personal",
+          phone: (s.phone as string) ?? null,
+        });
+      }
+    }
+
+    return { contacts, unread: unreadTotal };
+  });
+
+/** Markerar en brukares tråd som läst för mig. */
+export const markThreadRead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ clientId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const ctx = context as Ctx;
+    const { error } = await ctx.supabase.from("care_message_reads").upsert(
+      { user_id: ctx.userId, client_id: data.clientId, read_at: new Date().toISOString() },
+      { onConflict: "user_id,client_id" },
+    );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
