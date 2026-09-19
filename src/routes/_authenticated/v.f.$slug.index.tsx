@@ -22,6 +22,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Activity, AlertTriangle, CalendarDays, ShoppingCart, Wallet } from "lucide-react";
+
+import { CareStatusBadge } from "@/components/care/CareUI";
 import { moduleLabel } from "@/lib/care";
 import { StatGrid, StatLine, emptyStat, type CareStat } from "@/components/care/CareStats";
 import { getAdminOrg, removeStaff, saveStaff } from "@/lib/care-admin.functions";
@@ -123,6 +126,8 @@ function CompanyHome() {
   const clientCount = (q.data?.clients ?? []).length;
   const stats = q.data?.stats;
   const staffStats = (stats?.staff ?? {}) as Record<string, CareStat>;
+  const today = q.data?.today ?? [];
+  const deviations = q.data?.deviations ?? [];
 
   return (
     <div className="space-y-8">
@@ -135,6 +140,90 @@ function CompanyHome() {
       </header>
 
       {stats ? <StatGrid stat={stats.total as CareStat} days={stats.days} /> : null}
+
+      {role === "admin" ? (
+        <section className="grid gap-4 lg:grid-cols-3">
+          <div className="rounded-3xl border border-border/70 bg-card p-5 lg:col-span-2">
+            <div className="flex items-center justify-between">
+              <h2 className="flex items-center gap-2 text-sm font-semibold">
+                <Activity className="h-4 w-4 text-primary" aria-hidden />
+                Dagens läge
+              </h2>
+              <span className="text-xs text-muted-foreground">{today.length} besök idag</span>
+            </div>
+            {today.length === 0 ? (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Inga besök är planerade idag. Lägg in besök under Schema.
+              </p>
+            ) : (
+              <ul className="mt-3 space-y-2">
+                {today.slice(0, 6).map((v) => (
+                  <li
+                    key={v.id}
+                    className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/60 bg-background/60 px-3 py-2 text-sm"
+                  >
+                    <span className="font-medium tabular-nums">
+                      {new Date(v.starts_at).toLocaleTimeString("sv-SE", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate">
+                      {v.clientName} · {v.staffName}
+                    </span>
+                    <CareStatusBadge status={v.status} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <div className="rounded-3xl border border-border/70 bg-card p-5">
+              <h2 className="text-sm font-semibold">Snabbåtgärder</h2>
+              <div className="mt-3 grid gap-2">
+                <Button asChild variant="outline" className="justify-start gap-2">
+                  <Link to="/v/f/$slug/schema" params={{ slug }}>
+                    <CalendarDays className="h-4 w-4" aria-hidden />
+                    Planera schema
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="justify-start gap-2">
+                  <Link to="/v/f/$slug/handla" params={{ slug }}>
+                    <ShoppingCart className="h-4 w-4" aria-hidden />
+                    Inköpslistor
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="justify-start gap-2">
+                  <Link to="/v/f/$slug/ekonomi" params={{ slug }}>
+                    <Wallet className="h-4 w-4" aria-hidden />
+                    Ekonomi
+                  </Link>
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-border/70 bg-card p-5">
+              <h2 className="flex items-center gap-2 text-sm font-semibold">
+                <AlertTriangle className="h-4 w-4 text-primary" aria-hidden />
+                Senaste avvikelser
+              </h2>
+              {deviations.length === 0 ? (
+                <p className="mt-2 text-sm text-muted-foreground">Inga avvikelser registrerade.</p>
+              ) : (
+                <ul className="mt-2 space-y-2 text-sm">
+                  {deviations.map((d) => (
+                    <li key={d.id} className="rounded-2xl bg-secondary/50 px-3 py-2">
+                      <span className="font-medium">{d.clientName}</span>
+                      <span className="block text-xs text-muted-foreground">{d.deviation}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <Input
         placeholder="Sök personal"
