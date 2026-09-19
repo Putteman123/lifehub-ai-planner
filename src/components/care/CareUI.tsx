@@ -62,7 +62,7 @@ export function CareSectionHeader({
   icon: ReactNode;
   title: string;
   subtitle?: string;
-  image?: string;
+  image?: string | undefined;
   imageAlt?: string;
   imageClassName?: string;
   imageHeightClassName?: string;
