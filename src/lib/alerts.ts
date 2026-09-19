@@ -155,9 +155,16 @@ export function useAlertNotifications(alerts: Alert[]) {
       seen = {};
     }
     let changed = false;
+    const pushOn = localStorage.getItem("lifehub_push_on") === "1";
     for (const a of alerts) {
       if (a.urgency > 1 || seen[a.id] === today) continue;
-      new Notification(a.title, { body: a.detail, icon: "/icon-192.png", tag: a.id });
+      if (pushOn) {
+        void import("@/lib/push.functions").then(({ sendPushToMe }) =>
+          sendPushToMe({ data: { title: a.title, body: a.detail, path: a.to } }).catch(() => {}),
+        );
+      } else {
+        new Notification(a.title, { body: a.detail, icon: "/icon-192.png", tag: a.id });
+      }
       seen[a.id] = today;
       changed = true;
     }
