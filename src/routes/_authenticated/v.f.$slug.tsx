@@ -2,6 +2,7 @@ import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { ContactDrawer } from "@/components/care/ContactDrawer";
 import { DemoRoleSwitcher } from "@/components/care/DemoRoleSwitcher";
 import { DEMO_ROLE_TABS, DemoRoleProvider, demoRoleLabel, useDemoRole } from "@/lib/demo-role";
 
@@ -40,6 +41,8 @@ type TabPath =
   | "/v/f/$slug/karta"
   | "/v/f/$slug/rapporter"
   | "/v/f/$slug/medicin"
+  | "/v/f/$slug/handla"
+  | "/v/f/$slug/ekonomi"
   | "/v/f/$slug/insatser";
 
 const TABS: { key: string; to: TabPath; label: string; exact?: boolean }[] = [
@@ -49,6 +52,8 @@ const TABS: { key: string; to: TabPath; label: string; exact?: boolean }[] = [
   { key: "karta", to: "/v/f/$slug/karta", label: "Karta & rutter" },
   { key: "insatser", to: "/v/f/$slug/insatser", label: "Insatser" },
   { key: "medicin", to: "/v/f/$slug/medicin", label: "Medicin" },
+  { key: "handla", to: "/v/f/$slug/handla", label: "Handla" },
+  { key: "ekonomi", to: "/v/f/$slug/ekonomi", label: "Ekonomi" },
   { key: "rapporter", to: "/v/f/$slug/rapporter", label: "Rapporter" },
 ];
 
@@ -74,6 +79,7 @@ function CompanyAdminLayout() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
+          <ContactDrawer />
           {slug === "alfa-demo" ? <ShareDemoButton slug={slug} /> : null}
           <DemoRoleSwitcher />
         </div>
