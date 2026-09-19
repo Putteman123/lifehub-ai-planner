@@ -44,6 +44,9 @@ function directMapsUrl(path: string) {
   return `https://maps.googleapis.com/${clean}`;
 }
 
+/** Domän som egna nyckeln är godkänd för – krävs när nyckeln har webbplatsbegränsning. */
+const OWN_KEY_REFERER = "https://mellberg.online/";
+
 async function callMapsDirect(
   key: string,
   path: string,
@@ -51,6 +54,9 @@ async function callMapsDirect(
 ): Promise<unknown> {
   const headers: Record<string, string> = {
     "X-Goog-Api-Key": key,
+    // Nycklar med webbplatsbegränsning nekar anrop utan referer.
+    Referer: OWN_KEY_REFERER,
+    Origin: "https://mellberg.online",
     ...(init?.headers ?? {}),
   };
   if (init?.body !== undefined) headers["Content-Type"] = "application/json";
@@ -71,8 +77,17 @@ async function callMapsDirect(
     // på Lovables karttjänst, och loggar själv om inget alternativ finns.
     throw new Error(`Google Maps svarade ${res.status}: ${text.slice(0, 300)}`);
   }
-  return text ? (JSON.parse(text) as unknown) : null;
+  const parsed = text ? (JSON.parse(text) as unknown) : null;
+  // Legacy-API:er svarar 200 med status REQUEST_DENIED när nyckeln nekas –
+  // kasta så att anroparen kan falla tillbaka på Lovables karttjänst.
+  const status = (parsed as { status?: string } | null)?.status;
+  if (status === "REQUEST_DENIED" || status === "OVER_QUERY_LIMIT") {
+    const msg = (parsed as { error_message?: string }).error_message ?? status;
+    throw new Error(`Google Maps nekade anropet (${status}): ${msg}`);
+  }
+  return parsed;
 }
+
 
 async function call(
   service: GoogleService,
