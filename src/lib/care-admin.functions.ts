@@ -117,6 +117,39 @@ export const getAdminOrg = createServerFn({ method: "GET" })
       if (v.client_id) apply((clientStats[v.client_id] ??= blank()));
     }
 
+    // Dagens läge för kontrollpanelen.
+    const dayKey = (iso: string) =>
+      new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Europe/Stockholm" });
+    const todayKey = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Stockholm" });
+    const clientName = new Map<string, string>(
+      (clients ?? []).map((c: { id: string; name: string }) => [c.id, c.name]),
+    );
+    const staffName = new Map<string, string>(
+      (members ?? []).map((m: { id: string; display_name: string }) => [m.id, m.display_name]),
+    );
+    const today = visits
+      .filter((v) => dayKey(v.starts_at) === todayKey)
+      .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+      .map((v) => ({
+        id: v.id,
+        starts_at: v.starts_at,
+        ends_at: v.ends_at,
+        status: v.status,
+        deviation: v.deviation,
+        clientName: clientName.get(v.client_id ?? "") ?? "Okänd brukare",
+        staffName: v.staff_id ? (staffName.get(v.staff_id) ?? "Ej tilldelad") : "Ej tilldelad",
+      }));
+    const deviations = visits
+      .filter((v) => v.deviation)
+      .sort((a, b) => b.starts_at.localeCompare(a.starts_at))
+      .slice(0, 5)
+      .map((v) => ({
+        id: v.id,
+        starts_at: v.starts_at,
+        deviation: v.deviation as string,
+        clientName: clientName.get(v.client_id ?? "") ?? "Okänd brukare",
+      }));
+
     return {
       org,
       modules: (modules ?? []).filter((m: { enabled: boolean }) => m.enabled).map((m: { module: string }) => m.module),
@@ -124,6 +157,8 @@ export const getAdminOrg = createServerFn({ method: "GET" })
       clients: clients ?? [],
       invites: invites ?? [],
       stats: { total, staff: staffStats, clients: clientStats, days: 30 },
+      today,
+      deviations,
     };
   });
 

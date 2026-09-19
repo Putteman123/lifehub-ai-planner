@@ -12,10 +12,20 @@ export type DemoRole = (typeof DEMO_ROLES)[number]["value"];
 
 /** Vilka flikar varje roll ser i verksamhetsvyn. */
 export const DEMO_ROLE_TABS: Record<DemoRole, readonly string[]> = {
-  admin: ["personal", "brukare", "schema", "karta", "insatser", "medicin", "rapporter"],
-  staff: ["brukare", "schema", "karta", "insatser", "medicin"],
-  client: ["schema", "medicin"],
-  relative: ["schema", "medicin"],
+  admin: [
+    "personal",
+    "brukare",
+    "schema",
+    "karta",
+    "insatser",
+    "medicin",
+    "handla",
+    "rapporter",
+    "ekonomi",
+  ],
+  staff: ["brukare", "schema", "karta", "insatser", "medicin", "handla"],
+  client: ["schema", "medicin", "handla"],
+  relative: ["schema", "medicin", "handla"],
 };
 
 const STORAGE_KEY = "lifehub-demo-role";

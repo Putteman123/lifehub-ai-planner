@@ -51,6 +51,8 @@ import { Route as AuthenticatedVKundOrgIdRouteImport } from './routes/_authentic
 import { Route as ApiPublicHooksEpostRouteImport } from './routes/api/public/hooks/epost'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as AuthenticatedVFSlugIndexRouteImport } from './routes/_authenticated/v.f.$slug.index'
+import { Route as AuthenticatedVFSlugEkonomiRouteImport } from './routes/_authenticated/v.f.$slug.ekonomi'
+import { Route as AuthenticatedVFSlugHandlaRouteImport } from './routes/_authenticated/v.f.$slug.handla'
 import { Route as AuthenticatedVFSlugInsatserRouteImport } from './routes/_authenticated/v.f.$slug.insatser'
 import { Route as AuthenticatedVFSlugKartaRouteImport } from './routes/_authenticated/v.f.$slug.karta'
 import { Route as AuthenticatedVFSlugMedicinRouteImport } from './routes/_authenticated/v.f.$slug.medicin'
@@ -275,6 +277,18 @@ const AuthenticatedVFSlugIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedVFSlugRoute,
   } as any)
+const AuthenticatedVFSlugEkonomiRoute =
+  AuthenticatedVFSlugEkonomiRouteImport.update({
+    id: '/ekonomi',
+    path: '/ekonomi',
+    getParentRoute: () => AuthenticatedVFSlugRoute,
+  } as any)
+const AuthenticatedVFSlugHandlaRoute =
+  AuthenticatedVFSlugHandlaRouteImport.update({
+    id: '/handla',
+    path: '/handla',
+    getParentRoute: () => AuthenticatedVFSlugRoute,
+  } as any)
 const AuthenticatedVFSlugInsatserRoute =
   AuthenticatedVFSlugInsatserRouteImport.update({
     id: '/insatser',
@@ -365,6 +379,8 @@ export interface FileRoutesByFullPath {
   '/v/kund/$orgId': typeof AuthenticatedVKundOrgIdRoute
   '/api/public/hooks/epost': typeof ApiPublicHooksEpostRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/v/f/$slug/ekonomi': typeof AuthenticatedVFSlugEkonomiRoute
+  '/v/f/$slug/handla': typeof AuthenticatedVFSlugHandlaRoute
   '/v/f/$slug/insatser': typeof AuthenticatedVFSlugInsatserRoute
   '/v/f/$slug/karta': typeof AuthenticatedVFSlugKartaRoute
   '/v/f/$slug/medicin': typeof AuthenticatedVFSlugMedicinRoute
@@ -413,6 +429,8 @@ export interface FileRoutesByTo {
   '/v/kund/$orgId': typeof AuthenticatedVKundOrgIdRoute
   '/api/public/hooks/epost': typeof ApiPublicHooksEpostRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/v/f/$slug/ekonomi': typeof AuthenticatedVFSlugEkonomiRoute
+  '/v/f/$slug/handla': typeof AuthenticatedVFSlugHandlaRoute
   '/v/f/$slug/insatser': typeof AuthenticatedVFSlugInsatserRoute
   '/v/f/$slug/karta': typeof AuthenticatedVFSlugKartaRoute
   '/v/f/$slug/medicin': typeof AuthenticatedVFSlugMedicinRoute
@@ -466,6 +484,8 @@ export interface FileRoutesById {
   '/_authenticated/v/kund/$orgId': typeof AuthenticatedVKundOrgIdRoute
   '/api/public/hooks/epost': typeof ApiPublicHooksEpostRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/_authenticated/v/f/$slug/ekonomi': typeof AuthenticatedVFSlugEkonomiRoute
+  '/_authenticated/v/f/$slug/handla': typeof AuthenticatedVFSlugHandlaRoute
   '/_authenticated/v/f/$slug/insatser': typeof AuthenticatedVFSlugInsatserRoute
   '/_authenticated/v/f/$slug/karta': typeof AuthenticatedVFSlugKartaRoute
   '/_authenticated/v/f/$slug/medicin': typeof AuthenticatedVFSlugMedicinRoute
@@ -519,6 +539,8 @@ export interface FileRouteTypes {
     | '/v/kund/$orgId'
     | '/api/public/hooks/epost'
     | '/lovable/email/transactional/preview'
+    | '/v/f/$slug/ekonomi'
+    | '/v/f/$slug/handla'
     | '/v/f/$slug/insatser'
     | '/v/f/$slug/karta'
     | '/v/f/$slug/medicin'
@@ -567,6 +589,8 @@ export interface FileRouteTypes {
     | '/v/kund/$orgId'
     | '/api/public/hooks/epost'
     | '/lovable/email/transactional/preview'
+    | '/v/f/$slug/ekonomi'
+    | '/v/f/$slug/handla'
     | '/v/f/$slug/insatser'
     | '/v/f/$slug/karta'
     | '/v/f/$slug/medicin'
@@ -619,6 +643,8 @@ export interface FileRouteTypes {
     | '/_authenticated/v/kund/$orgId'
     | '/api/public/hooks/epost'
     | '/lovable/email/transactional/preview'
+    | '/_authenticated/v/f/$slug/ekonomi'
+    | '/_authenticated/v/f/$slug/handla'
     | '/_authenticated/v/f/$slug/insatser'
     | '/_authenticated/v/f/$slug/karta'
     | '/_authenticated/v/f/$slug/medicin'
@@ -946,6 +972,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVFSlugIndexRouteImport
       parentRoute: typeof AuthenticatedVFSlugRoute
     }
+    '/_authenticated/v/f/$slug/ekonomi': {
+      id: '/_authenticated/v/f/$slug/ekonomi'
+      path: '/ekonomi'
+      fullPath: '/v/f/$slug/ekonomi'
+      preLoaderRoute: typeof AuthenticatedVFSlugEkonomiRouteImport
+      parentRoute: typeof AuthenticatedVFSlugRoute
+    }
+    '/_authenticated/v/f/$slug/handla': {
+      id: '/_authenticated/v/f/$slug/handla'
+      path: '/handla'
+      fullPath: '/v/f/$slug/handla'
+      preLoaderRoute: typeof AuthenticatedVFSlugHandlaRouteImport
+      parentRoute: typeof AuthenticatedVFSlugRoute
+    }
     '/_authenticated/v/f/$slug/insatser': {
       id: '/_authenticated/v/f/$slug/insatser'
       path: '/insatser'
@@ -1006,6 +1046,8 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedVFSlugRouteChildren {
+  AuthenticatedVFSlugEkonomiRoute: typeof AuthenticatedVFSlugEkonomiRoute
+  AuthenticatedVFSlugHandlaRoute: typeof AuthenticatedVFSlugHandlaRoute
   AuthenticatedVFSlugInsatserRoute: typeof AuthenticatedVFSlugInsatserRoute
   AuthenticatedVFSlugKartaRoute: typeof AuthenticatedVFSlugKartaRoute
   AuthenticatedVFSlugMedicinRoute: typeof AuthenticatedVFSlugMedicinRoute
@@ -1018,6 +1060,8 @@ interface AuthenticatedVFSlugRouteChildren {
 }
 
 const AuthenticatedVFSlugRouteChildren: AuthenticatedVFSlugRouteChildren = {
+  AuthenticatedVFSlugEkonomiRoute: AuthenticatedVFSlugEkonomiRoute,
+  AuthenticatedVFSlugHandlaRoute: AuthenticatedVFSlugHandlaRoute,
   AuthenticatedVFSlugInsatserRoute: AuthenticatedVFSlugInsatserRoute,
   AuthenticatedVFSlugKartaRoute: AuthenticatedVFSlugKartaRoute,
   AuthenticatedVFSlugMedicinRoute: AuthenticatedVFSlugMedicinRoute,
