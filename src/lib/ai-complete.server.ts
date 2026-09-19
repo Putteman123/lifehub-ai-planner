@@ -119,14 +119,18 @@ async function completeViaOpenAI(
   }
 }
 
-/** Andrahandsval: användarens Google AI Studio-konto (GEMINI_API_KEY). */
+/** Andrahandsval: användarens Google-konto (GEMINI_API_KEY, annars den delade GOOGLE_API_KEY). */
 async function completeViaGemini(
   messages: Message[],
   jsonSchema: JsonSchema | undefined,
   model: string,
   apiKeyOverride?: string,
 ): Promise<string | null> {
-  const apiKey = apiKeyOverride ?? process.env["GEMINI_API_KEY"];
+  const apiKey =
+    apiKeyOverride ??
+    process.env["GEMINI_API_KEY"] ??
+    process.env["GOOGLE_API_KEY"] ??
+    process.env["GOOGLE_MAPS_OWN_KEY"];
   if (!apiKey) return null;
   try {
     const googleFetch = createGoogleAiStudioFetch();
@@ -221,8 +225,12 @@ export async function completeVision(opts: {
     }
   }
 
-  // Förstahandsval för bilder: användarens eget Gemini-konto.
-  if (imagesOnly && process.env["GEMINI_API_KEY"]) {
+  // Förstahandsval för bilder: användarens eget Google-konto.
+  const geminiKey =
+    process.env["GEMINI_API_KEY"] ??
+    process.env["GOOGLE_API_KEY"] ??
+    process.env["GOOGLE_MAPS_OWN_KEY"];
+  if (imagesOnly && geminiKey) {
     try {
       const googleFetch = createGoogleAiStudioFetch();
       const geminiRes = await googleFetch(
@@ -231,7 +239,7 @@ export async function completeVision(opts: {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${process.env["GEMINI_API_KEY"]}`,
+            Authorization: `Bearer ${geminiKey}`,
           },
           body: JSON.stringify({
             model: ANDREA_FAST_MODEL,

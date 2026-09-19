@@ -158,7 +158,10 @@ export const Route = createFileRoute("/api/chat")({
           return new Response("messages required", { status: 400 });
         }
 
-        const geminiKey = process.env["GEMINI_API_KEY"];
+        const geminiKey =
+          process.env["GEMINI_API_KEY"] ??
+          process.env["GOOGLE_API_KEY"] ??
+          process.env["GOOGLE_MAPS_OWN_KEY"];
         const lovableKey = process.env["LOVABLE_API_KEY"];
         if (!geminiKey && !lovableKey) {
           return new Response("Ingen AI-tjänst är konfigurerad.", { status: 500 });
