@@ -23,7 +23,7 @@ import {
   suggestSchedule,
 } from "@/lib/care-places.functions";
 import { formatDistance } from "@/lib/geo";
-import { CareStatusBadge } from "@/components/care/CareUI";
+import { CareSectionHeader, CareStatusBadge } from "@/components/care/CareUI";
 import { CareVisitTasks } from "@/components/care/CareVisitTasks";
 import { CareAssistant } from "@/components/care/CareAssistant";
 import { useDemoRole } from "@/lib/demo-role";
