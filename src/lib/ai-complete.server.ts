@@ -239,7 +239,7 @@ export async function completeVision(opts: {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${process.env["GEMINI_API_KEY"]}`,
+            Authorization: `Bearer ${geminiKey}`,
           },
           body: JSON.stringify({
             model: ANDREA_FAST_MODEL,
