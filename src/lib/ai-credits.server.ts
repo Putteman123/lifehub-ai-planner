@@ -56,7 +56,7 @@ export async function probeAiCredits(): Promise<AiCreditStatus> {
     model: PROBE_MODEL,
     monthlyLimit: ANDREA_MONTHLY_AI_LIMIT,
   };
-  const key = process.env["GEMINI_API_KEY"];
+  const key = process.env["GOOGLE_API_KEY"] ?? process.env["GEMINI_API_KEY"];
   if (!key) {
     return {
       ...base,

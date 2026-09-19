@@ -223,10 +223,8 @@ export async function completeVision(opts: {
   }
 
   // Förstahandsval för bilder: användarens eget Google-konto.
-  const geminiKey =
-    process.env["GEMINI_API_KEY"] ??
-    process.env["GOOGLE_API_KEY"] ??
-    process.env["GOOGLE_MAPS_OWN_KEY"];
+  const geminiKey = googleAiKey();
+
   if (imagesOnly && geminiKey) {
     try {
       const googleFetch = createGoogleAiStudioFetch();
