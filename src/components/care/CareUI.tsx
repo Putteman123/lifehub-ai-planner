@@ -54,19 +54,31 @@ export function CareSectionHeader({
   title,
   subtitle,
   image,
+  imageAlt = "",
+  imageClassName = "",
+  imageHeightClassName = "h-28 sm:h-36",
   action,
 }: {
   icon: ReactNode;
   title: string;
   subtitle?: string;
-  image?: string;
+  image?: string | undefined;
+  imageAlt?: string;
+  imageClassName?: string;
+  imageHeightClassName?: string;
   action?: ReactNode;
 }) {
   return (
     <header className="overflow-hidden rounded-3xl border border-border/70 bg-card">
       {image ? (
-        <div className="relative h-28 w-full sm:h-36">
-          <img src={image} alt="" className="size-full object-cover" loading="lazy" />
+        <div className={`relative w-full ${imageHeightClassName}`}>
+          <img
+            src={image}
+            alt={imageAlt}
+            className={`size-full object-cover ${imageClassName}`}
+            loading="eager"
+            fetchPriority="high"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-card via-card/40 to-transparent" />
         </div>
       ) : null}

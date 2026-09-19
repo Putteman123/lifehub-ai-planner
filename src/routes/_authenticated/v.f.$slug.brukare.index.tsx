@@ -19,6 +19,7 @@ import { StatGrid, StatLine, emptyStat, type CareStat } from "@/components/care/
 import { CareAvatar, CareNavigateButton, CareSectionHeader } from "@/components/care/CareUI";
 import { CareAssistant } from "@/components/care/CareAssistant";
 import careClientsImage from "@/assets/care-clients.jpg";
+import careStaffImage from "@/assets/care-role-staff.jpg";
 import { Users } from "lucide-react";
 import { getAdminOrg, saveClient } from "@/lib/care-admin.functions";
 import { useDemoRole } from "@/lib/demo-role";
@@ -108,7 +109,14 @@ function ClientsPage() {
         icon={<Users className="size-5" />}
         title="Brukare"
         subtitle={`${clients.length} brukare i verksamheten`}
-        image={careClientsImage}
+        image={role === "staff" ? careStaffImage : careClientsImage}
+        imageAlt={
+          role === "staff"
+            ? "Hemtjänstpersonal som möter en brukare hemma"
+            : "Brukare i en trygg vardagsmiljö"
+        }
+        imageClassName={role === "staff" ? "object-[center_38%]" : "object-center"}
+        imageHeightClassName={role === "staff" ? "h-56 sm:h-44" : "h-32 sm:h-36"}
         action={role === "admin" ? (
           <Button
             size="sm"

@@ -24,7 +24,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Activity, AlertTriangle, CalendarDays, ShoppingCart, Wallet } from "lucide-react";
 
-import { CareStatusBadge } from "@/components/care/CareUI";
+import careAdminImage from "@/assets/care-role-admin.jpg";
+import careStaffImage from "@/assets/care-role-staff.jpg";
+import { CareSectionHeader, CareStatusBadge } from "@/components/care/CareUI";
 import { moduleLabel } from "@/lib/care";
 import { StatGrid, StatLine, emptyStat, type CareStat } from "@/components/care/CareStats";
 import { getAdminOrg, removeStaff, saveStaff } from "@/lib/care-admin.functions";
@@ -131,13 +133,23 @@ function CompanyHome() {
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="font-display text-2xl font-semibold tracking-tight">{org.name}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {staff.length} i personalen · {clientCount} brukare
-          {modules.length > 0 ? ` · ${modules.map(moduleLabel).join(", ")}` : ""}
-        </p>
-      </header>
+      <CareSectionHeader
+        icon={<Activity className="size-5" />}
+        title={org.name}
+        subtitle={`${staff.length} i personalen · ${clientCount} brukare${
+          modules.length > 0 ? ` · ${modules.map(moduleLabel).join(", ")}` : ""
+        }`}
+        image={role === "admin" ? careAdminImage : careStaffImage}
+        imageAlt={
+          role === "admin"
+            ? "Verksamhetsledare som planerar dagens hemtjänst"
+            : "Hemtjänstpersonal som möter en brukare hemma"
+        }
+        imageClassName={role === "admin" ? "object-center" : "object-[center_38%]"}
+        imageHeightClassName={
+          role === "admin" ? "h-40 sm:h-48 lg:h-56" : "h-56 sm:h-48 lg:h-56"
+        }
+      />
 
       {stats ? <StatGrid stat={stats.total as CareStat} days={stats.days} /> : null}
 

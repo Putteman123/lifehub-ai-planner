@@ -23,11 +23,13 @@ import {
   suggestSchedule,
 } from "@/lib/care-places.functions";
 import { formatDistance } from "@/lib/geo";
-import { CareStatusBadge } from "@/components/care/CareUI";
+import { CareSectionHeader, CareStatusBadge } from "@/components/care/CareUI";
 import { CareVisitTasks } from "@/components/care/CareVisitTasks";
 import { CareAssistant } from "@/components/care/CareAssistant";
 import { useDemoRole } from "@/lib/demo-role";
-import { ListChecks } from "lucide-react";
+import careClientImage from "@/assets/care-role-client.jpg";
+import careRelativeImage from "@/assets/care-role-relative.jpg";
+import { CalendarDays, ListChecks } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/v/f/$slug/schema")({
   head: () => ({
@@ -218,24 +220,41 @@ function SchedulePage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-center gap-3">
-        <div className="flex-1">
-          <h1 className="font-display text-2xl font-semibold tracking-tight">Schema</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Vecka från{" "}
-            {weekStart.toLocaleDateString("sv-SE", { day: "numeric", month: "long" })}
-          </p>
-        </div>
-        <Button variant="secondary" size="sm" onClick={() => shiftWeek(-1)}>
-          Föregående
-        </Button>
-        <Button variant="secondary" size="sm" onClick={() => setWeekStart(mondayOf(new Date()))}>
-          Denna vecka
-        </Button>
-        <Button variant="secondary" size="sm" onClick={() => shiftWeek(1)}>
-          Nästa
-        </Button>
-      </header>
+      <CareSectionHeader
+        icon={<CalendarDays className="size-5" />}
+        title={role === "client" ? "Min dag" : role === "relative" ? "Omsorgen just nu" : "Schema"}
+        subtitle={`Vecka från ${weekStart.toLocaleDateString("sv-SE", {
+          day: "numeric",
+          month: "long",
+        })}`}
+        image={
+          role === "client" ? careClientImage : role === "relative" ? careRelativeImage : undefined
+        }
+        imageAlt={
+          role === "client"
+            ? "Brukare som tryggt använder sin surfplatta tillsammans med personal"
+            : role === "relative"
+              ? "Anhörig som har videosamtal med en närstående"
+              : ""
+        }
+        imageClassName={role === "relative" ? "object-[center_42%]" : "object-center"}
+        imageHeightClassName={
+          role === "client" ? "h-44 sm:h-56" : role === "relative" ? "h-56 sm:h-48" : "h-0"
+        }
+        action={
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" size="sm" onClick={() => shiftWeek(-1)}>
+              Föregående
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => setWeekStart(mondayOf(new Date()))}>
+              Denna vecka
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => shiftWeek(1)}>
+              Nästa
+            </Button>
+          </div>
+        }
+      />
 
       {(role === "client" || role === "relative") && demoClientId ? (
         <CareAssistant slug={slug} clientId={demoClientId} />
