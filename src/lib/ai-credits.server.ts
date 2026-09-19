@@ -76,7 +76,9 @@ export async function probeAiCredits(): Promise<AiCreditStatus> {
   }
 
   const started = Date.now();
-  const res = await fetch(GATEWAY_ENDPOINT, {
+  const { createGoogleAiStudioFetch } = await import("@/lib/google-ai.server");
+  const res = await createGoogleAiStudioFetch()(GATEWAY_ENDPOINT, {
+
     method: "POST",
     headers: {
       "Content-Type": "application/json",
