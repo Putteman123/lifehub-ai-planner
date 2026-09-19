@@ -13,3 +13,8 @@
 - [x] AI-snabbval med ikoner: nästa besök, dagens schema, kalenderbesök och ring kontoret
 - [x] Besöksrapport per brukare med planerade, utförda och uteblivna besök
 - [x] Säkerställ att alla byggda vårdfunktioner fungerar i Alfa Demo och i alla fyra demoroller
+
+## Pushnotiser
+- [ ] Koppla Firebase Cloud Messaging (väntar på Firebase-uppgifter från Patrick)
+- [ ] Tabell push_tokens + serverfunktioner för utskick
+- [ ] Aviseringsruta med status och testknapp i LifeHub
