@@ -2,7 +2,6 @@ import { Link } from "@tanstack/react-router";
 import { Bell, ChevronRight } from "lucide-react";
 
 import { SectionCard } from "@/components/SectionCard";
-import { Button } from "@/components/ui/button";
 import { useAlertNotifications, useAlerts } from "@/lib/alerts";
 
 const TONE: Record<string, string> = {
@@ -15,7 +14,7 @@ const TONE: Record<string, string> = {
 /** Proaktiva notiser: förfallodatum, IPTV, budget och deadlines. */
 export function AlertsCard() {
   const alerts = useAlerts();
-  const { permission, enable } = useAlertNotifications(alerts);
+  useAlertNotifications(alerts);
 
   if (alerts.length === 0) return null;
 
@@ -26,13 +25,6 @@ export function AlertsCard() {
       accent="text-destructive"
       tint="bg-destructive/12"
       count={alerts.length}
-      action={
-        permission === "default" ? (
-          <Button size="sm" variant="secondary" onClick={enable}>
-            Slå på aviseringar
-          </Button>
-        ) : null
-      }
     >
       <ul className="space-y-2">
         {alerts.map((a) => (
