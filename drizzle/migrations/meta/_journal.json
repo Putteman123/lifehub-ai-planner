@@ -50,6 +50,13 @@
       "when": 1789842485195,
       "tag": "0006_alfa_demo_shopping_finance",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1789858495699,
+      "tag": "0007_push_tokens",
+      "breakpoints": true
     }
   ]
 }
