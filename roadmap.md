@@ -16,5 +16,5 @@
 
 ## Pushnotiser
 - [ ] Koppla Firebase Cloud Messaging (väntar på Firebase-uppgifter från Patrick)
-- [ ] Tabell push_tokens + serverfunktioner för utskick
-- [ ] Aviseringsruta med status och testknapp i LifeHub
+- [x] Tabell push_tokens + serverfunktioner för utskick
+- [x] Aviseringsruta med status och testknapp i LifeHub
