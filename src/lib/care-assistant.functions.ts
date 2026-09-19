@@ -89,10 +89,19 @@ export const askCareAssistant = createServerFn({ method: "POST" })
       .eq("is_active", true);
     if (data.clientId) medQuery = medQuery.eq("client_id", data.clientId);
 
-    const [visitsRes, medsRes, clientsRes] = await Promise.all([
+    let shopQuery = context.supabase
+      .from("care_shopping_items")
+      .select("client_id, title, quantity, is_done")
+      .eq("org_id", org.id)
+      .eq("is_done", false)
+      .limit(60);
+    if (data.clientId) shopQuery = shopQuery.eq("client_id", data.clientId);
+
+    const [visitsRes, medsRes, clientsRes, shopRes] = await Promise.all([
       visitQuery,
       medQuery,
       context.supabase.from("care_clients").select("id, name, address").eq("org_id", org.id),
+      shopQuery,
     ]);
 
     const names = new Map<string, string>(
@@ -137,9 +146,29 @@ export const askCareAssistant = createServerFn({ method: "POST" })
               }${m.requires_delegation ? " [delegering]" : ""}`,
           )
         : ["- inga aktiva mediciner"]),
+      "",
+      "Att handla (ej avbockat):",
+      ...((shopRes.data ?? []).length
+        ? (shopRes.data ?? []).map(
+            (i: { client_id: string; title: string; quantity: string | null }) =>
+              `- ${names.get(i.client_id) ?? "brukare"}: ${i.title}${i.quantity ? ` (${i.quantity})` : ""}`,
+          )
+        : ["- inget på inköpslistan"]),
     ].filter(Boolean);
 
+    const shopItems = (shopRes.data ?? []) as Array<{ client_id: string; title: string; quantity: string | null }>;
     if (data.slug === "alfa-demo") {
+      const q = data.question.toLocaleLowerCase("sv-SE");
+      if (q.includes("handla") || q.includes("inköp") || q.includes("inkop")) {
+        return {
+          answer: shopItems.length
+            ? `Det här står på inköpslistan:\n${shopItems
+                .slice(0, 8)
+                .map((i) => `• ${i.title}${i.quantity ? ` (${i.quantity})` : ""} – ${names.get(i.client_id) ?? "brukare"}`)
+                .join("\n")}`
+            : "Inköpslistan är tom just nu.",
+        };
+      }
       return {
         answer: demoAnswer(
           data.question,
