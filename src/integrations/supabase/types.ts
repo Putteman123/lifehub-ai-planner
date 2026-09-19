@@ -544,6 +544,32 @@ export type Database = {
           },
         ]
       }
+      care_message_reads: {
+        Row: {
+          client_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_message_reads_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "care_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       care_messages: {
         Row: {
           author_id: string
@@ -587,6 +613,44 @@ export type Database = {
             foreignKeyName: "care_messages_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_org_finance: {
+        Row: {
+          created_at: string
+          currency: string
+          hourly_rate: number
+          org_id: string
+          staff_cost_per_hour: number
+          travel_cost_per_km: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          hourly_rate?: number
+          org_id: string
+          staff_cost_per_hour?: number
+          travel_cost_per_km?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          hourly_rate?: number
+          org_id?: string
+          staff_cost_per_hour?: number
+          travel_cost_per_km?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_org_finance_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -645,6 +709,75 @@ export type Database = {
           },
           {
             foreignKeyName: "care_relatives_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_shopping_items: {
+        Row: {
+          amount: number | null
+          client_id: string
+          created_at: string
+          created_by: string | null
+          created_name: string | null
+          created_role: string | null
+          done_at: string | null
+          done_by: string | null
+          id: string
+          is_done: boolean
+          note: string | null
+          org_id: string
+          quantity: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number | null
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          created_name?: string | null
+          created_role?: string | null
+          done_at?: string | null
+          done_by?: string | null
+          id?: string
+          is_done?: boolean
+          note?: string | null
+          org_id: string
+          quantity?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number | null
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          created_name?: string | null
+          created_role?: string | null
+          done_at?: string | null
+          done_by?: string | null
+          id?: string
+          is_done?: boolean
+          note?: string | null
+          org_id?: string
+          quantity?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_shopping_items_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "care_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "care_shopping_items_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
