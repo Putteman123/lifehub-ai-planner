@@ -1,7 +1,10 @@
 import type { ComponentType } from 'react'
 
+import { template as campaignTemplate } from './campaign'
 import { template as careInviteTemplate } from './care-invite'
 import { template as careLeadTemplate } from './care-lead'
+import { template as inboxForwardTemplate } from './inbox-forward'
+import { template as inboxReplyTemplate } from './inbox-reply'
 import { template as reminderTemplate } from './reminder'
 import { template as weeklySummaryTemplate } from './weekly-summary'
 
@@ -28,4 +31,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'reminder': reminderTemplate,
   'care-lead': careLeadTemplate,
   'care-invite': careInviteTemplate,
+  'inbox-forward': inboxForwardTemplate,
+  'inbox-reply': inboxReplyTemplate,
+  'campaign': campaignTemplate,
 }

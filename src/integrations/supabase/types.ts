@@ -329,6 +329,77 @@ export type Database = {
         }
         Relationships: []
       }
+      care_campaign_recipients: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          email: string
+          error: string | null
+          id: string
+          name: string | null
+          status: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          email: string
+          error?: string | null
+          id?: string
+          name?: string | null
+          status: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          email?: string
+          error?: string | null
+          id?: string
+          name?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_campaign_recipients_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "care_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_campaigns: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          failed_count: number
+          id: string
+          sent_count: number
+          skipped_count: number
+          subject: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          failed_count?: number
+          id?: string
+          sent_count?: number
+          skipped_count?: number
+          subject: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          failed_count?: number
+          id?: string
+          sent_count?: number
+          skipped_count?: number
+          subject?: string
+        }
+        Relationships: []
+      }
       care_clients: {
         Row: {
           address: string | null
@@ -428,6 +499,125 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      care_inbox_messages: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          direction: string
+          id: string
+          thread_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          direction: string
+          id?: string
+          thread_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          direction?: string
+          id?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "care_inbox_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "care_inbox_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      care_inbox_settings: {
+        Row: {
+          forward_email: string | null
+          forward_enabled: boolean
+          id: boolean
+          updated_at: string
+        }
+        Insert: {
+          forward_email?: string | null
+          forward_enabled?: boolean
+          id?: boolean
+          updated_at?: string
+        }
+        Update: {
+          forward_email?: string | null
+          forward_enabled?: boolean
+          id?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      care_inbox_threads: {
+        Row: {
+          created_at: string
+          from_email: string
+          from_name: string
+          id: string
+          last_message_at: string
+          org_name: string | null
+          source: string
+          status: string
+          subject: string
+          unread: boolean
+        }
+        Insert: {
+          created_at?: string
+          from_email: string
+          from_name: string
+          id?: string
+          last_message_at?: string
+          org_name?: string | null
+          source?: string
+          status?: string
+          subject: string
+          unread?: boolean
+        }
+        Update: {
+          created_at?: string
+          from_email?: string
+          from_name?: string
+          id?: string
+          last_message_at?: string
+          org_name?: string | null
+          source?: string
+          status?: string
+          subject?: string
+          unread?: boolean
+        }
+        Relationships: []
+      }
+      care_marketing_contacts: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          org_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name?: string | null
+          org_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          org_name?: string | null
+        }
+        Relationships: []
       }
       care_medication_events: {
         Row: {

@@ -41,6 +41,7 @@ function CareAppLayout() {
               </Link>
             ) : null}
             <Item to="/v/samtal" label="Samtal" />
+            <Item to="/v/inkorg" label="Inkorg" />
           </nav>
         </div>
       </header>
@@ -59,7 +60,7 @@ function Item({
   label,
   exact,
 }: {
-  to: "/v" | "/v/organisationer" | "/v/samtal";
+  to: "/v" | "/v/organisationer" | "/v/samtal" | "/v/inkorg";
   label: string;
   exact?: boolean;
 }) {
