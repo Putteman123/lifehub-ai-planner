@@ -95,7 +95,7 @@ function CareHome() {
           <div className="overflow-hidden rounded-md border border-border/70">
             <img
               src={careRoute}
-              alt="Vårdpersonal står vid bilen och går igenum dagens ruttkarta inför nästa besök"
+              alt="Vårdpersonal står vid bilen och går igenom dagens ruttkarta inför nästa besök"
               width={1264}
               height={843}
               loading="lazy"
