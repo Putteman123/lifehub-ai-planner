@@ -62,7 +62,7 @@ export const submitLead = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-const SITE_URL = () => process.env["SITE_URL"] ?? "https://mellberg.online";
+const SITE_URL = () => process.env["SITE_URL"] ?? "https://livo.health";
 
 const ROLE_LABEL: Record<string, string> = {
   superadmin: "superadmin",
