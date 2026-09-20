@@ -31,4 +31,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'reminder': reminderTemplate,
   'care-lead': careLeadTemplate,
   'care-invite': careInviteTemplate,
+  'inbox-forward': inboxForwardTemplate,
+  'inbox-reply': inboxReplyTemplate,
+  'campaign': campaignTemplate,
 }
