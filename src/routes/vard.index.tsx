@@ -56,10 +56,13 @@ function CareHome() {
               insyn – alltid med samtycke.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
-              <Button asChild size="lg">
+              <Button asChild size="lg" className="h-14 px-8 text-base">
+                <Link to="/auth">Logga in</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="h-14 px-8 text-base">
                 <Link to="/vard/kontakt">Boka en demo</Link>
               </Button>
-              <Button asChild size="lg" variant="outline">
+              <Button asChild size="lg" variant="ghost" className="h-14 px-6 text-base">
                 <Link to="/vard/kommun">För kommun och region</Link>
               </Button>
             </div>
