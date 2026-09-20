@@ -45,6 +45,60 @@ export const submitLead = createServerFn({ method: "POST" })
     });
     if (error) throw new Error("Kunde inte skicka just nu. Försök igen om en stund.");
 
+    // Förfrågan hamnar även i superadmins inkorg och vidarebefordras till valfri adress.
+    let threadId: string | null = null;
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: thread } = await supabaseAdmin
+        .from("care_inbox_threads")
+        .insert({
+          source: "lead",
+          from_name: data.contact_name,
+          from_email: data.email,
+          org_name: data.org_name,
+          subject: `Intresseanmälan – ${data.org_name}`,
+        })
+        .select("id")
+        .single();
+      threadId = thread?.id ?? null;
+      if (threadId) {
+        const parts = [
+          data.message ?? "",
+          data.phone ? `Telefon: ${data.phone}` : "",
+          data.segment ? `Verksamhetstyp: ${data.segment}` : "",
+        ].filter(Boolean);
+        await supabaseAdmin.from("care_inbox_messages").insert({
+          thread_id: threadId,
+          direction: "in",
+          body: parts.join("\n\n") || "(inget meddelande)",
+        });
+      }
+
+      const { data: settings } = await supabaseAdmin
+        .from("care_inbox_settings")
+        .select("forward_email, forward_enabled")
+        .limit(1)
+        .maybeSingle();
+      if (settings?.forward_enabled && settings.forward_email) {
+        const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
+        await sendTemplateEmail("inbox-forward", settings.forward_email, {
+          templateData: {
+            contactName: data.contact_name,
+            contactEmail: data.email,
+            orgName: data.org_name,
+            phone: data.phone ?? "",
+            segment: data.segment ?? "",
+            message: data.message ?? "",
+            inboxUrl: `${SITE_URL()}/v/inkorg`,
+          },
+          replyTo: data.email,
+          ...(threadId ? { idempotencyKey: `inbox-forward-${threadId}` } : {}),
+        });
+      }
+    } catch (inboxError) {
+      console.error("Kunde inte lägga förfrågan i inkorgen:", inboxError);
+    }
+
     // Bekräftelsemejl – anmälan sparas även om mejlet inte går fram.
     try {
       const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
