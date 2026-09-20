@@ -25,7 +25,7 @@ export function CareHeader() {
             <Link
               key={l.to}
               to={l.to}
-              className="rounded-full px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              className="rounded px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
               activeProps={{ className: "bg-secondary text-foreground" }}
             >
               {l.label}
@@ -52,7 +52,7 @@ export function CareHeader() {
                 key={l.to}
                 to={l.to}
                 onClick={() => setOpen(false)}
-                className="rounded-xl px-3 py-2 text-sm text-muted-foreground"
+                className="rounded px-3 py-2 text-sm text-muted-foreground"
               >
                 {l.label}
               </Link>

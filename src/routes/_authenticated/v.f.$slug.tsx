@@ -18,6 +18,8 @@ function ShareDemoButton({ slug }: { slug: string }) {
         const { protocol, host } = window.location;
         const base = host.endsWith(".mellberg.online")
           ? `${protocol}//livo.health`
+          : host.endsWith(".livo.health")
+            ? `${protocol}//livo.health`
           : `${protocol}//${host}`;
         const url = `${base}/demo/${slug}`;
         void navigator.clipboard
@@ -46,7 +48,7 @@ type TabPath =
   | "/v/f/$slug/ekonomi"
   | "/v/f/$slug/insatser";
 
-const TABS = [
+const TABS: { key: string; to: TabPath; label: string; icon: typeof UsersRound; exact?: boolean }[] = [
   { key: "personal", to: "/v/f/$slug", label: "Personal", icon: UsersRound, exact: true },
   { key: "brukare", to: "/v/f/$slug/brukare", label: "Brukare", icon: PackageCheck },
   { key: "schema", to: "/v/f/$slug/schema", label: "Schema", icon: CalendarDays },

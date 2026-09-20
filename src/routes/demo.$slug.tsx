@@ -151,7 +151,7 @@ function DemoPage() {
           <h2 className="font-display text-lg font-semibold">Personal</h2>
           <ul className="space-y-2">
             {(members as Member[]).map((m) => (
-              <li key={m.id} className="rounded-2xl border border-border/70 bg-card p-4">
+            <li key={m.id} className="rounded-md border border-border/70 bg-card p-4">
                 <p className="font-medium">{m.display_name}</p>
                 <p className="text-sm text-muted-foreground">
                   {m.role === "org_admin" ? "Verksamhetsadmin" : "Personal"}
@@ -168,7 +168,7 @@ function DemoPage() {
           <h2 className="font-display text-lg font-semibold">Brukare</h2>
           <ul className="space-y-2">
             {(clients as Client[]).map((c) => (
-              <li key={c.id} className="rounded-2xl border border-border/70 bg-card p-4">
+            <li key={c.id} className="rounded-md border border-border/70 bg-card p-4">
                 <p className="font-medium">{c.name}</p>
                 <p className="text-sm text-muted-foreground">{c.address ?? "Ingen adress"}</p>
                 <StatLine stat={clientStats[c.id] ?? emptyStat} />
@@ -192,7 +192,7 @@ function DemoPage() {
               {(todaysVisits as Visit[]).map((v) => (
                 <li
                   key={v.id}
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card p-4"
+                  className="flex items-center justify-between gap-3 rounded-md border border-border/70 bg-card p-4"
                 >
                   <div className="min-w-0">
                     <p className="font-medium">
