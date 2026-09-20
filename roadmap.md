@@ -26,3 +26,7 @@
 - [ ] Koppla Firebase Cloud Messaging (väntar på Firebase-uppgifter från Patrick)
 - [x] Tabell push_tokens + serverfunktioner för utskick
 - [x] Aviseringsruta med status och testknapp i LifeHub
+
+## Domän & projekt
+- [ ] Stoppa omdirigering www.livo.health → mellberg.online (Patrick: Settings → Domains → mellberg.online ⋯ → Unset as primary)
+- [ ] Eventuell flytt av vården till eget Lovable-projekt (Patrick startar remix)
