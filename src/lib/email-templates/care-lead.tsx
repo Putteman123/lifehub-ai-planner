@@ -12,10 +12,10 @@ interface Props {
 const Email = ({ contactName, orgName, message }: Props) => (
   <Html lang="sv" dir="ltr">
     <Head />
-    <Preview>Tack för din intresseanmälan till LifeHub Vård</Preview>
+    <Preview>Tack för din intresseanmälan till livo.health</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={brand}>LifeHub Vård</Text>
+        <Text style={brand}>livo.health</Text>
         <Heading style={h1}>Tack{contactName ? `, ${contactName}` : ""}!</Heading>
         <Text style={text}>
           Vi har tagit emot din intresseanmälan{orgName ? ` för ${orgName}` : ""} och hör av oss
@@ -23,7 +23,7 @@ const Email = ({ contactName, orgName, message }: Props) => (
         </Text>
         {message ? <Text style={quote}>”{message}”</Text> : null}
         <Hr style={hr} />
-        <Text style={footer}>LifeHub Vård – trygg planering för hemsjukvård.</Text>
+        <Text style={footer}>livo.health – trygg planering för hemsjukvård.</Text>
       </Container>
     </Body>
   </Html>
@@ -31,7 +31,7 @@ const Email = ({ contactName, orgName, message }: Props) => (
 
 export const template = {
   component: Email,
-  subject: "Tack för din intresseanmälan – LifeHub Vård",
+  subject: "Tack för din intresseanmälan – livo.health",
   displayName: "Bekräftelse intresseanmälan",
   previewData: {
     contactName: "Anna Karlsson",

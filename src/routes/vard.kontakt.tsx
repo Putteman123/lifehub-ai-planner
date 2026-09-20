@@ -20,13 +20,13 @@ import { submitLead } from "@/lib/care.functions";
 export const Route = createFileRoute("/vard/kontakt")({
   head: () => ({
     meta: [
-      { title: "Boka demo av LifeHub Vård – kontakt och offert" },
+      { title: "Boka demo av livo.health – kontakt och offert" },
       {
         name: "description",
         content:
-          "Berätta kort om er verksamhet så visar vi LifeHub Vård och sätter upp en pilot med påhittade brukare.",
+          "Berätta kort om er verksamhet så visar vi livo.health och sätter upp en pilot med påhittade brukare.",
       },
-      { property: "og:title", content: "Boka demo av LifeHub Vård" },
+      { property: "og:title", content: "Boka demo av livo.health" },
       {
         property: "og:description",
         content: "Demo och offert för kommun, region och privata vårdaktörer.",
@@ -71,7 +71,7 @@ function KontaktPage() {
   return (
     <CareSection eyebrow="Kontakt" title="Boka demo eller be om en offert">
       {sent ? (
-        <div className="rounded-3xl border border-border/70 bg-card p-8">
+        <div className="rounded-md border border-border/70 bg-card p-8">
           <h3 className="font-display text-xl font-semibold">Tack för din förfrågan</h3>
           <p className="mt-2 text-sm text-muted-foreground">
             Vi återkommer till {form.email} med förslag på tid för en genomgång.
@@ -80,7 +80,7 @@ function KontaktPage() {
       ) : (
         <form
           onSubmit={handleSubmit}
-          className="grid max-w-2xl gap-5 rounded-3xl border border-border/70 bg-card p-7"
+          className="grid max-w-2xl gap-5 rounded-md border border-border/70 bg-card p-7 shadow-sm"
         >
           <div className="grid gap-2">
             <Label htmlFor="org_name">Verksamhet</Label>
@@ -151,7 +151,7 @@ function KontaktPage() {
             {busy ? "Skickar…" : "Skicka förfrågan"}
           </Button>
           <p className="text-xs text-muted-foreground">
-            Vi använder uppgifterna enbart för att kontakta er om LifeHub Vård.
+            Vi använder uppgifterna enbart för att kontakta er om livo.health.
           </p>
         </form>
       )}

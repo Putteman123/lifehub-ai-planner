@@ -15,12 +15,12 @@ import { listOrgMedications, logMedicationEvent } from "@/lib/care-admin.functio
 export const Route = createFileRoute("/_authenticated/v/f/$slug/medicin")({
   head: () => ({
     meta: [
-      { title: "Medicin – LifeHub Vård" },
+      { title: "Medicin – livo.health" },
       {
         name: "description",
         content: "Alla mediciner i verksamheten med tider, delegering och given-logg.",
       },
-      { property: "og:title", content: "Medicin – LifeHub Vård" },
+      { property: "og:title", content: "Medicin – livo.health" },
       {
         property: "og:description",
         content: "Alla mediciner i verksamheten med tider, delegering och given-logg.",

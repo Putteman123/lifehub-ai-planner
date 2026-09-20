@@ -15,12 +15,12 @@ import { useDemoRole } from "@/lib/demo-role";
 export const Route = createFileRoute("/_authenticated/v/f/$slug/ekonomi")({
   head: () => ({
     meta: [
-      { title: "Ekonomi – Alfa 1.0 Vård" },
+      { title: "Ekonomi – livo.health" },
       {
         name: "description",
         content: "Intäkter, personalkostnad, resor och resultat per månad för hemtjänsten.",
       },
-      { property: "og:title", content: "Ekonomi – Alfa 1.0 Vård" },
+      { property: "og:title", content: "Ekonomi – livo.health" },
       {
         property: "og:description",
         content: "Fakturaunderlag per brukare och kostnad per anställd i hemtjänstverksamheten.",

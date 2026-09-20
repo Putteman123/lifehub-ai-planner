@@ -17,7 +17,7 @@ function ShareDemoButton({ slug }: { slug: string }) {
         // På en företagssubdomän pekar origin fel – använd alltid huvuddomänen.
         const { protocol, host } = window.location;
         const base = host.endsWith(".mellberg.online")
-          ? `${protocol}//mellberg.online`
+          ? `${protocol}//livo.health`
           : `${protocol}//${host}`;
         const url = `${base}/demo/${slug}`;
         void navigator.clipboard

@@ -34,9 +34,9 @@ import { CalendarDays, ListChecks } from "lucide-react";
 export const Route = createFileRoute("/_authenticated/v/f/$slug/schema")({
   head: () => ({
     meta: [
-      { title: "Schema – LifeHub Vård" },
+      { title: "Schema – livo.health" },
       { name: "description", content: "Veckans besök per brukare och personal." },
-      { property: "og:title", content: "Schema – LifeHub Vård" },
+      { property: "og:title", content: "Schema – livo.health" },
       { property: "og:description", content: "Veckans besök per brukare och personal." },
     ],
   }),

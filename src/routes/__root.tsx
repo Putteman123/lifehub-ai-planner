@@ -114,7 +114,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "LifeHub AI" },
       { name: "description", content: "Din personliga AI-assistent för arbete, familj och privatliv" },
       { name: "author", content: "LifeHub" },
-      { name: "theme-color", content: "#F6F3EC" },
+      { name: "theme-color", content: "#245778" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },

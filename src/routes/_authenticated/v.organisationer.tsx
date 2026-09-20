@@ -21,7 +21,7 @@ import { createCustomer, getCareContext, listLeads, listOrganizations } from "@/
 export const Route = createFileRoute("/_authenticated/v/organisationer")({
   head: () => ({
     meta: [
-      { title: "Kunder – LifeHub Vård" },
+      { title: "Kunder – livo.health" },
       {
         name: "description",
         content: "Lägg upp nya kunder, styr moduler och sätt behörigheter per roll.",

@@ -43,7 +43,7 @@ import {
 export const Route = createFileRoute("/_authenticated/v/kund/$orgId")({
   head: () => ({
     meta: [
-      { title: "Kund – LifeHub Vård" },
+      { title: "Kund – livo.health" },
       { name: "description", content: "Uppgifter, behörigheter, personal och brukare för kunden." },
     ],
   }),
