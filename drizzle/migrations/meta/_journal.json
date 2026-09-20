@@ -57,6 +57,13 @@
       "when": 1789858495699,
       "tag": "0007_push_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789935476937,
+      "tag": "0008_care_inbox_and_campaigns",
+      "breakpoints": true
     }
   ]
 }
