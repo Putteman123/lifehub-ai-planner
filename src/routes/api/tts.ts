@@ -21,6 +21,51 @@ async function authenticatedUser(request: Request) {
 
 /** Naturlig, varm kvinnoröst (ElevenLabs "Charlotte", flerspråkig). */
 const DEFAULT_VOICE_ID = "XB0fDUnXU5powFXDhCwa";
+const DEFAULT_VOICE_NAME = "Charlotte";
+const PREFERRED_VOICE_NAME = "andrea";
+
+type ElevenLabsVoice = { voice_id?: string; name?: string };
+
+let voiceCache: { id: string; name: string } | null = null;
+let voiceLookupPromise: Promise<{ id: string; name: string }> | null = null;
+
+/**
+ * Löser upp rösten "Andrea" på ElevenLabs-kontot via namn.
+ * Prioritet: ELEVENLABS_VOICE_ID → rösten "Andrea" → standardrösten.
+ */
+async function resolveVoice(apiKey: string): Promise<{ id: string; name: string }> {
+  const envId = process.env["ELEVENLABS_VOICE_ID"];
+  if (envId) return { id: envId, name: "env" };
+  if (voiceCache) return voiceCache;
+  if (!voiceLookupPromise) {
+    voiceLookupPromise = (async () => {
+      try {
+        const resp = await fetch("https://api.elevenlabs.io/v1/voices", {
+          headers: { "xi-api-key": apiKey },
+        });
+        if (resp.ok) {
+          const data = (await resp.json()) as { voices?: ElevenLabsVoice[] };
+          const match = (data.voices ?? []).find(
+            (v) => v.name?.trim().toLowerCase() === PREFERRED_VOICE_NAME && v.voice_id,
+          );
+          if (match?.voice_id) {
+            voiceCache = { id: match.voice_id, name: match.name ?? "Andrea" };
+            return voiceCache;
+          }
+        } else {
+          console.error("ElevenLabs röstlista misslyckades:", resp.status);
+        }
+      } catch (error) {
+        console.error("ElevenLabs röstupplösning misslyckades:", error);
+      }
+      voiceCache = { id: DEFAULT_VOICE_ID, name: DEFAULT_VOICE_NAME };
+      return voiceCache;
+    })().finally(() => {
+      voiceLookupPromise = null;
+    });
+  }
+  return voiceLookupPromise;
+}
 
 export const Route = createFileRoute("/api/tts")({
   server: {
