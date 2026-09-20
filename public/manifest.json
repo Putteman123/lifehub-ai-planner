@@ -3,7 +3,7 @@
   "short_name": "livo.health",
   "description": "Trygg planering, omsorg och kontakt för verksamhet, personal, brukare och anhöriga.",
   "lang": "sv",
-  "start_url": "/vard",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#F7F8F6",
