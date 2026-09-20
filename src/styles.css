@@ -285,26 +285,26 @@
   }
 }
 
-/* LifeHub Vård – lugn vårdpalett: djup petrol, varm sand. */
+/* livo.health – klinisk vårdpalett: Deep Care Blue, Soft Health Green, aprikos och mjuk grå. */
 .care-theme {
-  --background: oklch(0.975 0.012 85);
-  --foreground: oklch(0.27 0.045 205);
-  --surface: oklch(0.99 0.006 85);
+  --background: oklch(0.985 0.004 140);
+  --foreground: oklch(0.29 0.055 235);
+  --surface: oklch(0.995 0.002 140);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.27 0.045 205);
+  --card-foreground: oklch(0.29 0.055 235);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.27 0.045 205);
-  --primary: oklch(0.36 0.062 205);
-  --primary-foreground: oklch(0.98 0.01 85);
-  --secondary: oklch(0.93 0.022 80);
-  --secondary-foreground: oklch(0.3 0.05 205);
-  --muted: oklch(0.945 0.014 85);
-  --muted-foreground: oklch(0.5 0.03 205);
-  --accent: oklch(0.76 0.08 72);
-  --accent-foreground: oklch(0.27 0.045 205);
-  --border: oklch(0.36 0.062 205 / 14%);
-  --input: oklch(0.36 0.062 205 / 20%);
-  --ring: oklch(0.36 0.062 205 / 45%);
+  --popover-foreground: oklch(0.29 0.055 235);
+  --primary: oklch(0.43 0.09 235);
+  --primary-foreground: oklch(0.99 0.002 140);
+  --secondary: oklch(0.92 0.035 145);
+  --secondary-foreground: oklch(0.32 0.052 235);
+  --muted: oklch(0.955 0.008 220);
+  --muted-foreground: oklch(0.5 0.035 225);
+  --accent: oklch(0.79 0.12 75);
+  --accent-foreground: oklch(0.28 0.05 235);
+  --border: oklch(0.55 0.045 225 / 18%);
+  --input: oklch(0.55 0.045 225 / 24%);
+  --ring: oklch(0.43 0.09 235 / 48%);
   background-color: var(--background);
   color: var(--foreground);
 }
@@ -326,6 +326,6 @@
 
 .care-hero-glow {
   background:
-    radial-gradient(60% 70% at 15% 15%, oklch(0.36 0.062 205 / 14%), transparent 70%),
-    radial-gradient(50% 60% at 90% 10%, oklch(0.76 0.08 72 / 22%), transparent 70%);
+    linear-gradient(115deg, oklch(0.43 0.09 235 / 10%), transparent 42%),
+    linear-gradient(245deg, oklch(0.76 0.07 145 / 16%), transparent 48%);
 }

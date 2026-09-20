@@ -21,12 +21,12 @@ import { geocodeClients, getCareMap, getDayRoute } from "@/lib/care-places.funct
 export const Route = createFileRoute("/_authenticated/v/f/$slug/karta")({
   head: () => ({
     meta: [
-      { title: "Karta & rutter – LifeHub Vård" },
+      { title: "Karta & rutter – livo.health" },
       {
         name: "description",
         content: "Brukarnas adresser på karta och dagens körrutt per medarbetare.",
       },
-      { property: "og:title", content: "Karta & rutter – LifeHub Vård" },
+      { property: "og:title", content: "Karta & rutter – livo.health" },
       {
         property: "og:description",
         content: "Brukarnas adresser på karta och dagens körrutt per medarbetare.",

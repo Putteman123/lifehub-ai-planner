@@ -8,13 +8,13 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/vard/brukare")({
   head: () => ({
     meta: [
-      { title: "Brukare och anhöriga – dagens schema, medicin och insyn | LifeHub Vård" },
+      { title: "Brukare och anhöriga – dagens schema, medicin och insyn | livo.health" },
       {
         name: "description",
         content:
           "Brukaren ser dagens besök, aktiviteter och medicintider. Anhöriga följer medicin, besök och inköp – med samtycke.",
       },
-      { property: "og:title", content: "LifeHub Vård för brukare och anhöriga" },
+      { property: "og:title", content: "livo.health för brukare och anhöriga" },
       {
         property: "og:description",
         content: "Trygg insyn i vardagen, alltid på brukarens villkor.",
@@ -41,7 +41,7 @@ function BrukarePage() {
               befinner sig – inget mer väntande i ovisshet.
             </p>
           </div>
-          <div className="overflow-hidden rounded-3xl border border-border/70">
+          <div className="overflow-hidden rounded-md border border-border/70">
             <img
               src={careMedicine}
               alt="Medicinlista och dagens schema visat på en surfplatta"

@@ -10,15 +10,15 @@ import { listMyCareThreads } from "@/lib/care-messages.functions";
 export const Route = createFileRoute("/_authenticated/v/samtal")({
   head: () => ({
     meta: [
-      { title: "Samtal – LifeHub Vård" },
+      { title: "Samtal – livo.health" },
       {
         name: "description",
-        content: "Meddelanden mellan personal, brukare och anhöriga i LifeHub Vård.",
+        content: "Meddelanden mellan personal, brukare och anhöriga i livo.health.",
       },
-      { property: "og:title", content: "Samtal – LifeHub Vård" },
+      { property: "og:title", content: "Samtal – livo.health" },
       {
         property: "og:description",
-        content: "Meddelanden mellan personal, brukare och anhöriga i LifeHub Vård.",
+        content: "Meddelanden mellan personal, brukare och anhöriga i livo.health.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

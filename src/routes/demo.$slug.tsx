@@ -13,21 +13,22 @@ import {
 } from "@/components/care/CareStats";
 import { getDemoCompany } from "@/lib/care-demo.functions";
 import { APP_VERSION } from "@/lib/nav-theme";
+import livoLogo from "@/assets/livo-health-logo.png";
 
 export const Route = createFileRoute("/demo/$slug")({
   head: () => ({
     meta: [
-      { title: "Demo av Alfa 1.0 – hemtjänstsystem" },
+      { title: "Demo av livo.health – Digital Omsorgslösning" },
       {
         name: "description",
         content:
-          "Skrivskyddad demo av Alfa 1.0: personal, brukare, besök och mediciner med riktiga siffror.",
+          "Skrivskyddad demo av livo.health: personal, brukare, besök och mediciner med mätbara siffror.",
       },
-      { property: "og:title", content: "Demo av Alfa 1.0 – hemtjänstsystem" },
+      { property: "og:title", content: "Demo av livo.health – Digital Omsorgslösning" },
       {
         property: "og:description",
         content:
-          "Skrivskyddad demo av Alfa 1.0: personal, brukare, besök och mediciner med riktiga siffror.",
+          "Skrivskyddad demo av livo.health: personal, brukare, besök och mediciner med mätbara siffror.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -85,6 +86,7 @@ function DemoPage() {
   if (pin === null || q.error) {
     return (
       <div className="care-theme mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 px-6">
+        <img src={livoLogo} alt="livo.health – Digital Omsorgslösning" width={398} height={100} className="mb-3 h-auto w-full max-w-xs" />
         <h1 className="font-display text-2xl font-semibold tracking-tight">
           Demo av Alfa {APP_VERSION.replace("Alfa ", "")}
         </h1>
@@ -124,6 +126,8 @@ function DemoPage() {
     <div className="care-theme min-h-screen">
       <header className="border-b border-border/70 bg-background/85 px-4 py-4 backdrop-blur">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3">
+          <img src={livoLogo} alt="livo.health" width={185} height={47} className="h-9 w-auto" />
+          <span aria-hidden className="h-6 w-px bg-border" />
           <span className="font-display font-semibold">{org.name}</span>
           <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-secondary-foreground">
             {APP_VERSION}
@@ -147,7 +151,7 @@ function DemoPage() {
           <h2 className="font-display text-lg font-semibold">Personal</h2>
           <ul className="space-y-2">
             {(members as Member[]).map((m) => (
-              <li key={m.id} className="rounded-2xl border border-border/70 bg-card p-4">
+            <li key={m.id} className="rounded-md border border-border/70 bg-card p-4">
                 <p className="font-medium">{m.display_name}</p>
                 <p className="text-sm text-muted-foreground">
                   {m.role === "org_admin" ? "Verksamhetsadmin" : "Personal"}
@@ -164,7 +168,7 @@ function DemoPage() {
           <h2 className="font-display text-lg font-semibold">Brukare</h2>
           <ul className="space-y-2">
             {(clients as Client[]).map((c) => (
-              <li key={c.id} className="rounded-2xl border border-border/70 bg-card p-4">
+            <li key={c.id} className="rounded-md border border-border/70 bg-card p-4">
                 <p className="font-medium">{c.name}</p>
                 <p className="text-sm text-muted-foreground">{c.address ?? "Ingen adress"}</p>
                 <StatLine stat={clientStats[c.id] ?? emptyStat} />
@@ -188,7 +192,7 @@ function DemoPage() {
               {(todaysVisits as Visit[]).map((v) => (
                 <li
                   key={v.id}
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card p-4"
+                  className="flex items-center justify-between gap-3 rounded-md border border-border/70 bg-card p-4"
                 >
                   <div className="min-w-0">
                     <p className="font-medium">

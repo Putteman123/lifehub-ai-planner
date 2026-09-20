@@ -24,11 +24,11 @@ export function DemoRoleSwitcher() {
   };
 
   return (
-    <div className="flex items-center gap-2 rounded-full border border-border/70 bg-card px-3 py-1.5">
+    <div className="flex items-center gap-2 rounded-md border border-border/70 bg-card px-3 py-1.5">
       <Eye className="size-4 text-muted-foreground" />
       <span className="text-xs text-muted-foreground">Visa som</span>
       <Select value={role} onValueChange={(v) => changeRole(v as DemoRole)}>
-        <SelectTrigger className="h-7 w-[168px] rounded-full border-0 bg-secondary text-sm">
+        <SelectTrigger className="h-7 w-[168px] rounded border-0 bg-secondary text-sm">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

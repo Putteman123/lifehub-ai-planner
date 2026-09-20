@@ -7,13 +7,13 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/vard/kommun")({
   head: () => ({
     meta: [
-      { title: "För kommun, region och privata vårdaktörer – LifeHub Vård" },
+      { title: "För kommun, region och privata vårdaktörer – livo.health" },
       {
         name: "description",
         content:
           "Skapa organisationer, styr vilka moduler varje verksamhet får och låt admin lägga schema med adress, uppgifter och tid.",
       },
-      { property: "og:title", content: "LifeHub Vård för kommun och region" },
+      { property: "og:title", content: "livo.health för kommun och region" },
       {
         property: "og:description",
         content: "Organisationer, roller och moduler som styrs uppifrån och ned.",
@@ -58,15 +58,15 @@ function KommunPage() {
 
       <CareSection eyebrow="Så kommer ni igång" title="Tre steg till en pilot">
         <ol className="space-y-4 text-sm leading-relaxed text-muted-foreground">
-          <li className="rounded-2xl border border-border/70 bg-card p-5">
+          <li className="rounded-md border border-border/70 bg-card p-5">
             <span className="font-semibold text-foreground">1. Vi skapar organisationen</span> och
             tilldelar de moduler ni ska prova.
           </li>
-          <li className="rounded-2xl border border-border/70 bg-card p-5">
+          <li className="rounded-md border border-border/70 bg-card p-5">
             <span className="font-semibold text-foreground">2. Er admin bjuder in personal</span> och
             lägger in ett par dagars schema med påhittade brukare.
           </li>
-          <li className="rounded-2xl border border-border/70 bg-card p-5">
+          <li className="rounded-md border border-border/70 bg-card p-5">
             <span className="font-semibold text-foreground">3. Ni kör en vecka</span> och vi justerar
             uppgifter, tider och vyer efter hur det faktiskt fungerar.
           </li>

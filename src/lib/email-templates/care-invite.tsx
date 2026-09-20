@@ -23,13 +23,13 @@ interface Props {
 const Email = ({ orgName, displayName, roleLabel, acceptUrl }: Props) => (
   <Html lang="sv" dir="ltr">
     <Head />
-    <Preview>Du har blivit inbjuden till {orgName ?? "LifeHub Vård"}</Preview>
+    <Preview>Du har blivit inbjuden till {orgName ?? "livo.health"}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={brand}>LifeHub Vård</Text>
+        <Text style={brand}>livo.health</Text>
         <Heading style={h1}>Välkommen{displayName ? `, ${displayName}` : ""}!</Heading>
         <Text style={text}>
-          Du har blivit inbjuden till {orgName ?? "en verksamhet"} i LifeHub Vård
+          Du har blivit inbjuden till {orgName ?? "en verksamhet"} i livo.health
           {roleLabel ? ` som ${roleLabel}` : ""}.
         </Text>
         <Text style={text}>
@@ -50,7 +50,7 @@ const Email = ({ orgName, displayName, roleLabel, acceptUrl }: Props) => (
 export const template = {
   component: Email,
   subject: (data: Record<string, unknown>) =>
-    `Inbjudan till ${typeof data["orgName"] === "string" && data["orgName"] ? data["orgName"] : "LifeHub Vård"}`,
+    `Inbjudan till ${typeof data["orgName"] === "string" && data["orgName"] ? data["orgName"] : "livo.health"}`,
   displayName: "Inbjudan till vårdorganisation",
   previewData: {
     orgName: "Hemtjänst Nord",

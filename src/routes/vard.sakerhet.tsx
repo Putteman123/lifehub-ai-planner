@@ -7,13 +7,13 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/vard/sakerhet")({
   head: () => ({
     meta: [
-      { title: "Säkerhet, samtycke och integritet – LifeHub Vård" },
+      { title: "Säkerhet, samtycke och integritet – livo.health" },
       {
         name: "description",
         content:
           "Roller, samtycken och loggning från start. Varje person ser bara sin egen information, och AI:n har begränsade befogenheter.",
       },
-      { property: "og:title", content: "Säkerhet och integritet i LifeHub Vård" },
+      { property: "og:title", content: "Säkerhet och integritet i livo.health" },
       {
         property: "og:description",
         content: "Strikt behörighetsstyrning, samtycken och loggade läsningar.",
@@ -50,7 +50,7 @@ function SakerhetPage() {
             Känsliga läsningar och ändringar loggas, så det går att följa upp vem som sett vad.
           </CareCard>
         </div>
-        <div className="mt-10 rounded-3xl border border-border/70 bg-card p-6 text-sm leading-relaxed text-muted-foreground">
+        <div className="mt-10 rounded-md border border-border/70 bg-card p-6 text-sm leading-relaxed text-muted-foreground">
           <p className="font-semibold text-foreground">AI med tydliga gränser</p>
           <p className="mt-2">
             Assistenten hjälper till med schemaimport, ordning på besöken och enkla frågor från

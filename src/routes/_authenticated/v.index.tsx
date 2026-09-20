@@ -9,7 +9,7 @@ import { getCareContext } from "@/lib/care.functions";
 export const Route = createFileRoute("/_authenticated/v/")({
   head: () => ({
     meta: [
-      { title: "Översikt – LifeHub Vård" },
+      { title: "Översikt – livo.health" },
       { name: "description", content: "Dina organisationer, roller och aktiva moduler." },
     ],
   }),

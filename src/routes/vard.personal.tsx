@@ -8,13 +8,13 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/vard/personal")({
   head: () => ({
     meta: [
-      { title: "Vårdpersonalens dag – schema, uppgifter och rutt | LifeHub Vård" },
+      { title: "Vårdpersonalens dag – schema, uppgifter och rutt | livo.health" },
       {
         name: "description",
         content:
           "Personalen får dagens besök, uppgifter att pricka av, medicinlista och bästa väg efter dagens färdsätt.",
       },
-      { property: "og:title", content: "Vårdpersonalens vy i LifeHub Vård" },
+      { property: "og:title", content: "Vårdpersonalens vy i livo.health" },
       {
         property: "og:description",
         content: "Dagens schema, uppgifter, medicin och karta – utan ekonomi.",
@@ -41,7 +41,7 @@ function PersonalPage() {
               brukarens eller verksamhetens.
             </p>
           </div>
-          <div className="overflow-hidden rounded-3xl border border-border/70">
+          <div className="overflow-hidden rounded-md border border-border/70">
             <img
               src={careRoute}
               alt="Vårdpersonal med mobilen och dagens rutt"

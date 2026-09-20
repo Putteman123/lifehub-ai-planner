@@ -3,22 +3,23 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import livoLogo from "@/assets/livo-health-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { acceptInvite } from "@/lib/care.functions";
 
 export const Route = createFileRoute("/invite/$token")({
   head: () => ({
     meta: [
-      { title: "Tacka ja till inbjudan – LifeHub Vård" },
+      { title: "Tacka ja till inbjudan – livo.health" },
       {
         name: "description",
         content:
-          "Aktivera din inbjudan till LifeHub Vård och kom in i verksamhetens schema, uppgifter och medicinlista.",
+          "Aktivera din inbjudan till livo.health och kom in i verksamhetens schema, uppgifter och medicinlista.",
       },
-      { property: "og:title", content: "Tacka ja till inbjudan – LifeHub Vård" },
+      { property: "og:title", content: "Tacka ja till inbjudan – livo.health" },
       {
         property: "og:description",
-        content: "Aktivera din inbjudan och kom in i LifeHub Vård.",
+        content: "Aktivera din inbjudan och kom in i livo.health.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -62,8 +63,9 @@ function InvitePage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-svh max-w-md flex-col justify-center gap-5 px-6">
-      <h1 className="text-2xl font-semibold text-foreground">Din inbjudan till LifeHub Vård</h1>
+    <main className="care-theme mx-auto flex min-h-svh max-w-md flex-col justify-center gap-5 px-6">
+      <img src={livoLogo} alt="livo.health – Digital Omsorgslösning" width={398} height={100} className="h-auto w-full max-w-xs" />
+      <h1 className="text-2xl font-semibold text-foreground">Din inbjudan till livo.health</h1>
 
       {done ? (
         <p className="text-muted-foreground">

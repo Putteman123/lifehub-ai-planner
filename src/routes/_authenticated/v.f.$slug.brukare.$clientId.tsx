@@ -35,9 +35,9 @@ import { useDemoRole } from "@/lib/demo-role";
 export const Route = createFileRoute("/_authenticated/v/f/$slug/brukare/$clientId")({
   head: () => ({
     meta: [
-      { title: "Brukare – LifeHub Vård" },
+      { title: "Brukare – livo.health" },
       { name: "description", content: "Brukarens uppgifter, anhöriga, medicinlista och besök." },
-      { property: "og:title", content: "Brukare – LifeHub Vård" },
+      { property: "og:title", content: "Brukare – livo.health" },
       {
         property: "og:description",
         content: "Brukarens uppgifter, anhöriga, medicinlista och besök.",

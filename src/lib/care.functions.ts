@@ -421,7 +421,7 @@ export const inviteMember = createServerFn({ method: "POST" })
       const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
       const result = await sendTemplateEmail("care-invite", data.email, {
         templateData: {
-          orgName: org?.name ?? "LifeHub Vård",
+          orgName: org?.name ?? "livo.health",
           displayName: data.display_name,
           roleLabel: ROLE_LABEL[data.role] ?? data.role,
           acceptUrl: `${SITE_URL()}/invite/${invite.token}`,

@@ -20,12 +20,12 @@ import { useDemoRole } from "@/lib/demo-role";
 export const Route = createFileRoute("/_authenticated/v/f/$slug/handla")({
   head: () => ({
     meta: [
-      { title: "Handla – Alfa 1.0 Vård" },
+      { title: "Handla – livo.health" },
       {
         name: "description",
         content: "Inköpslista per brukare: personal, brukare och anhöriga håller listan aktuell.",
       },
-      { property: "og:title", content: "Handla – Alfa 1.0 Vård" },
+      { property: "og:title", content: "Handla – livo.health" },
       {
         property: "og:description",
         content: "Inköpslista per brukare i hemtjänsten – lägg till, bocka av och notera belopp.",

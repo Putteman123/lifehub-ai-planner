@@ -69,7 +69,7 @@ export function CareSectionHeader({
   action?: ReactNode;
 }) {
   return (
-    <header className="overflow-hidden rounded-3xl border border-border/70 bg-card">
+    <header className="overflow-hidden rounded-md border border-border/70 bg-card shadow-sm">
       {image ? (
         <div className={`relative w-full ${imageHeightClassName}`}>
           <img
@@ -83,7 +83,7 @@ export function CareSectionHeader({
         </div>
       ) : null}
       <div className="flex flex-wrap items-center gap-3 px-5 py-4">
-        <span className="flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <span className="flex size-10 items-center justify-center rounded-md bg-primary/10 text-primary">
           {icon}
         </span>
         <div className="min-w-0 flex-1">
@@ -107,7 +107,7 @@ export function CareAvatar({ name, className = "" }: { name: string; className?:
   return (
     <span
       aria-hidden
-      className={`flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-sm font-semibold text-primary ${className}`}
+      className={`flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-sm font-semibold text-primary ${className}`}
     >
       {initials || "–"}
     </span>
@@ -151,7 +151,7 @@ export function CareNavigateButton({
       target="_blank"
       rel="noreferrer"
       onClick={(e) => e.stopPropagation()}
-      className={`inline-flex items-center gap-1.5 rounded-xl bg-primary font-medium text-primary-foreground transition-opacity hover:opacity-90 ${pad}`}
+      className={`inline-flex items-center gap-1.5 rounded-md bg-primary font-medium text-primary-foreground transition-opacity hover:opacity-90 ${pad}`}
     >
       <Navigation className="size-4" /> {label}
     </a>

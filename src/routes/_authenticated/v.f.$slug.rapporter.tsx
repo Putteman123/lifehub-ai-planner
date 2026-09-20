@@ -21,12 +21,12 @@ import { getCareReports, type ReportRow, type VisitReportRow } from "@/lib/care-
 export const Route = createFileRoute("/_authenticated/v/f/$slug/rapporter")({
   head: () => ({
     meta: [
-      { title: "Rapporter – LifeHub Vård" },
+      { title: "Rapporter – livo.health" },
       {
         name: "description",
         content: "Besök, timmar, kilometer och punktlighet per medarbetare och brukare.",
       },
-      { property: "og:title", content: "Rapporter – LifeHub Vård" },
+      { property: "og:title", content: "Rapporter – livo.health" },
       {
         property: "og:description",
         content: "Besök, timmar, kilometer och punktlighet per medarbetare och brukare.",

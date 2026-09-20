@@ -20,12 +20,12 @@ import { getStaffDetail, saveStaff, setStaffActive } from "@/lib/care-admin.func
 export const Route = createFileRoute("/_authenticated/v/f/$slug/personal/$memberId")({
   head: () => ({
     meta: [
-      { title: "Personalkort – LifeHub Vård" },
+      { title: "Personalkort – livo.health" },
       {
         name: "description",
         content: "Kontaktuppgifter, arbetstider och besök för en anställd.",
       },
-      { property: "og:title", content: "Personalkort – LifeHub Vård" },
+      { property: "og:title", content: "Personalkort – livo.health" },
       {
         property: "og:description",
         content: "Kontaktuppgifter, arbetstider och besök för en anställd.",

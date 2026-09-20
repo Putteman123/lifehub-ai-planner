@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { CalendarCheck, Map, Pill, ShieldCheck, Sparkles, Users } from "lucide-react";
 
 import careHero from "@/assets/care-hero.jpg";
+import livoLogo from "@/assets/livo-health-logo.png";
 import careMedicine from "@/assets/care-medicine.jpg";
 import careRoute from "@/assets/care-route.jpg";
 import { CareCard, CareSection } from "@/components/care/CareChrome";
@@ -10,13 +11,13 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/vard/")({
   head: () => ({
     meta: [
-      { title: "LifeHub Vård – schema, medicin och trygghet i hemsjukvården" },
+      { title: "livo.health – Digital Omsorgslösning" },
       {
         name: "description",
         content:
           "Digitalt stöd för hemsjukvård: schema med adress och uppgifter, medicinlista att pricka av, ruttplanering och insyn för brukare och anhöriga.",
       },
-      { property: "og:title", content: "LifeHub Vård – trygg hemsjukvård i vardagen" },
+      { property: "og:title", content: "livo.health – trygg digital omsorg i vardagen" },
       {
         property: "og:description",
         content:
@@ -33,8 +34,15 @@ function CareHome() {
   return (
     <>
       <section className="care-hero-glow">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 lg:grid-cols-2 lg:py-20">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 lg:grid-cols-[1.05fr_.95fr] lg:py-16">
           <div className="care-rise">
+            <img
+              src={livoLogo}
+              alt="livo.health – Digital Omsorgslösning"
+              width={530}
+              height={133}
+              className="mb-8 h-auto w-full max-w-sm"
+            />
             <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
               <Sparkles className="size-3.5" /> Byggt för hemsjukvård
             </span>
@@ -42,7 +50,7 @@ function CareHome() {
               Hela dagen på plats – från schema till utdelad medicin
             </h1>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
-              LifeHub Vård samlar besök, uppgifter, mediciner och resvägar i ett lugnt gränssnitt.
+              livo.health samlar besök, uppgifter, mediciner och resvägar i ett lugnt gränssnitt.
               Verksamheten planerar, personalen prickar av, brukaren ser sin dag och anhöriga får
               insyn – alltid med samtycke.
             </p>
@@ -55,7 +63,7 @@ function CareHome() {
               </Button>
             </div>
           </div>
-          <div className="care-rise overflow-hidden rounded-[2rem] border border-border/70 shadow-[0_40px_80px_-50px_rgba(0,0,0,0.6)]">
+          <div className="care-rise overflow-hidden rounded-md border border-border/70 shadow-lg">
             <img
               src={careHero}
               alt="Vårdpersonal visar dagens schema i mobilen för en äldre kvinna hemma"
@@ -83,7 +91,7 @@ function CareHome() {
 
       <CareSection eyebrow="Ute på vägarna" title="Rätt väg till nästa besök">
         <div className="grid items-center gap-8 lg:grid-cols-2">
-          <div className="overflow-hidden rounded-3xl border border-border/70">
+          <div className="overflow-hidden rounded-md border border-border/70">
             <img
               src={careRoute}
               alt="Vårdpersonal planerar rutten till nästa besök från bilen"
@@ -126,7 +134,7 @@ function CareHome() {
               <Link to="/vard/brukare">För brukare och anhöriga</Link>
             </Button>
           </div>
-          <div className="overflow-hidden rounded-3xl border border-border/70">
+          <div className="overflow-hidden rounded-md border border-border/70">
             <img
               src={careMedicine}
               alt="Medicindosett och en enkel checklista på en surfplatta"
@@ -154,7 +162,7 @@ function CareHome() {
             Följer medicin, besök, schema och inköp – och ekonomi endast om samtycke finns.
           </CareCard>
         </div>
-        <div className="mt-10 rounded-3xl border border-border/70 bg-card p-8 text-center">
+        <div className="mt-10 rounded-md border border-border/70 bg-card p-8 text-center shadow-sm">
           <h3 className="font-display text-xl font-semibold">Vill ni se det i praktiken?</h3>
           <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
             Vi visar systemet på en halvtimme och sätter upp en pilot med påhittade brukare, så att
