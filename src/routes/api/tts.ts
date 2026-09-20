@@ -101,6 +101,7 @@ export const Route = createFileRoute("/api/tts")({
           });
         }
 
+        const voice = await resolveVoice(elevenKey);
         const subscription = (await response.json()) as ElevenLabsSubscription;
         const used = subscription.character_count ?? null;
         const limit = subscription.character_limit ?? null;
@@ -110,6 +111,8 @@ export const Route = createFileRoute("/api/tts")({
           status: 200,
           errorType: null,
           latencyMs,
+          voice: voice.name,
+          voiceId: voice.id,
           used,
           limit,
           remaining: used !== null && limit !== null ? Math.max(0, limit - used) : null,
@@ -128,9 +131,9 @@ export const Route = createFileRoute("/api/tts")({
 
         const elevenKey = process.env["ELEVENLABS_API_KEY"];
         if (elevenKey) {
-          const voiceId = process.env["ELEVENLABS_VOICE_ID"] || DEFAULT_VOICE_ID;
+          const voice = await resolveVoice(elevenKey);
           const resp = await fetch(
-            `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?output_format=mp3_44100_128`,
+            `https://api.elevenlabs.io/v1/text-to-speech/${voice.id}/stream?output_format=mp3_44100_128`,
             {
               method: "POST",
               headers: {
