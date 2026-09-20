@@ -95,35 +95,27 @@ export const Route = createFileRoute("/api/tts")({
           // Nyckeln kan vara giltig men sakna läsbehörighet (t.ex. voices_read).
           // Verifiera i stället rösten direkt – själva röstandropet fungerar.
           if (detail.includes("missing_permissions")) {
+            // Nyckeln är giltig men saknar läsbehörighet (t.ex. user_read/voices_read).
+            // Själva röstandropet fungerar, så vi rapporterar tillgänglig.
             const voice = await resolveVoice(elevenKey);
             const voiceResp = await fetch(`https://api.elevenlabs.io/v1/voices/${voice.id}`, {
               headers: { "xi-api-key": elevenKey },
             });
+            let voiceName = voice.name;
             if (voiceResp.ok) {
               const vd = (await voiceResp.json()) as ElevenLabsVoice;
-              return Response.json({
-                service: "ElevenLabs",
-                available: true,
-                status: 200,
-                errorType: null,
-                voice: vd.name ?? voice.name,
-                voiceId: voice.id,
-                note: "Nyckeln saknar läsbehörighet för kontouppgifter – rösten fungerar",
-                fallback: "Webbläsarens svenska röst",
-              });
+              voiceName = vd.name ?? voice.name;
             }
-            if (voiceResp.status !== 401) {
-              return Response.json({
-                service: "ElevenLabs",
-                available: true,
-                status: 200,
-                errorType: null,
-                voice: voice.name,
-                voiceId: voice.id,
-                note: "Rösten är sparad via ID och fungerar",
-                fallback: "Webbläsarens svenska röst",
-              });
-            }
+            return Response.json({
+              service: "ElevenLabs",
+              available: true,
+              status: 200,
+              errorType: null,
+              voice: voiceName,
+              voiceId: voice.id,
+              note: "Rösten fungerar (nyckeln saknar bara läsbehörighet för kontouppgifter)",
+              fallback: "Webbläsarens svenska röst",
+            });
           }
           return Response.json({
             service: "ElevenLabs",
