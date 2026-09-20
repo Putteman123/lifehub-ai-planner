@@ -1,12 +1,12 @@
 # Alfa 1.0
 
 ## Livo.health-varumärke
-- [ ] Logga och livo.health-namn på alla publika och inloggade vårdsidor
-- [ ] Ny publik presentation med befintlig vårdinformation
-- [ ] Nya favicon-, mobil-, maskable- och Apple-startikoner
-- [ ] Livo.health-palett och rollanpassade skärmformat
-- [ ] Metadata, demo och inbjudningar uppdaterade till livo.health
-- [ ] Visuell kontroll på dator, iPhone och surfplatta
+- [x] Logga och livo.health-namn på alla publika och inloggade vårdsidor
+- [x] Ny publik presentation med befintlig vårdinformation
+- [x] Nya favicon-, mobil-, maskable- och Apple-startikoner
+- [x] Livo.health-palett och rollanpassade skärmformat
+- [x] Metadata, demo och inbjudningar uppdaterade till livo.health
+- [x] Visuell kontroll på dator, iPhone och surfplatta
 
 - [ ] Undermenyer under Vård (topp + verksamhetsflikar + huvudmeny)
 - [ ] Demoföretag "Alfa Demo" med personal, brukare, anhöriga, mediciner, besök, meddelanden
