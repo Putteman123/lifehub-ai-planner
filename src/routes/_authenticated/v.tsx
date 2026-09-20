@@ -2,8 +2,8 @@ import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 
-import careLogo from "@/assets/care-logo.png";
-import { APP_NAME, APP_VERSION } from "@/lib/nav-theme";
+import livoLogo from "@/assets/livo-health-logo.png";
+import { APP_VERSION } from "@/lib/nav-theme";
 import { listMyAdminOrgs } from "@/lib/care-admin.functions";
 
 export const Route = createFileRoute("/_authenticated/v")({
@@ -22,9 +22,8 @@ function CareAppLayout() {
   return (
     <div className="care-theme min-h-screen">
       <header className="border-b border-border/70 bg-background/85 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3 px-4 py-3">
-          <img src={careLogo} alt="" width={32} height={32} className="size-8" />
-          <span className="font-display font-semibold">{APP_NAME} Vård</span>
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
+          <img src={livoLogo} alt="livo.health – Digital Omsorgslösning" width={212} height={53} className="h-10 w-auto" />
           <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-secondary-foreground">
             {APP_VERSION}
           </span>
@@ -45,11 +44,11 @@ function CareAppLayout() {
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-8">
+      <main className="mx-auto max-w-6xl px-4 py-8">
         <Outlet />
       </main>
-      <footer className="mx-auto max-w-5xl px-4 pb-10 text-xs text-muted-foreground">
-        Alfa Vård · version {APP_VERSION}
+      <footer className="mx-auto max-w-6xl px-4 pb-10 text-xs text-muted-foreground">
+        livo.health · Digital Omsorgslösning · {APP_VERSION}
       </footer>
     </div>
   );
