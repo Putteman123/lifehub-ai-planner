@@ -1,31 +1,51 @@
-# Flytta vårddelen (Alfa 1.0) till ett eget projekt
+# Livo.health – nytt varumärke för hela vårddelen
 
-## Så här går flytten till
+## Mål
 
-Remix kopierar hela projektet — det finns ingen funktion som kopierar bara en del. Därför remixar vi allt och rensar sedan bort LifeHub-delen i kopian, så att bara vårdsystemet (Alfa 1.0) finns kvar. Din nuvarande app och all data rörs inte.
+Göra om vårddelen till **livo.health – Digital Omsorgslösning** före flytten till det nya projektet och den nya domänen. Den privata LifeHub-delen och dess data lämnas oförändrade.
 
-### Steg 1 – du gör (tar en minut)
-1. Högerklicka på projektet i sidlistan (eller projektnamnet uppe till vänster → Inställningar → "Remix this project").
-2. Döp kopian till t.ex. **Alfa 1.0 – Hemtjänst**.
-3. Öppna det nya projektet och skriv till mig där: "Rensa bort LifeHub".
+## Visuell riktning
 
-### Steg 2 – jag gör i det nya projektet
-- Tar bort allt som hör till din privata LifeHub: dashboard, kalender, barn, jurist, inköpslista, ekonomi, kvitton, IPTV, kassaskåp, resor, Gmail-skanning m.m.
-- Behåller det som vårddelen bygger på: inloggning + PIN, Andrea-chatt, hela vårdsystemet under `/v/...` (kunder, verksamheter, personal, brukare, schema, karta, insatser, medicin, handla, ekonomi, rapporter, samtal), demoläget `/demo/alfa-demo` och rollväxlaren.
-- Gör vårdens översikt till startsida — appen öppnar direkt i vårdläge.
-- Kör om databasmigrationerna i det nya projektets backend (kundregister, behörigheter, besök, mediciner, chatt, inköp, ekonomi, pushtokens) och lägger in Alfa Demo-företaget igen.
-- Namnger appen Alfa 1.0 och verifierar att allt bygger och fungerar.
+- Utgå från den uppladdade varumärkesbilden: vit, lugn och klinisk grund med **Deep Care Blue**, **Soft Health Green**, aprikos som varm statusfärg och mjuk grå.
+- Använd ett rent, modernt uttryck med tydlig typografi, luftiga ytor, tunna avdelare och kompakta funktionsytor – samma känsla som personal-, rapporterings- och anhörigvyerna i referensen.
+- Återskapa logotypen som rena, skarpa tillgångar från originalunderlaget: full logotyp med text, symbol och kvadratisk appikon. Ingen skärmdump bäddas in på sidan.
 
-### Steg 3 – du gör efteråt (jag guidar)
-- Lägg in nycklarna på nytt i det nya projektet: `GOOGLE_API_KEY` (kartor, Firebase, Andrea), samt vid behov `OPENAI_API_KEY` / `GOOGLE_CALENDAR_API_KEY`. Hemligheter följer inte med en remix.
-- Subdomäner (`care-4-you.mellberg.online`, `alfa-demo...`): koden följer med, men DNS/publicering pekar idag på detta projekt. Välj: flytta domänen till nya projektet, eller kör på nya projektets egen adress (`*.lovable.app`) tills vidare.
+## Ändringar
 
-## Vad som INTE flyttas automatiskt
-- Databasens innehåll (riktiga kunder/brukare) — nytt projekt får ny tom backend + Alfa Demo-datat. Demo-datat räcker för demonstrationer; skarp data läggs in via kundregistret.
-- Hemligheter/nycklar (steg 3).
-- Publicerad domän — måste kopplas om om du vill ha mellberg.online-adresserna där.
+1. **Logga på alla vårdsidor**
+   - Ersätt LifeHub Vård/Alfa-märkningen med livo.health i den publika sidans sidhuvud och sidfot.
+   - Lägg samma symbol och namn i den inloggade vårddelens sidhuvuden, menyer, inloggning och demo.
+   - Behåll kundernas egna namn där de identifierar respektive verksamhet.
 
-## Tekniska detaljer
-- Rensning: rutter utanför `v.*`/`demo`/`auth`/`invite` tas bort, nav-tema och `APP_NAME` sätts till Alfa 1.0, startsidan `/` omdirigerar till vårdens vy, serverns subdomän-rewrite behålls.
-- Migrationer körs i samma ordning (kundregister → behörigheter → besök/medicin → chatt → inköp/ekonomi → pushtokens → alfa-demo-data).
-- Verifiering: `bunx tsgo --noEmit` grönt, build OK, samt genomgång av demo i alla fyra roller.
+2. **Mobilikon och installerad app**
+   - Skapa nya favicon-, Apple Touch-, Android- och maskable-ikoner från livo.health-symbolen.
+   - Uppdatera appmanifestet till livo.health, rätt färger och rätt installerat appnamn.
+   - Skapa matchande startbilder för iPhone/iPad så den gamla LifeHub-symbolen inte visas vid start.
+
+3. **Ny publik landningssida i referensens stil**
+   - Behåll informationen som redan finns på den gamla vårdlandningssidan: schema, medicin, trygghet, ruttplanering, samtycke och de fyra rollerna.
+   - Bygg om presentationen med livo.health-loggan som första tydliga signal, verkliga vårdbilder och produktnära exempel för personal, rapportering och anhöriga.
+   - Behåll länkarna till Kommun & region, Vårdpersonal, Brukare & anhöriga, Säkerhet och Kontakt/Boka demo.
+   - Anpassa även undersidorna visuellt så de känns som samma webbplats, utan att ändra deras funktion eller formulär.
+
+4. **Inloggade rollvyer**
+   - Anpassa admin för dator, personal och anhörig för mobil samt brukare för surfplatta.
+   - Ge schema, rapportering, kontakt, läkemedel och statusmarkeringar samma visuella språk som referensen.
+   - Behåll alla befintliga funktioner, data, roller, demo-flöden och behörigheter.
+
+5. **Namn och metadata**
+   - Byt vårddelens synliga produktnamn till livo.health och underraden till “Digital Omsorgslösning”.
+   - Uppdatera sidtitlar, beskrivningar och delningsmetadata på samtliga publika vårdsidor.
+   - Förbered domänneutrala länkar så flytten till `livo.health` inte kräver hårdkodade adressändringar.
+
+## Verifiering
+
+- Kontrollera landningssidan och alla publika undersidor på mobil och dator.
+- Kontrollera admin-, personal-, brukar- och anhörigvyn i deras avsedda skärmformat.
+- Kontrollera att logga, appikon, installerat namn och startbild visas korrekt.
+- Kontrollera att demo, inloggning, navigering och befintliga vårdfunktioner fortfarande fungerar.
+- Kör typkontroll och invänta grön förhandsvisning innan domänflytten påbörjas.
+
+## Efter detta
+
+När utseendet är godkänt remixar vi projektet enligt flyttplanen, rensar bort privata LifeHub-delar i kopian och kopplar därefter `livo.health` till det nya vårdprojektet.
