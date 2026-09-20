@@ -4,7 +4,8 @@ import { CalendarCheck, Map, Pill, ShieldCheck, Sparkles, Users } from "lucide-r
 import careHero from "@/assets/care-hero.jpg";
 import livoLogo from "@/assets/livo-health-logo.png";
 import careMedicine from "@/assets/care-medicine.jpg";
-import careRoute from "@/assets/care-route.jpg";
+import careRouteAsset from "@/assets/care-route-field.jpg.asset.json";
+const careRoute = careRouteAsset.url;
 import { CareCard, CareSection } from "@/components/care/CareChrome";
 import { Button } from "@/components/ui/button";
 
@@ -94,9 +95,9 @@ function CareHome() {
           <div className="overflow-hidden rounded-md border border-border/70">
             <img
               src={careRoute}
-              alt="Vårdpersonal planerar rutten till nästa besök från bilen"
-              width={1200}
-              height={800}
+              alt="Vårdpersonal står vid bilen och går igenom dagens ruttkarta inför nästa besök"
+              width={1264}
+              height={843}
               loading="lazy"
               className="h-full w-full object-cover"
             />
