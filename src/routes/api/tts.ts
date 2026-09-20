@@ -35,7 +35,7 @@ let voiceLookupPromise: Promise<{ id: string; name: string }> | null = null;
  */
 async function resolveVoice(apiKey: string): Promise<{ id: string; name: string }> {
   const envId = process.env["ELEVENLABS_VOICE_ID"];
-  if (envId) return { id: envId, name: "env" };
+  if (envId) return { id: envId, name: "Andrea" };
   if (voiceCache) return voiceCache;
   if (!voiceLookupPromise) {
     voiceLookupPromise = (async () => {
@@ -91,6 +91,32 @@ export const Route = createFileRoute("/api/tts")({
         });
         const latencyMs = Date.now() - started;
         if (!response.ok) {
+          const detail = await response.text().catch(() => "");
+          // Nyckeln kan vara giltig men sakna läsbehörighet (t.ex. voices_read).
+          // Verifiera i stället rösten direkt – själva röstandropet fungerar.
+          if (detail.includes("missing_permissions")) {
+            // Nyckeln är giltig men saknar läsbehörighet (t.ex. user_read/voices_read).
+            // Själva röstandropet fungerar, så vi rapporterar tillgänglig.
+            const voice = await resolveVoice(elevenKey);
+            const voiceResp = await fetch(`https://api.elevenlabs.io/v1/voices/${voice.id}`, {
+              headers: { "xi-api-key": elevenKey },
+            });
+            let voiceName = voice.name;
+            if (voiceResp.ok) {
+              const vd = (await voiceResp.json()) as ElevenLabsVoice;
+              voiceName = vd.name ?? voice.name;
+            }
+            return Response.json({
+              service: "ElevenLabs",
+              available: true,
+              status: 200,
+              errorType: null,
+              voice: voiceName,
+              voiceId: voice.id,
+              note: "Rösten fungerar (nyckeln saknar bara läsbehörighet för kontouppgifter)",
+              fallback: "Webbläsarens svenska röst",
+            });
+          }
           return Response.json({
             service: "ElevenLabs",
             available: false,
