@@ -36,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/v/inkorg")({
       },
     ],
   }),
-  component: InboxPage;
+  component: InboxPage,
 });
 
 function InboxPage() {
