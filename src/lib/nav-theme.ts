@@ -2,7 +2,6 @@ import {
   Archive,
   Baby,
   CalendarDays,
-  HeartPulse,
   LayoutDashboard,
   ListTodo,
   MapPin,
