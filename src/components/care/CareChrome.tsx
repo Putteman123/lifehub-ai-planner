@@ -31,8 +31,11 @@ export function CareHeader() {
               {l.label}
             </Link>
           ))}
-          <Button asChild size="sm" className="ml-2">
+          <Button asChild size="sm" variant="outline" className="ml-2">
             <Link to="/vard/kontakt">Boka demo</Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link to="/auth">Logga in</Link>
           </Button>
         </nav>
         <button
@@ -57,9 +60,14 @@ export function CareHeader() {
                 {l.label}
               </Link>
             ))}
-            <Button asChild size="sm" className="mt-2">
+            <Button asChild size="sm" variant="outline" className="mt-2">
               <Link to="/vard/kontakt" onClick={() => setOpen(false)}>
                 Boka demo
+              </Link>
+            </Button>
+            <Button asChild size="sm" className="mt-2">
+              <Link to="/auth" onClick={() => setOpen(false)}>
+                Logga in
               </Link>
             </Button>
           </div>

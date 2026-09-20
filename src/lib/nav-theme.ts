@@ -2,7 +2,6 @@ import {
   Archive,
   Baby,
   CalendarDays,
-  HeartPulse,
   LayoutDashboard,
   ListTodo,
   MapPin,
@@ -37,7 +36,6 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { to: "/arkiv", label: "Arkiv", icon: Archive, color: "text-nav-kalendrar" },
   { to: "/kassaskap", label: "Kassaskåp", icon: ShieldCheck, color: "text-nav-kassaskap" },
   { to: "/kalendrar", label: "Kalendrar", icon: Settings2, color: "text-nav-kalendrar" },
-  { to: "/v", label: "Vård", icon: HeartPulse, color: "text-nav-vard" },
 ] as const;
 
 /** Menyn grupperad så att mobilvyn blir lugnare att skumma. */
@@ -59,7 +57,7 @@ export const NAV_GROUPS: readonly { title: string; items: readonly NavItem[] }[]
   {
     title: "Verktyg",
     items: NAV_ITEMS.filter((i) =>
-      ["/platser", "/iptv", "/arkiv", "/kassaskap", "/kalendrar", "/v"].includes(i.to),
+      ["/platser", "/iptv", "/arkiv", "/kassaskap", "/kalendrar"].includes(i.to),
     ),
   },
 ] as const;

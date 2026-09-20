@@ -56,7 +56,7 @@ export const template = {
     orgName: "Hemtjänst Nord",
     displayName: "Anna Karlsson",
     roleLabel: "vårdpersonal",
-    acceptUrl: "https://mellberg.online/invite/demo-token",
+    acceptUrl: "https://livo.health/invite/demo-token",
   },
 } satisfies TemplateEntry;
 
