@@ -187,7 +187,58 @@ export async function completeText(opts: {
   );
   if (geminiText) return geminiText;
 
+  const pplxText = await completeViaPerplexity(messages, opts.jsonSchema, opts.input);
+  if (pplxText) return pplxText;
+
   return completeViaLovable(messages, opts.jsonSchema);
+}
+
+/** Välj Perplexity-modell efter typ av fråga. */
+function pickPerplexityModel(input: string): string {
+  const q = input.toLocaleLowerCase("sv-SE");
+  if (/(planera|plan |schema|kalender|prioritera|steg för steg|varför)/.test(q))
+    return "sonar-reasoning-pro";
+  if (/(nyhet|senaste|idag|pris|väder|vem är|vad hände|aktuell)/.test(q)) return "sonar-pro";
+  return "sonar";
+}
+
+/** Tredjehandsval: användarens Perplexity-konto, före Lovable-reserven. */
+async function completeViaPerplexity(
+  messages: Message[],
+  jsonSchema: JsonSchema | undefined,
+  input: string,
+): Promise<string | null> {
+  const keys = [process.env["PERPLEXITY_API_KEY_1"], process.env["PERPLEXITY_API_KEY"]].filter(
+    (k): k is string => Boolean(k),
+  );
+  const model = jsonSchema ? "sonar" : pickPerplexityModel(input);
+  for (const key of keys) {
+    try {
+      const res = await fetch("https://api.perplexity.ai/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model,
+          stream: true,
+          messages,
+          ...(jsonSchema
+            ? { response_format: { type: "json_schema", json_schema: { schema: jsonSchema.schema } } }
+            : {}),
+        }),
+      });
+      if (!res.ok || !res.body) {
+        const detail = await res.text().catch(() => "");
+        console.warn(`Perplexity svarade ${res.status}: ${detail.slice(0, 300)}`);
+        continue;
+      }
+      let text = await readStream(res.body);
+      text = text.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+      if (text) return text;
+    } catch (error) {
+      console.warn("Perplexity misslyckades, provar reservtjänsten.", error);
+    }
+  }
+  return null;
 }
 
 export type AiAttachment = { filename: string; mimeType: string; data: string };
