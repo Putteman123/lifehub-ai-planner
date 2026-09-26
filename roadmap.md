@@ -30,3 +30,5 @@
 ## Domän & projekt
 - [ ] Stoppa omdirigering www.livo.health → mellberg.online (Patrick: Settings → Domains → mellberg.online ⋯ → Unset as primary)
 - [ ] Eventuell flytt av vården till eget Lovable-projekt (Patrick startar remix)
+
+- [ ] Ta bort vårdsidorna ur LifeHub – väntar på att Lobohealth fungerar (databas + demoföretag) och domänerna flyttats

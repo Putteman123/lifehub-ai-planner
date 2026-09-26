@@ -7,6 +7,7 @@ import {
   MapPin,
   Scale,
   Settings2,
+  Stethoscope,
   ShieldCheck,
   ShoppingCart,
   Tv,
@@ -32,6 +33,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { to: "/barn", label: "Barn", icon: Baby, color: "text-nav-barn" },
   { to: "/jurist", label: "Jurist", icon: Scale, color: "text-nav-jurist" },
   { to: "/iptv", label: "IPTV", icon: Tv, color: "text-nav-iptv" },
+  { to: "/v", label: "Superadmin", icon: Stethoscope, color: "text-nav-kalendrar" },
   { to: "/platser", label: "Platser", icon: MapPin, color: "text-nav-platser" },
   { to: "/arkiv", label: "Arkiv", icon: Archive, color: "text-nav-kalendrar" },
   { to: "/kassaskap", label: "Kassaskåp", icon: ShieldCheck, color: "text-nav-kassaskap" },
@@ -57,7 +59,7 @@ export const NAV_GROUPS: readonly { title: string; items: readonly NavItem[] }[]
   {
     title: "Verktyg",
     items: NAV_ITEMS.filter((i) =>
-      ["/platser", "/iptv", "/arkiv", "/kassaskap", "/kalendrar"].includes(i.to),
+      ["/platser", "/iptv", "/v", "/arkiv", "/kassaskap", "/kalendrar"].includes(i.to),
     ),
   },
 ] as const;
