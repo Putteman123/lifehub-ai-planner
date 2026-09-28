@@ -160,7 +160,7 @@ export const Route = createFileRoute("/api/chat")({
 
         // Andrea kör på din egen Google-nyckel i första hand.
         // Kartnyckeln duger inte för Gemini och används därför inte som reserv.
-        const geminiKey = process.env["GEMINI_API_KEY"] ?? process.env["GOOGLE_API_KEY"];
+        const geminiKey = process.env["GOOGLE_API_KEY"] ?? process.env["GEMINI_API_KEY"];
 
         const lovableKey = process.env["LOVABLE_API_KEY"];
         if (!geminiKey && !lovableKey) {
