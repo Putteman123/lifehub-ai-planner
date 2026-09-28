@@ -15,7 +15,7 @@ export function createGoogleAiStudioFetch() {
  * den är inte giltig för Generative Language API och ger bara 400-fel.
  */
 export function googleAiKey(): string | undefined {
-  return process.env["GEMINI_API_KEY"] ?? process.env["GOOGLE_API_KEY"];
+  return process.env["GOOGLE_API_KEY"] ?? process.env["GEMINI_API_KEY"];
 }
 
 export function createGoogleAiStudioProvider(geminiApiKey: string) {
