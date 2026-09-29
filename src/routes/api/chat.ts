@@ -1066,6 +1066,10 @@ export const Route = createFileRoute("/api/chat")({
         return result.toUIMessageStreamResponse({
           originalMessages: converted.originalMessages,
           sendReasoning: true,
+          messageMetadata: ({ part }) => {
+            if (part.type === "finish") return { provider: aiProvider() };
+            return undefined;
+          },
           onError: (error) => gatewayMessage(error),
         });
       },
