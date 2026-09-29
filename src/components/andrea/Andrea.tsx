@@ -1197,6 +1197,12 @@ function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: 
                     </div>
                   ) : null}
 
+                  {!thinking && text && providerLabel((m as { metadata?: { provider?: string } }).metadata?.provider) ? (
+                    <p className="text-[11px] text-muted-foreground/70">
+                      {providerLabel((m as { metadata?: { provider?: string } }).metadata?.provider)}
+                    </p>
+                  ) : null}
+
                   {actions.map((part, k) => (
                     <ActionCard
                       key={k}
