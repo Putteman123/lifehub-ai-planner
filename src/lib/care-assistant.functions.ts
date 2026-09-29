@@ -66,7 +66,7 @@ export const askCareAssistant = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const org = await requireOrg(context as Ctx, data.slug);
-    const { completeText } = await import("@/lib/ai-complete.server");
+    const { completeTextDetailed } = await import("@/lib/ai-complete.server");
 
     const now = new Date();
     const from = new Date(now.getTime() - 12 * 3600_000).toISOString();
@@ -178,10 +178,13 @@ export const askCareAssistant = createServerFn({ method: "POST" })
       };
     }
 
-    const answer = await completeText({
+    const result = await completeTextDetailed({
       system: SYSTEM,
       input: `${lines.join("\n")}\n\nFråga: ${data.question}`,
     });
 
-    return { answer: answer || "Jag kunde tyvärr inte svara just nu. Försök igen om en stund." };
+    return {
+      answer: result.text || "Jag kunde tyvärr inte svara just nu. Försök igen om en stund.",
+      provider: result.provider,
+    };
   });
