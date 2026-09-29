@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Baby, Briefcase, CalendarDays, Car, ChevronLeft, ChevronRight, Dumbbell, Plus, Scale, Star, Users } from "lucide-react";
+import { DayBriefCard } from "@/components/calendar/DayBriefCard";
 
 import { AppShell } from "@/components/AppShell";
 import { DataGate } from "@/components/DataGate";
@@ -229,20 +230,69 @@ function OverlapWarning({ events, day }: { events: EventRow[]; day: Date }) {
   );
 }
 
+function eventIcon(e: EventRow) {
+  const t = `${e.title} ${e.category}`.toLowerCase();
+  if (shiftType(e)) return Briefcase;
+  if (/möte|meet|samtal|zoom|teams/.test(t)) return Users;
+  if (/resa|flyg|tåg|bil|kör/.test(t)) return Car;
+  if (/barn|skola|förskola/.test(t)) return Baby;
+  if (/jurist|ärende|advokat/.test(t)) return Scale;
+  if (/viktig/.test(t)) return Star;
+  if (/träning|gym|löp/.test(t)) return Dumbbell;
+  return CalendarDays;
+}
+
 function EventChip({ event, onSelect }: { event: EventRow; onSelect: SelectFn }) {
   const meta = shiftMeta(event);
+  const Icon = eventIcon(event);
   return (
     <button
       onClick={(e) => {
         e.stopPropagation();
         onSelect(event);
       }}
-      className={`w-full truncate rounded-md px-2 py-1 text-left text-[11px] ${meta.chip}`}
+      className={`flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-xs font-medium shadow-sm transition hover:brightness-95 ${meta.chip}`}
     >
-      {event.all_day ? "" : `${fmt(event.starts_at, "HH:mm")} `}
-      {event.title}
+      <Icon className="size-3.5 shrink-0 opacity-80" />
+      <span className="min-w-0 truncate">
+        {event.all_day ? "" : <span className="tabular-nums opacity-75">{fmt(event.starts_at, "HH:mm")} </span>}
+        {event.title}
+      </span>
     </button>
   );
+}
+
+const HOUR_PX = 64;
+
+function layoutDay(items: EventRow[], day: Date) {
+  const start0 = new Date(day);
+  start0.setHours(0, 0, 0, 0);
+  const rows = items
+    .map((e) => {
+      const s = Math.max(0, (new Date(e.starts_at).getTime() - start0.getTime()) / 60000);
+      const en = Math.min(1440, (new Date(e.ends_at).getTime() - start0.getTime()) / 60000);
+      return { e, s, en: Math.max(en, s + 30) };
+    })
+    .sort((a, b) => a.s - b.s);
+  const out: { e: EventRow; s: number; en: number; col: number; cols: number }[] = [];
+  let group: typeof out = [];
+  let groupEnd = -1;
+  const flush = () => {
+    const cols = Math.max(1, ...group.map((g) => g.col + 1));
+    group.forEach((g) => (g.cols = cols));
+    out.push(...group);
+    group = [];
+  };
+  for (const r of rows) {
+    if (r.s >= groupEnd && group.length) flush();
+    const used = new Set(group.filter((g) => g.en > r.s).map((g) => g.col));
+    let col = 0;
+    while (used.has(col)) col++;
+    group.push({ ...r, col, cols: 1 });
+    groupEnd = Math.max(groupEnd, r.en);
+  }
+  if (group.length) flush();
+  return out;
 }
 
 function DayView({
@@ -257,51 +307,99 @@ function DayView({
   piggy?: PiggyFn;
 }) {
   const items = eventsOnDay(events, day);
+  const allDay = items.filter((e) => e.all_day);
+  const timed = layoutDay(items.filter((e) => !e.all_day), day);
   const load = dayLoad(events, day);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [now, setNow] = useState(() => new Date());
+  const isToday = fmt(day, "yyyy-MM-dd") === fmt(now, "yyyy-MM-dd");
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(t);
+  }, []);
+  useEffect(() => {
+    const target = isToday ? nowMin - 90 : timed[0] ? timed[0].s - 60 : 7 * 60;
+    scrollRef.current?.scrollTo({ top: Math.max(0, (target / 60) * HOUR_PX) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [day]);
+
   return (
-    <div className="card-soft p-5">
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <div className={`flex items-center gap-2 text-sm ${LOAD_STYLES[load].text}`}>
-          <span className={`size-2 rounded-full ${LOAD_STYLES[load].dot}`} />
-          {LOAD_STYLES[load].label}
+    <div>
+      <DayBriefCard events={events} day={day} />
+      <div className="card-soft p-4">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div className={`flex items-center gap-2 text-sm ${LOAD_STYLES[load].text}`}>
+            <span className={`size-2 rounded-full ${LOAD_STYLES[load].dot}`} />
+            {LOAD_STYLES[load].label} · {items.length} {items.length === 1 ? "aktivitet" : "aktiviteter"}
+          </div>
+          <PiggyMarker amount={piggy?.(day) ?? null} size="md" />
         </div>
-        <PiggyMarker amount={piggy?.(day) ?? null} size="md" />
-      </div>
-      <div className="space-y-2">
-        {items.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Inga aktiviteter denna dag.</p>
-        ) : (
-          items.map((e) => {
-            const meta = shiftMeta(e);
-            return (
+        {allDay.length ? (
+          <div className="mb-3 space-y-1.5">
+            {allDay.map((e) => (
+              <EventChip key={e.id} event={e} onSelect={onSelect} />
+            ))}
+          </div>
+        ) : null}
+        <OverlapWarning events={events} day={day} />
+        <div ref={scrollRef} className="relative mt-2 max-h-[65vh] overflow-y-auto rounded-xl border border-border/60">
+          <div className="relative" style={{ height: 24 * HOUR_PX }}>
+            {Array.from({ length: 24 }, (_, h) => (
               <button
-                key={e.id}
-                onClick={() => onSelect(e)}
-                className={`flex w-full items-center gap-3 rounded-lg border-l-2 bg-surface px-3 py-3 text-left hover:bg-accent ${meta.bar}`}
+                key={h}
+                onClick={() => {
+                  const d = new Date(day);
+                  d.setHours(h, 0, 0, 0);
+                  onSelect(null, d);
+                }}
+                className="absolute inset-x-0 flex border-t border-border/50 text-left hover:bg-accent/40"
+                style={{ top: h * HOUR_PX, height: HOUR_PX }}
+                aria-label={`Ny händelse ${h}:00`}
               >
-                <span className="w-24 shrink-0 text-xs tabular-nums text-muted-foreground">
-                  {timeRange(e)}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2">
-                    <span className="min-w-0 truncate text-sm font-medium">{e.title}</span>
-                    {meta.shift ? (
-                      <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${meta.chip}`}>
-                        {meta.label}
-                      </span>
-                    ) : null}
-                  </span>
-                  {e.location ? (
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {e.location}
-                    </span>
-                  ) : null}
+                <span className="w-12 shrink-0 -translate-y-2 bg-card pl-2 text-[11px] tabular-nums text-muted-foreground">
+                  {String(h).padStart(2, "0")}:00
                 </span>
               </button>
-            );
-          })
-        )}
-        <OverlapWarning events={events} day={day} />
+            ))}
+            {timed.map(({ e, s, en, col, cols }) => {
+              const meta = shiftMeta(e);
+              const Icon = eventIcon(e);
+              const h = ((en - s) / 60) * HOUR_PX;
+              return (
+                <button
+                  key={e.id}
+                  onClick={() => onSelect(e)}
+                  className={`absolute overflow-hidden rounded-lg border-l-4 px-2 py-1 text-left shadow-sm transition hover:shadow-md ${meta.chip} ${meta.bar}`}
+                  style={{
+                    top: (s / 60) * HOUR_PX + 1,
+                    height: h - 2,
+                    left: `calc(3.25rem + (100% - 3.75rem) * ${col / cols})`,
+                    width: `calc((100% - 3.75rem) / ${cols} - 4px)`,
+                  }}
+                >
+                  <span className="flex items-center gap-1.5 text-xs font-semibold">
+                    <Icon className="size-3.5 shrink-0" />
+                    <span className="truncate">{e.title}</span>
+                  </span>
+                  {h > 36 ? (
+                    <span className="block truncate text-[11px] tabular-nums opacity-80">
+                      {timeRange(e)}
+                      {e.location ? ` · ${e.location}` : ""}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+            {isToday ? (
+              <div className="pointer-events-none absolute inset-x-0 z-10 flex items-center" style={{ top: (nowMin / 60) * HOUR_PX }}>
+                <span className="ml-11 size-2.5 rounded-full bg-destructive" />
+                <span className="h-0.5 flex-1 bg-destructive" />
+              </div>
+            ) : null}
+          </div>
+        </div>
       </div>
     </div>
   );
