@@ -130,6 +130,22 @@ function readAsDataUrl(file: File) {
   });
 }
 
+/** Liten etikett som visar vilken AI-tjänst som levererade svaret. */
+function providerLabel(provider?: string): string | null {
+  switch (provider) {
+    case "google":
+      return "Svarade via din Google-nyckel";
+    case "openai":
+      return "Svarade via ChatGPT";
+    case "perplexity":
+      return "Svarade via Perplexity";
+    case "lovable":
+      return "Svarade via Lovable (reserv)";
+    default:
+      return null;
+  }
+}
+
 /** Historik utan tunga fildata så localStorage inte spränger kvoten. */
 function slimForStorage(messages: UIMessage[]): UIMessage[] {
   return messages.map((m) => ({

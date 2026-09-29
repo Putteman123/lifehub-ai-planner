@@ -29,11 +29,15 @@ export function CareAssistant({ slug, clientId }: { slug: string; clientId?: str
   const meet = useServerFn(startCareMeet);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
+  const [provider, setProvider] = useState<string | null>(null);
 
   const askM = useMutation({
     mutationFn: (q: string) =>
       ask({ data: { slug, clientId, question: q, role: demoRoleLabel(role) } }),
-    onSuccess: (r) => setAnswer(r.answer),
+    onSuccess: (r) => {
+      setAnswer(r.answer);
+      setProvider((r as { provider?: string }).provider ?? null);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
