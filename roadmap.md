@@ -32,3 +32,5 @@
 - [ ] Eventuell flytt av vården till eget Lovable-projekt (Patrick startar remix)
 
 - [ ] Ta bort vårdsidorna ur LifeHub – väntar på att Lobohealth fungerar (databas + demoföretag) och domänerna flyttats
+
+- [ ] Flytta livo.health + www.livo.health till Lobohealth (kräver Project Settings → Domains i båda projekten)

@@ -129,7 +129,7 @@
   --cat-iptv: oklch(0.52 0.1 205);
   --cat-ekonomi: oklch(0.5 0.11 165);
 
-  --shadow-soft: 0 1px 2px oklch(0.29 0.075 268 / 6%), 0 12px 28px -18px oklch(0.29 0.075 268 / 30%);
+  --shadow-soft: 0 1px 2px oklch(0.29 0.075 268 / 4%), 0 8px 24px -12px oklch(0.29 0.075 268 / 18%);
   --shadow-glow: 0 0 0 1px oklch(0.29 0.075 268 / 12%), 0 16px 36px -20px oklch(0.29 0.075 268 / 35%);
 
   --nav-oversikt: oklch(0.29 0.075 268);
