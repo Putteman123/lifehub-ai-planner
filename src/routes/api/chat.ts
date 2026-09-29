@@ -1039,6 +1039,12 @@ export const Route = createFileRoute("/api/chat")({
         const model = gemini && fallback
           ? withModelFallback(primaryModel, fallback.model)
           : primaryModel;
+        const aiProvider = (): "google" | "lovable" =>
+          gemini
+            ? "lastUsed" in model && (model as { lastUsed: () => string }).lastUsed() === "fallback"
+              ? "lovable"
+              : "google"
+            : "lovable";
 
         const result = streamText({
           model,
@@ -1060,6 +1066,10 @@ export const Route = createFileRoute("/api/chat")({
         return result.toUIMessageStreamResponse({
           originalMessages: converted.originalMessages,
           sendReasoning: true,
+          messageMetadata: ({ part }) => {
+            if (part.type === "finish") return { provider: aiProvider() };
+            return undefined;
+          },
           onError: (error) => gatewayMessage(error),
         });
       },

@@ -164,20 +164,23 @@ async function completeViaGemini(
  * Kör ett strömmande textanrop i prioritetsordning:
  * ChatGPT (eget konto) → Gemini (eget konto) → Lovable AI (reserv).
  */
-export async function completeText(opts: {
+export type AiProvider = "openai" | "google" | "perplexity" | "lovable";
+
+/** Som completeText, men berättar även vilken AI-tjänst som levererade svaret. */
+export async function completeTextDetailed(opts: {
   apiKey?: string;
   system: string;
   input: string;
   jsonSchema?: JsonSchema;
   model?: string;
-}): Promise<string> {
+}): Promise<{ text: string; provider: AiProvider }> {
   const messages: Message[] = [
     { role: "system", content: opts.system },
     { role: "user", content: opts.input },
   ];
 
   const openAiText = await completeViaOpenAI(messages, opts.jsonSchema);
-  if (openAiText) return openAiText;
+  if (openAiText) return { text: openAiText, provider: "openai" };
 
   const geminiText = await completeViaGemini(
     messages,
@@ -185,12 +188,22 @@ export async function completeText(opts: {
     opts.model ?? ANDREA_FAST_MODEL,
     opts.apiKey,
   );
-  if (geminiText) return geminiText;
+  if (geminiText) return { text: geminiText, provider: "google" };
 
   const pplxText = await completeViaPerplexity(messages, opts.jsonSchema, opts.input);
-  if (pplxText) return pplxText;
+  if (pplxText) return { text: pplxText, provider: "perplexity" };
 
-  return completeViaLovable(messages, opts.jsonSchema);
+  return { text: await completeViaLovable(messages, opts.jsonSchema), provider: "lovable" };
+}
+
+export async function completeText(opts: {
+  apiKey?: string;
+  system: string;
+  input: string;
+  jsonSchema?: JsonSchema;
+  model?: string;
+}): Promise<string> {
+  return (await completeTextDetailed(opts)).text;
 }
 
 /** Välj Perplexity-modell efter typ av fråga. */

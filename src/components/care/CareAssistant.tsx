@@ -29,11 +29,15 @@ export function CareAssistant({ slug, clientId }: { slug: string; clientId?: str
   const meet = useServerFn(startCareMeet);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
+  const [provider, setProvider] = useState<string | null>(null);
 
   const askM = useMutation({
     mutationFn: (q: string) =>
       ask({ data: { slug, clientId, question: q, role: demoRoleLabel(role) } }),
-    onSuccess: (r) => setAnswer(r.answer),
+    onSuccess: (r) => {
+      setAnswer(r.answer);
+      setProvider((r as { provider?: string }).provider ?? null);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -119,7 +123,20 @@ export function CareAssistant({ slug, clientId }: { slug: string; clientId?: str
       </form>
 
       {answer ? (
-        <p className="mt-3 whitespace-pre-wrap rounded-2xl bg-background/70 p-3 text-sm">{answer}</p>
+        <div className="mt-3 space-y-1">
+          <p className="whitespace-pre-wrap rounded-2xl bg-background/70 p-3 text-sm">{answer}</p>
+          {provider ? (
+            <p className="text-[11px] text-muted-foreground/70">
+              {provider === "google"
+                ? "Svarade via din Google-nyckel"
+                : provider === "openai"
+                  ? "Svarade via ChatGPT"
+                  : provider === "perplexity"
+                    ? "Svarade via Perplexity"
+                    : "Svarade via Lovable (reserv)"}
+            </p>
+          ) : null}
+        </div>
       ) : null}
     </section>
   );

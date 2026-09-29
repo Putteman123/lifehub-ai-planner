@@ -130,6 +130,22 @@ function readAsDataUrl(file: File) {
   });
 }
 
+/** Liten etikett som visar vilken AI-tjänst som levererade svaret. */
+function providerLabel(provider?: string): string | null {
+  switch (provider) {
+    case "google":
+      return "Svarade via din Google-nyckel";
+    case "openai":
+      return "Svarade via ChatGPT";
+    case "perplexity":
+      return "Svarade via Perplexity";
+    case "lovable":
+      return "Svarade via Lovable (reserv)";
+    default:
+      return null;
+  }
+}
+
 /** Historik utan tunga fildata så localStorage inte spränger kvoten. */
 function slimForStorage(messages: UIMessage[]): UIMessage[] {
   return messages.map((m) => ({
@@ -1195,6 +1211,12 @@ function AndreaPanel({ onClose, autoVoice }: { onClose: () => void; autoVoice?: 
                     <div className="rounded-2xl rounded-bl-md bg-muted/60 px-4 py-2.5 text-sm leading-relaxed [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-2 [&_p:last-child]:mb-0 [&_strong]:font-semibold [&_ul]:mb-2 [&_ul]:space-y-1">
                       <ReactMarkdown>{text}</ReactMarkdown>
                     </div>
+                  ) : null}
+
+                  {!thinking && text && providerLabel((m as { metadata?: { provider?: string } }).metadata?.provider) ? (
+                    <p className="text-[11px] text-muted-foreground/70">
+                      {providerLabel((m as { metadata?: { provider?: string } }).metadata?.provider)}
+                    </p>
                   ) : null}
 
                   {actions.map((part, k) => (
