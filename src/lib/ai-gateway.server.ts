@@ -64,20 +64,28 @@ export function createLovableResponsesModel(apiKey: string, initialRunId?: strin
   };
 }
 
+export type FallbackAwareModel = LanguageModelV4 & {
+  /** "primary" tills reserven har använts, därefter "fallback". */
+  lastUsed: () => "primary" | "fallback";
+};
+
 /** Byter leverantör om primärmodellen avvisar anropet innan streamen startar. */
 export function withModelFallback(
   primary: LanguageModelV4,
   fallback: LanguageModelV4,
-): LanguageModelV4 {
+): FallbackAwareModel {
+  let used: "primary" | "fallback" = "primary";
   return {
     specificationVersion: "v4",
     provider: `${primary.provider}+fallback`,
     modelId: primary.modelId,
     supportedUrls: primary.supportedUrls,
+    lastUsed: () => used,
     doGenerate: async (options) => {
       try {
         return await primary.doGenerate(options);
       } catch (error) {
+        used = "fallback";
         console.warn("Andrea: primär AI misslyckades, använder Lovable AI-reserven.", error);
         return fallback.doGenerate(options);
       }
@@ -86,6 +94,7 @@ export function withModelFallback(
       try {
         return await primary.doStream(options);
       } catch (error) {
+        used = "fallback";
         console.warn("Andrea: primär AI misslyckades, använder Lovable AI-reserven.", error);
         return fallback.doStream(options);
       }
