@@ -29,10 +29,10 @@ export function GooglePanel({ connectedExternalIds }: { connectedExternalIds: st
     retry: false,
   });
 
-  async function importCalendar(externalId: string, name: string) {
+  async function importCalendar(externalId: string, name: string, account: number) {
     setBusy(externalId);
     try {
-      const { calendarId } = await connectFn({ data: { externalId, name } });
+      const { calendarId } = await connectFn({ data: { externalId, name, account } });
       const result = await syncFn({ data: { calendarId } });
       await qc.invalidateQueries({ queryKey: ["calendars"] });
       await qc.invalidateQueries({ queryKey: ["events"] });
@@ -75,37 +75,54 @@ export function GooglePanel({ connectedExternalIds }: { connectedExternalIds: st
             Kunde inte hämta kalendrar från Google.
           </p>
         ) : (
-          <ul className="mt-2 space-y-2">
-            {(calendarsQ.data ?? []).map((c) => {
-              const imported = connectedExternalIds.includes(c.id);
-              return (
-                <li
-                  key={c.id}
-                  className="flex min-w-0 items-center justify-between gap-2 rounded-xl bg-muted/40 px-3 py-2"
-                >
-                  <span className="truncate text-sm">{c.summary}</span>
-                  <Button
-                    size="sm"
-                    variant={imported ? "ghost" : "secondary"}
-                    disabled={busy === c.id}
-                    onClick={() => importCalendar(c.id, c.summary)}
-                  >
-                    {busy === c.id ? (
-                      <Loader2 className="size-4 animate-spin" />
-                    ) : imported ? (
-                      <>
-                        <Check className="size-4" /> Synka
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="size-4" /> Importera
-                      </>
-                    )}
-                  </Button>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="mt-2 space-y-4">
+            {Object.entries(
+              (calendarsQ.data ?? []).reduce<Record<string, typeof calendarsQ.data>>(
+                (acc, c) => {
+                  (acc[c.accountLabel] ??= []).push(c);
+                  return acc;
+                },
+                {},
+              ),
+            ).map(([label, cals]) => (
+              <div key={label}>
+                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  {label}
+                </p>
+                <ul className="space-y-2">
+                  {(cals ?? []).map((c) => {
+                    const imported = connectedExternalIds.includes(`${c.account}:${c.id}`);
+                    return (
+                      <li
+                        key={`${c.account}:${c.id}`}
+                        className="flex min-w-0 items-center justify-between gap-2 rounded-xl bg-muted/40 px-3 py-2"
+                      >
+                        <span className="truncate text-sm">{c.summary}</span>
+                        <Button
+                          size="sm"
+                          variant={imported ? "ghost" : "secondary"}
+                          disabled={busy === c.id}
+                          onClick={() => importCalendar(c.id, c.summary, c.account)}
+                        >
+                          {busy === c.id ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : imported ? (
+                            <>
+                              <Check className="size-4" /> Synka
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="size-4" /> Importera
+                            </>
+                          )}
+                        </Button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </section>

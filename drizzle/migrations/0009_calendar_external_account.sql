@@ -1,0 +1,1 @@
+ALTER TABLE public.calendars ADD COLUMN IF NOT EXISTS external_account integer NOT NULL DEFAULT 0;

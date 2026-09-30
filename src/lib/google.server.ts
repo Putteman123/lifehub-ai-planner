@@ -89,13 +89,31 @@ async function callMapsDirect(
 }
 
 
+/**
+ * Alla kopplade Google Calendar-konton. Första kopplingen heter
+ * GOOGLE_CALENDAR_API_KEY, därefter _2, _3 ... Returnerar index + nyckel.
+ */
+export function calendarAccounts(): Array<{ index: number; key: string }> {
+  const out: Array<{ index: number; key: string }> = [];
+  for (let i = 1; i <= 5; i++) {
+    const env = i === 1 ? "GOOGLE_CALENDAR_API_KEY" : `GOOGLE_CALENDAR_API_KEY_${i}`;
+    const key = process.env[env];
+    if (key) out.push({ index: i - 1, key });
+  }
+  return out;
+}
+
 async function call(
   service: GoogleService,
   path: string,
   init?: { method?: string; body?: unknown; headers?: Record<string, string> },
+  accountIndex?: number,
 ): Promise<unknown> {
   const lovableKey = process.env["LOVABLE_API_KEY"];
-  const connectorKey = process.env[GOOGLE_CONNECTORS[service].env];
+  let connectorKey = process.env[GOOGLE_CONNECTORS[service].env];
+  if (service === "calendar" && accountIndex !== undefined) {
+    connectorKey = calendarAccounts().find((a) => a.index === accountIndex)?.key;
+  }
 
   if (service === "maps") {
     const own = ownMapsKey();
@@ -145,18 +163,39 @@ export type GoogleCalendarSummary = {
   summary: string;
   primary: boolean;
   backgroundColor: string | null;
+  /** Vilket kopplat Google-konto kalendern tillhör (0 = första kopplingen). */
+  account: number;
+  /** Kontots e-postadress (primärkalenderns id). */
+  accountLabel: string;
 };
 
+/** Kalendrar från alla kopplade Google-konton, märkta med konto. */
 export async function listGoogleCalendars(): Promise<GoogleCalendarSummary[]> {
-  const data = (await call("calendar", "/calendar/v3/users/me/calendarList?maxResults=250")) as {
-    items?: Array<{ id: string; summary?: string; primary?: boolean; backgroundColor?: string }>;
-  };
-  return (data.items ?? []).map((c) => ({
-    id: c.id,
-    summary: c.summary ?? c.id,
-    primary: Boolean(c.primary),
-    backgroundColor: c.backgroundColor ?? null,
-  }));
+  const accounts = calendarAccounts();
+  const out: GoogleCalendarSummary[] = [];
+  for (const account of accounts) {
+    const data = (await call(
+      "calendar",
+      "/calendar/v3/users/me/calendarList?maxResults=250",
+      undefined,
+      account.index,
+    )) as {
+      items?: Array<{ id: string; summary?: string; primary?: boolean; backgroundColor?: string }>;
+    };
+    const items = data.items ?? [];
+    const label = items.find((c) => c.primary)?.id ?? `Konto ${account.index + 1}`;
+    for (const c of items) {
+      out.push({
+        id: c.id,
+        summary: c.summary ?? c.id,
+        primary: Boolean(c.primary),
+        backgroundColor: c.backgroundColor ?? null,
+        account: account.index,
+        accountLabel: label,
+      });
+    }
+  }
+  return out;
 }
 
 export type GoogleEvent = {
@@ -173,6 +212,7 @@ export async function fetchGoogleEvents(
   calendarId: string,
   fromIso: string,
   toIso: string,
+  account = 0,
 ): Promise<GoogleEvent[]> {
   const out: GoogleEvent[] = [];
   let pageToken: string | undefined;
@@ -190,6 +230,8 @@ export async function fetchGoogleEvents(
     const data = (await call(
       "calendar",
       `/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${params.toString()}`,
+      undefined,
+      account,
     )) as {
       items?: Array<{
         id: string;
@@ -228,6 +270,7 @@ export async function fetchGoogleEvents(
 export async function createGoogleEvent(
   calendarId: string,
   input: { title: string; startsAt: string; endsAt: string; location?: string; description?: string },
+  account = 0,
 ) {
   const body = {
     summary: input.title,
@@ -240,6 +283,7 @@ export async function createGoogleEvent(
     "calendar",
     `/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
     { method: "POST", body },
+    account,
   )) as { id?: string; htmlLink?: string };
   return { id: data.id ?? null, link: data.htmlLink ?? null };
 }
@@ -249,6 +293,7 @@ export async function updateGoogleEvent(
   calendarId: string,
   eventId: string,
   input: { title: string; startsAt: string; endsAt: string; location?: string; description?: string },
+  account = 0,
 ) {
   const body = {
     summary: input.title,
@@ -261,16 +306,18 @@ export async function updateGoogleEvent(
     "calendar",
     `/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
     { method: "PATCH", body },
+    account,
   )) as { id?: string; htmlLink?: string };
   return { id: data.id ?? eventId, link: data.htmlLink ?? null };
 }
 
 /** Ta bort en händelse ur Google-kalendern. */
-export async function deleteGoogleEvent(calendarId: string, eventId: string) {
+export async function deleteGoogleEvent(calendarId: string, eventId: string, account = 0) {
   await call(
     "calendar",
     `/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
     { method: "DELETE" },
+    account,
   );
   return { deleted: true };
 }

@@ -149,7 +149,9 @@ function CalendarsPage() {
       <GoogleStatusPanel />
       <CategoryManager />
       <GooglePanel
-        connectedExternalIds={calendars.map((c) => c.external_id).filter((v): v is string => !!v)}
+        connectedExternalIds={calendars
+          .map((c) => (c.external_id ? `${c.external_account ?? 0}:${c.external_id}` : null))
+          .filter((v): v is string => !!v)}
       />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
