@@ -44,6 +44,36 @@ describe("GitHub-översikt", () => {
     });
   }
 
+  it("returnerar cache utan ny fetch inom cachetiden", async () => {
+    const c = ctx(async () => ({ data: true, error: null }));
+    const f = okFetch();
+    await loadGithubOverview(c, { fetchImpl: f });
+    expect(f).toHaveBeenCalledTimes(5);
+    const f2 = okFetch();
+    const d = await loadGithubOverview(c, { fetchImpl: f2 });
+    expect(d.repo.defaultBranch).toBe("main");
+    expect(f2).not.toHaveBeenCalled();
+  });
+
+  it("force:true hämtar på nytt trots färsk cache", async () => {
+    const c = ctx(async () => ({ data: true, error: null }));
+    await loadGithubOverview(c, { fetchImpl: okFetch() });
+    const f2 = okFetch();
+    const d = await loadGithubOverview(c, { force: true, fetchImpl: f2 });
+    expect(d.repo.fullName).toBe("Putteman123/lifehub-ai-planner");
+    expect(f2).toHaveBeenCalledTimes(5);
+  });
+
+  it("safeGithubUrl avvisar osäkra protokoll och värdar", () => {
+    const fallback = "https://github.com/Putteman123/lifehub-ai-planner";
+    expect(safeGithubUrl("javascript:alert(1)")).toBe(fallback);
+    expect(safeGithubUrl("http://github.com/x")).toBe(fallback);
+    expect(safeGithubUrl("https://evil.com/x")).toBe(fallback);
+    expect(safeGithubUrl("https://github.com.evil.com/x")).toBe(fallback);
+    expect(safeGithubUrl(123)).toBe(fallback);
+    expect(safeGithubUrl("https://github.com/Putteman123/lifehub-ai-planner")).toBe(fallback);
+  });
+
   it("visar läsbart fel vid rate limit", async () => {
     const f = vi.fn(async () => new Response("{}", { status: 403, headers: { "x-ratelimit-remaining": "0" } })) as unknown as typeof fetch;
     await expect(loadGithubOverview(ctx(async () => ({ data: true, error: null })), { fetchImpl: f })).rejects.toThrow(/gräns/);
