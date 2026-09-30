@@ -230,6 +230,8 @@ export async function fetchGoogleEvents(
     const data = (await call(
       "calendar",
       `/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${params.toString()}`,
+      undefined,
+      account,
     )) as {
       items?: Array<{
         id: string;
@@ -268,6 +270,7 @@ export async function fetchGoogleEvents(
 export async function createGoogleEvent(
   calendarId: string,
   input: { title: string; startsAt: string; endsAt: string; location?: string; description?: string },
+  account = 0,
 ) {
   const body = {
     summary: input.title,
@@ -280,6 +283,7 @@ export async function createGoogleEvent(
     "calendar",
     `/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
     { method: "POST", body },
+    account,
   )) as { id?: string; htmlLink?: string };
   return { id: data.id ?? null, link: data.htmlLink ?? null };
 }
@@ -289,6 +293,7 @@ export async function updateGoogleEvent(
   calendarId: string,
   eventId: string,
   input: { title: string; startsAt: string; endsAt: string; location?: string; description?: string },
+  account = 0,
 ) {
   const body = {
     summary: input.title,
@@ -301,16 +306,18 @@ export async function updateGoogleEvent(
     "calendar",
     `/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
     { method: "PATCH", body },
+    account,
   )) as { id?: string; htmlLink?: string };
   return { id: data.id ?? eventId, link: data.htmlLink ?? null };
 }
 
 /** Ta bort en händelse ur Google-kalendern. */
-export async function deleteGoogleEvent(calendarId: string, eventId: string) {
+export async function deleteGoogleEvent(calendarId: string, eventId: string, account = 0) {
   await call(
     "calendar",
     `/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`,
     { method: "DELETE" },
+    account,
   );
   return { deleted: true };
 }
