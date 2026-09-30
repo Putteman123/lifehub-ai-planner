@@ -43,6 +43,7 @@ function CareAppLayout() {
             ) : null}
             <Item to="/v/samtal" label="Samtal" />
             <Item to="/v/inkorg" label="Inkorg" />
+            {ctx?.isOwner === true ? <Item to="/v/github" label="GitHub" /> : null}
             <PushButton />
           </nav>
         </div>
