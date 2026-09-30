@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import { getGithubOverview } from "@/lib/github-overview.functions";
 import type { GhItem } from "@/lib/github-overview.server";
+import { getCareContext } from "@/lib/care.functions";
 
 export const Route = createFileRoute("/_authenticated/v/github")({
   head: () => ({
@@ -51,20 +52,42 @@ function List({ title, items, empty }: { title: string; items: GhItem[]; empty: 
 }
 
 function GithubView() {
+  const fetchContext = useServerFn(getCareContext);
   const fetchOverview = useServerFn(getGithubOverview);
-  const qc = useQueryClient();
-  const [force, setForce] = useState(false);
+  const forceRef = useRef(false);
+
+  const ctxQuery = useQuery({
+    queryKey: ["care-context"],
+    queryFn: () => fetchContext(),
+    staleTime: 60_000,
+  });
+  const isOwner = ctxQuery.data?.isOwner === true;
+
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["github-overview"],
-    queryFn: () => fetchOverview({ data: { force } }),
+    queryFn: () => fetchOverview({ data: { force: forceRef.current } }),
     retry: false,
+    enabled: isOwner,
   });
 
   async function refresh() {
-    setForce(true);
-    await qc.cancelQueries({ queryKey: ["github-overview"] });
-    await refetch();
-    setForce(false);
+    forceRef.current = true;
+    try {
+      await refetch();
+    } finally {
+      forceRef.current = false;
+    }
+  }
+
+  if (ctxQuery.isLoading) {
+    return <p className="text-sm text-muted-foreground">Kontrollerar behörighet…</p>;
+  }
+  if (!isOwner) {
+    return (
+      <p className="rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+        Åtkomst nekad – endast superadmin kan se GitHub-översikten.
+      </p>
+    );
   }
 
   return (
