@@ -27,16 +27,18 @@ export const listGoogleCalendarsFn = createServerFn({ method: "GET" })
 /** Koppla en Google-kalender till LifeHub och synka den direkt. */
 export const connectGoogleCalendar = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { externalId: string; name: string; color?: string }) => {
+  .inputValidator((input: { externalId: string; name: string; color?: string; account?: number }) => {
     if (!input?.externalId) throw new Error("Kalender-id saknas.");
     return input;
   })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const account = data.account ?? 0;
     const { data: existing } = await supabase
       .from("calendars")
       .select("id")
       .eq("external_id", data.externalId)
+      .eq("external_account", account)
       .maybeSingle();
 
     if (existing) return { calendarId: existing.id, created: false };
@@ -49,6 +51,7 @@ export const connectGoogleCalendar = createServerFn({ method: "POST" })
         source: "google",
         color: data.color ?? "privat",
         external_id: data.externalId,
+        external_account: account,
       })
       .select("id")
       .single();
@@ -112,12 +115,13 @@ export const syncEventToGoogle = createServerFn({ method: "POST" })
 
     const { data: calendar } = await supabase
       .from("calendars")
-      .select("source, external_id")
+      .select("source, external_id, external_account")
       .eq("id", event.calendar_id)
       .maybeSingle();
     if (!calendar || calendar.source !== "google" || !calendar.external_id) {
       return { pushed: false as const, reason: "not_google" };
     }
+    const account = calendar.external_account ?? 0;
 
     const payload = {
       title: event.title,
