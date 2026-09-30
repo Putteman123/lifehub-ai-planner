@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import { getGithubOverview } from "@/lib/github-overview.functions";
 import type { GhItem } from "@/lib/github-overview.server";
+import { getCareContext } from "@/lib/care.functions";
 
 export const Route = createFileRoute("/_authenticated/v/github")({
   head: () => ({
