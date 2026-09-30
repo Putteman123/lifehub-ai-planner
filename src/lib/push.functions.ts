@@ -17,12 +17,14 @@ function keys() {
 async function pushToUser(
   ctx: Ctx,
   msg: { title: string; body: string; path?: string },
+  validateOnly = false,
 ): Promise<{ sent: number; error?: string }> {
   const { lovableKey, connectionKey } = keys();
   if (!lovableKey || !connectionKey) {
     return { sent: 0, error: "Firebase är inte kopplat ännu." };
   }
 
+  // Endast användarens egna enheter – RLS begränsar dessutom till user_id = auth.uid().
   const { data: rows } = await ctx.supabase
     .from("push_tokens")
     .select("id, token")
@@ -43,6 +45,7 @@ async function pushToUser(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        ...(validateOnly ? { validate_only: true } : {}),
         message: {
           token: row.token,
           notification: { title: msg.title, body: msg.body },
@@ -121,12 +124,13 @@ export const getPushStatus = createServerFn({ method: "GET" })
 
 export const sendTestPush = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    return pushToUser(context as unknown as Ctx, {
-      title: "LifeHub",
-      body: "Testnotis – pushnotiser fungerar.",
-      path: "/dashboard",
-    });
+  .inputValidator((d) => z.object({ dryRun: z.boolean().optional() }).parse(d ?? {}))
+  .handler(async ({ data, context }) => {
+    return pushToUser(
+      context as unknown as Ctx,
+      { title: "LifeHub", body: "Testnotis – pushnotiser fungerar.", path: "/dashboard" },
+      data.dryRun === true,
+    );
   });
 
 export const sendPushToMe = createServerFn({ method: "POST" })
