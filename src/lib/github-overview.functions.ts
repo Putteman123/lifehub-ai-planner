@@ -8,5 +8,5 @@ export const getGithubOverview = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ force: z.boolean().optional() }).parse(d ?? {}))
   .handler(async ({ data, context }) => {
     const { loadGithubOverview } = await import("./github-overview.server");
-    return loadGithubOverview(context as never, { force: data.force });
+    return loadGithubOverview(context as never, { force: data.force === true });
   });
