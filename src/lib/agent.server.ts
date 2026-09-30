@@ -38,7 +38,7 @@ export async function createEvent(userId: string, input: EventInput) {
   // Finns en kopplad Google-kalender bokas händelsen även där.
   const { data: googleCal } = await supabaseAdmin
     .from("calendars")
-    .select("id, external_id")
+    .select("id, external_id, external_account")
     .eq("user_id", userId)
     .eq("source", "google")
     .not("external_id", "is", null)
@@ -71,13 +71,17 @@ export async function createEvent(userId: string, input: EventInput) {
     try {
       const { createGoogleEvent, hasGoogle } = await import("@/lib/google.server");
       if (hasGoogle("calendar")) {
-        const created = await createGoogleEvent(googleCal.external_id, {
-          title: input.title,
-          startsAt,
-          endsAt,
-          ...(input.location ? { location: input.location } : {}),
-          ...(input.description ? { description: input.description } : {}),
-        });
+        const created = await createGoogleEvent(
+          googleCal.external_id,
+          {
+            title: input.title,
+            startsAt,
+            endsAt,
+            ...(input.location ? { location: input.location } : {}),
+            ...(input.description ? { description: input.description } : {}),
+          },
+          googleCal.external_account ?? 0,
+        );
         if (created.id) {
           await supabaseAdmin
             .from("events")
