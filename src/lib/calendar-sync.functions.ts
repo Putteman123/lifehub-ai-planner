@@ -40,6 +40,7 @@ export const syncCalendar = createServerFn({ method: "POST" })
         calendar.external_id as string,
         new Date(now - 60 * 86400000).toISOString(),
         new Date(now + 365 * 86400000).toISOString(),
+        (calendar.external_account as number | null) ?? 0,
       );
     } else {
       if (!calendar.ics_url) {

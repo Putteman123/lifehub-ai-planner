@@ -136,11 +136,11 @@ export const syncEventToGoogle = createServerFn({ method: "POST" })
       : null;
 
     if (existingId) {
-      await updateGoogleEvent(calendar.external_id, existingId, payload);
+      await updateGoogleEvent(calendar.external_id, existingId, payload, account);
       return { pushed: true as const, googleEventId: existingId };
     }
 
-    const created = await createGoogleEvent(calendar.external_id, payload);
+    const created = await createGoogleEvent(calendar.external_id, payload, account);
     if (created.id) {
       await supabase.from("events").update({ external_id: `gcal:${created.id}` }).eq("id", event.id);
     }
@@ -161,13 +161,17 @@ export const removeEventFromGoogle = createServerFn({ method: "POST" })
     }
     const { data: calendar } = await context.supabase
       .from("calendars")
-      .select("source, external_id")
+      .select("source, external_id, external_account")
       .eq("id", data.calendarId)
       .maybeSingle();
     if (!calendar || calendar.source !== "google" || !calendar.external_id) {
       return { deleted: false as const };
     }
-    await deleteGoogleEvent(calendar.external_id, data.externalId.slice("gcal:".length));
+    await deleteGoogleEvent(
+      calendar.external_id,
+      data.externalId.slice("gcal:".length),
+      calendar.external_account ?? 0,
+    );
     return { deleted: true as const };
   });
 
