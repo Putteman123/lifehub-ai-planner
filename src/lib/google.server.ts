@@ -89,13 +89,31 @@ async function callMapsDirect(
 }
 
 
+/**
+ * Alla kopplade Google Calendar-konton. Första kopplingen heter
+ * GOOGLE_CALENDAR_API_KEY, därefter _2, _3 ... Returnerar index + nyckel.
+ */
+export function calendarAccounts(): Array<{ index: number; key: string }> {
+  const out: Array<{ index: number; key: string }> = [];
+  for (let i = 1; i <= 5; i++) {
+    const env = i === 1 ? "GOOGLE_CALENDAR_API_KEY" : `GOOGLE_CALENDAR_API_KEY_${i}`;
+    const key = process.env[env];
+    if (key) out.push({ index: i - 1, key });
+  }
+  return out;
+}
+
 async function call(
   service: GoogleService,
   path: string,
   init?: { method?: string; body?: unknown; headers?: Record<string, string> },
+  accountIndex?: number,
 ): Promise<unknown> {
   const lovableKey = process.env["LOVABLE_API_KEY"];
-  const connectorKey = process.env[GOOGLE_CONNECTORS[service].env];
+  let connectorKey = process.env[GOOGLE_CONNECTORS[service].env];
+  if (service === "calendar" && accountIndex !== undefined) {
+    connectorKey = calendarAccounts().find((a) => a.index === accountIndex)?.key;
+  }
 
   if (service === "maps") {
     const own = ownMapsKey();
