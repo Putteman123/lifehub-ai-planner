@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import livoLogo from "@/assets/livo-health-logo.png";
 import { APP_VERSION } from "@/lib/nav-theme";
 import { listMyAdminOrgs } from "@/lib/care-admin.functions";
+import { getCareContext } from "@/lib/care.functions";
 import { PushButton } from "@/components/dashboard/PushCard";
 
 export const Route = createFileRoute("/_authenticated/v")({
@@ -17,6 +18,8 @@ function CareAppLayout() {
     queryKey: ["care-my-admin-orgs"],
     queryFn: () => fetchOrgs({}),
   });
+  const fetchCtx = useServerFn(getCareContext);
+  const { data: ctx } = useQuery({ queryKey: ["care-context"], queryFn: () => fetchCtx({}) });
 
   const first = (orgs ?? []).find((o) => o?.slug) as { slug: string } | undefined;
 
@@ -63,7 +66,7 @@ function Item({
   label,
   exact,
 }: {
-  to: "/v" | "/v/organisationer" | "/v/samtal" | "/v/inkorg";
+  to: "/v" | "/v/organisationer" | "/v/samtal" | "/v/inkorg" | "/v/github";
   label: string;
   exact?: boolean;
 }) {
