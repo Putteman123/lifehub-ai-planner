@@ -291,6 +291,7 @@ export type Database = {
         Row: {
           color: string
           created_at: string
+          external_account: number
           external_id: string | null
           ics_url: string | null
           id: string
@@ -304,6 +305,7 @@ export type Database = {
         Insert: {
           color?: string
           created_at?: string
+          external_account?: number
           external_id?: string | null
           ics_url?: string | null
           id?: string
@@ -317,6 +319,7 @@ export type Database = {
         Update: {
           color?: string
           created_at?: string
+          external_account?: number
           external_id?: string | null
           ics_url?: string | null
           id?: string

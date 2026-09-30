@@ -64,6 +64,13 @@
       "when": 1789935476937,
       "tag": "0008_care_inbox_and_campaigns",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790802196668,
+      "tag": "0009_calendar_external_account",
+      "breakpoints": true
     }
   ]
 }
