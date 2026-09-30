@@ -163,18 +163,39 @@ export type GoogleCalendarSummary = {
   summary: string;
   primary: boolean;
   backgroundColor: string | null;
+  /** Vilket kopplat Google-konto kalendern tillhör (0 = första kopplingen). */
+  account: number;
+  /** Kontots e-postadress (primärkalenderns id). */
+  accountLabel: string;
 };
 
+/** Kalendrar från alla kopplade Google-konton, märkta med konto. */
 export async function listGoogleCalendars(): Promise<GoogleCalendarSummary[]> {
-  const data = (await call("calendar", "/calendar/v3/users/me/calendarList?maxResults=250")) as {
-    items?: Array<{ id: string; summary?: string; primary?: boolean; backgroundColor?: string }>;
-  };
-  return (data.items ?? []).map((c) => ({
-    id: c.id,
-    summary: c.summary ?? c.id,
-    primary: Boolean(c.primary),
-    backgroundColor: c.backgroundColor ?? null,
-  }));
+  const accounts = calendarAccounts();
+  const out: GoogleCalendarSummary[] = [];
+  for (const account of accounts) {
+    const data = (await call(
+      "calendar",
+      "/calendar/v3/users/me/calendarList?maxResults=250",
+      undefined,
+      account.index,
+    )) as {
+      items?: Array<{ id: string; summary?: string; primary?: boolean; backgroundColor?: string }>;
+    };
+    const items = data.items ?? [];
+    const label = items.find((c) => c.primary)?.id ?? `Konto ${account.index + 1}`;
+    for (const c of items) {
+      out.push({
+        id: c.id,
+        summary: c.summary ?? c.id,
+        primary: Boolean(c.primary),
+        backgroundColor: c.backgroundColor ?? null,
+        account: account.index,
+        accountLabel: label,
+      });
+    }
+  }
+  return out;
 }
 
 export type GoogleEvent = {
