@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { __resetGithubCache, loadGithubOverview } from "./github-overview.server";
+import { __resetGithubCache, loadGithubOverview, safeGithubUrl } from "./github-overview.server";
 
 const ctx = (rpc: () => Promise<{ data: unknown; error: unknown }>) => ({ supabase: { rpc: vi.fn(rpc) }, userId: "u1" });
 
