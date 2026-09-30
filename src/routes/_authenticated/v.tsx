@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import livoLogo from "@/assets/livo-health-logo.png";
 import { APP_VERSION } from "@/lib/nav-theme";
 import { listMyAdminOrgs } from "@/lib/care-admin.functions";
+import { PushButton } from "@/components/dashboard/PushCard";
 
 export const Route = createFileRoute("/_authenticated/v")({
   component: CareAppLayout,
@@ -42,6 +43,7 @@ function CareAppLayout() {
             ) : null}
             <Item to="/v/samtal" label="Samtal" />
             <Item to="/v/inkorg" label="Inkorg" />
+            <PushButton />
           </nav>
         </div>
       </header>

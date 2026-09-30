@@ -85,6 +85,49 @@ export async function enablePush(): Promise<PushResult> {
   return token ? { status: "registered", token } : { status: "denied" };
 }
 
+async function pushApp() {
+  const { initializeApp, getApps } = await import("firebase/app");
+  const existing = getApps().find((a) => a.name === "push");
+  return existing ?? initializeApp(firebaseConfig as Record<string, string>, "push");
+}
+
+/** Avregistrerar enheten lokalt och returnerar token så servern kan ta bort den. */
+export async function disablePush(): Promise<string | null> {
+  if (!pushIsConfigured() || typeof window === "undefined" || !("serviceWorker" in navigator)) return null;
+  const reg = await navigator.serviceWorker.getRegistration("/firebase-messaging-sw.js");
+  if (!reg) return null;
+  const { getMessaging, getToken, deleteToken } = await import("firebase/messaging");
+  const messaging = getMessaging(await pushApp());
+  try {
+    const token = await getToken(messaging, { vapidKey: vapidKey!, serviceWorkerRegistration: reg });
+    await deleteToken(messaging);
+    return token || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Visar notiser som en toast när appen är öppen (bakgrundsnotiser sköts av service workern). */
+export function listenForegroundPush(): () => void {
+  if (typeof window === "undefined" || !pushIsConfigured() || Notification?.permission !== "granted") {
+    return () => {};
+  }
+  let unsub: (() => void) | undefined;
+  let cancelled = false;
+  void (async () => {
+    const { isSupported, getMessaging, onMessage } = await import("firebase/messaging");
+    if (cancelled || !(await isSupported())) return;
+    const { toast } = await import("sonner");
+    unsub = onMessage(getMessaging(await pushApp()), (payload) => {
+      toast(payload.notification?.title ?? "Livo", { description: payload.notification?.body });
+    });
+  })();
+  return () => {
+    cancelled = true;
+    unsub?.();
+  };
+}
+
 export function pushPlatform() {
   if (typeof window === "undefined") return "web";
   const ua = window.navigator.userAgent;
