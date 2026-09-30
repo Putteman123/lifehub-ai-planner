@@ -212,6 +212,7 @@ export async function fetchGoogleEvents(
   calendarId: string,
   fromIso: string,
   toIso: string,
+  account = 0,
 ): Promise<GoogleEvent[]> {
   const out: GoogleEvent[] = [];
   let pageToken: string | undefined;
