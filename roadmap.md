@@ -18,3 +18,4 @@
 - [x] Tabell push_tokens + serverfunktioner för utskick
 - [x] Aviseringsruta med status och testknapp i LifeHub
 
+- [ ] Koppla AI-kedjan till LifeHack: Andrea ska svara direkt från LifeHack-sidan, inte separat tabell
