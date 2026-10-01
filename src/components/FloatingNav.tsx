@@ -1,11 +1,32 @@
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { Lock } from "lucide-react";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { APP_NAME, CARE_SUBNAV, NAV_GROUPS, NAV_ITEMS } from "@/lib/nav-theme";
+import { APP_NAME, NAV_GROUPS, NAV_ITEMS } from "@/lib/nav-theme";
+import { myAccountStatus } from "@/lib/account.functions";
+
+function useVisibleNavigation() {
+  const fetchStatus = useServerFn(myAccountStatus);
+  const status = useQuery({
+    queryKey: ["account-status"],
+    queryFn: () => fetchStatus({}),
+    staleTime: 60_000,
+  });
+  const isOwner = status.data?.isOwner === true;
+  return {
+    items: NAV_ITEMS.filter((item) => !item.ownerOnly || isOwner),
+    groups: NAV_GROUPS.map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !item.ownerOnly || isOwner),
+    })),
+  };
+}
 
 /** Flytande vertikal meny längs vänsterkanten – endast surfplatta och dator. */
 export function FloatingNav({ onLock }: { onLock: () => void }) {
+  const { items } = useVisibleNavigation();
   return (
     <nav
       aria-label="Huvudmeny"
@@ -18,7 +39,7 @@ export function FloatingNav({ onLock }: { onLock: () => void }) {
       }}
     >
       <ul className="flex flex-col gap-1">
-        {NAV_ITEMS.map((item) => (
+        {items.map((item) => (
           <li key={item.to}>
             <Link
               to={item.to}
@@ -64,6 +85,7 @@ export function MobileNav({
   onOpenChange: (open: boolean) => void;
   onLock: () => void;
 }) {
+  const { groups } = useVisibleNavigation();
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -82,7 +104,7 @@ export function MobileNav({
           </SheetHeader>
 
           <nav aria-label="Huvudmeny" className="flex-1 space-y-4 overflow-y-auto px-3 pb-3">
-            {NAV_GROUPS.map((group) => (
+            {groups.map((group) => (
               <div key={group.title}>
                 <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                   {group.title}
@@ -101,22 +123,6 @@ export function MobileNav({
                         <item.icon className={`size-5 shrink-0 ${item.color}`} />
                         <span className="truncate">{item.label}</span>
                       </Link>
-                      {item.to === "/v" ? (
-                        <ul className="mb-1 ml-9 space-y-0.5 border-l border-border/70 pl-3">
-                          {CARE_SUBNAV.filter((s) => s.to !== "/v").map((sub) => (
-                            <li key={sub.to}>
-                              <Link
-                                to={sub.to}
-                                onClick={() => onOpenChange(false)}
-                                className="flex min-h-[40px] items-center rounded-xl px-2 text-[14px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                                activeProps={{ className: "text-primary" }}
-                              >
-                                {sub.label}
-                              </Link>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : null}
                     </li>
                   ))}
                 </ul>

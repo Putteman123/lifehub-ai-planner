@@ -1,13 +1,14 @@
 import {
   Archive,
   Baby,
+  Bot,
   CalendarDays,
+  Github,
   LayoutDashboard,
   ListTodo,
   MapPin,
   Scale,
   Settings2,
-  Stethoscope,
   ShieldCheck,
   ShoppingCart,
   Tv,
@@ -19,6 +20,7 @@ export type NavItem = {
   to: string;
   label: string;
   icon: LucideIcon;
+  ownerOnly?: boolean;
   /** Semantisk färgtoken för lägets ikon. */
   color: string;
 };
@@ -33,7 +35,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { to: "/barn", label: "Barn", icon: Baby, color: "text-nav-barn" },
   { to: "/jurist", label: "Jurist", icon: Scale, color: "text-nav-jurist" },
   { to: "/iptv", label: "IPTV", icon: Tv, color: "text-nav-iptv" },
-  { to: "/v", label: "Superadmin", icon: Stethoscope, color: "text-nav-kalendrar" },
+  { to: "/ai", label: "AI-förbrukning", icon: Bot, color: "text-nav-kalendrar", ownerOnly: true },
+  { to: "/github", label: "GitHub", icon: Github, color: "text-nav-kalendrar", ownerOnly: true },
   { to: "/platser", label: "Platser", icon: MapPin, color: "text-nav-platser" },
   { to: "/arkiv", label: "Arkiv", icon: Archive, color: "text-nav-kalendrar" },
   { to: "/kassaskap", label: "Kassaskåp", icon: ShieldCheck, color: "text-nav-kassaskap" },
@@ -59,17 +62,9 @@ export const NAV_GROUPS: readonly { title: string; items: readonly NavItem[] }[]
   {
     title: "Verktyg",
     items: NAV_ITEMS.filter((i) =>
-      ["/platser", "/iptv", "/v", "/arkiv", "/kassaskap", "/kalendrar"].includes(i.to),
+      ["/platser", "/iptv", "/ai", "/github", "/arkiv", "/kassaskap", "/kalendrar"].includes(i.to),
     ),
   },
-] as const;
-
-
-/** Undermeny för vårddelen – visas under "Vård" i mobilmenyn. */
-export const CARE_SUBNAV: readonly { to: string; label: string }[] = [
-  { to: "/v", label: "Översikt" },
-  { to: "/v/organisationer", label: "Kunder" },
-  { to: "/v/samtal", label: "Samtal" },
 ] as const;
 
 /** Appens version, visas i inställningar. */

@@ -134,7 +134,7 @@ export function PushCard() {
   );
 }
 
-/** Kompakt knapp i sidhuvudet för vårdroller (admin, personal, brukare, anhörig). */
+/** Kompakt knapp för platser där hela aviseringspanelen inte får plats. */
 export function PushButton() {
   return (
     <Popover>

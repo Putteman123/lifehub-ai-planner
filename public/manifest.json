@@ -1,13 +1,13 @@
 {
-  "name": "livo.health – Digital Omsorgslösning",
-  "short_name": "livo.health",
-  "description": "Trygg planering, omsorg och kontakt för verksamhet, personal, brukare och anhöriga.",
+  "name": "LifeHub AI",
+  "short_name": "LifeHub",
+  "description": "Din personliga AI-assistent för arbete, familj och privatliv.",
   "lang": "sv",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#F7F8F6",
-  "theme_color": "#245778",
+  "background_color": "#F4F0E6",
+  "theme_color": "#172554",
   "orientation": "portrait-primary",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
