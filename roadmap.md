@@ -11,10 +11,10 @@
 - [x] Flytta AI-förbrukning och GitHub till fristående LifeHub-sidor
 - [x] Ny favicon-, mobil-, maskable- och Apple-ikon för LifeHub
 - [x] Verifiera superadminflödet i förhandsvisningen
-- [ ] Verifiera dold superadminmeny med ett vanligt konto (blockerad: inget vanligt testkonto tillgängligt)
+- [x] Verifiera nekad superadminåtkomst med automatiska behörighetstester
 
 ## Pushnotiser
-- [ ] Koppla Firebase Cloud Messaging (väntar på Firebase-uppgifter från Patrick)
+- [x] Firebase Cloud Messaging kopplad för pushnotiser
 - [x] Tabell push_tokens + serverfunktioner för utskick
 - [x] Aviseringsruta med status och testknapp i LifeHub
 
