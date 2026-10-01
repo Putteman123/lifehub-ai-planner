@@ -1,5 +1,10 @@
 # Alfa 1.0
 
+## AI-förbrukning
+- [x] Superadminvy med antal, procent, perioder och leverantörskedja
+- [x] Metadatafri loggning av lyckade AI-svar från Google, ChatGPT, Perplexity och Lovable
+- [x] Strikt ägarkontroll före varje statistikfråga
+
 ## Livo.health-varumärke
 - [x] Logga och livo.health-namn på alla publika och inloggade vårdsidor
 - [x] Ny publik presentation med befintlig vårdinformation

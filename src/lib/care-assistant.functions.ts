@@ -181,6 +181,7 @@ export const askCareAssistant = createServerFn({ method: "POST" })
     const result = await completeTextDetailed({
       system: SYSTEM,
       input: `${lines.join("\n")}\n\nFråga: ${data.question}`,
+      feature: "care-assistant",
     });
 
     return {

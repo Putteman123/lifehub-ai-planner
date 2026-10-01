@@ -82,7 +82,7 @@ async function completeViaLovable(
 }
 
 /**
- * Förstahandsval: användarens eget ChatGPT-konto (OPENAI_API_KEY).
+ * Andrahandsval: användarens eget ChatGPT-konto (OPENAI_API_KEY).
  * Returnerar null om nyckeln saknas eller anropet misslyckas, så att
  * anroparen kan gå vidare i reservkedjan.
  */
@@ -119,7 +119,7 @@ async function completeViaOpenAI(
   }
 }
 
-/** Andrahandsval: användarens Google-konto (GEMINI_API_KEY, annars den delade GOOGLE_API_KEY). */
+/** Förstahandsval: användarens Google-konto (GOOGLE_API_KEY, annars GEMINI_API_KEY). */
 async function completeViaGemini(
   messages: Message[],
   jsonSchema: JsonSchema | undefined,
@@ -162,7 +162,7 @@ async function completeViaGemini(
 
 /**
  * Kör ett strömmande textanrop i prioritetsordning:
- * ChatGPT (eget konto) → Gemini (eget konto) → Lovable AI (reserv).
+ * Gemini (eget konto) → ChatGPT (eget konto) → Perplexity → Lovable AI (reserv).
  */
 export type AiProvider = "openai" | "google" | "perplexity" | "lovable";
 
@@ -173,14 +173,18 @@ export async function completeTextDetailed(opts: {
   input: string;
   jsonSchema?: JsonSchema;
   model?: string;
+  feature?: string;
 }): Promise<{ text: string; provider: AiProvider }> {
   const messages: Message[] = [
     { role: "system", content: opts.system },
     { role: "user", content: opts.input },
   ];
 
-  const openAiText = await completeViaOpenAI(messages, opts.jsonSchema);
-  if (openAiText) return { text: openAiText, provider: "openai" };
+  const delivered = async (text: string, provider: AiProvider) => {
+    const { recordAiUsage } = await import("./ai-usage.server");
+    await recordAiUsage(provider, opts.feature ?? "text");
+    return { text, provider };
+  };
 
   const geminiText = await completeViaGemini(
     messages,
@@ -188,12 +192,15 @@ export async function completeTextDetailed(opts: {
     opts.model ?? ANDREA_FAST_MODEL,
     opts.apiKey,
   );
-  if (geminiText) return { text: geminiText, provider: "google" };
+  if (geminiText) return delivered(geminiText, "google");
+
+  const openAiText = await completeViaOpenAI(messages, opts.jsonSchema);
+  if (openAiText) return delivered(openAiText, "openai");
 
   const pplxText = await completeViaPerplexity(messages, opts.jsonSchema, opts.input);
-  if (pplxText) return { text: pplxText, provider: "perplexity" };
+  if (pplxText) return delivered(pplxText, "perplexity");
 
-  return { text: await completeViaLovable(messages, opts.jsonSchema), provider: "lovable" };
+  return delivered(await completeViaLovable(messages, opts.jsonSchema), "lovable");
 }
 
 export async function completeText(opts: {
@@ -202,6 +209,7 @@ export async function completeText(opts: {
   input: string;
   jsonSchema?: JsonSchema;
   model?: string;
+  feature?: string;
 }): Promise<string> {
   return (await completeTextDetailed(opts)).text;
 }
@@ -271,6 +279,7 @@ export async function completeVision(opts: {
   input: string;
   attachments: AiAttachment[];
   jsonSchema?: JsonSchema;
+  feature?: string;
 }): Promise<string> {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new Error("AI-tjänsten är inte tillgänglig just nu. Försök igen om en stund.");
@@ -313,7 +322,11 @@ export async function completeVision(opts: {
       );
       if (geminiRes.ok && geminiRes.body) {
         const text = await readStream(geminiRes.body);
-        if (text) return text;
+        if (text) {
+          const { recordAiUsage } = await import("./ai-usage.server");
+          await recordAiUsage("google", opts.feature ?? "vision");
+          return text;
+        }
       } else {
         const detail = await geminiRes.text().catch(() => "");
         console.warn(`Gemini (bilaga) svarade ${geminiRes.status}: ${detail.slice(0, 300)}`);
@@ -349,5 +362,10 @@ export async function completeVision(opts: {
     throw new Error("AI-tjänsten kunde inte läsa bilagan just nu.");
   }
 
-  return readStream(res.body);
+  const text = await readStream(res.body);
+  if (text) {
+    const { recordAiUsage } = await import("./ai-usage.server");
+    await recordAiUsage("lovable", opts.feature ?? "vision");
+  }
+  return text;
 }
