@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Delete, Fingerprint, Loader2, Lock, LogIn, Sparkles } from "lucide-react";
+import { Delete, Fingerprint, Loader2, Lock, LogIn } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import "@lovable.dev/cloud-auth-js/styles.css";
