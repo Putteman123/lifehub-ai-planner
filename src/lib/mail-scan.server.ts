@@ -112,6 +112,7 @@ export async function classifyMail(input: {
         input: prompt,
         attachments: input.attachments,
         jsonSchema,
+        feature: "receipt-reading",
       });
     } catch (error) {
       console.warn("bilaga kunde inte läsas, kör på texten", error);
@@ -120,6 +121,7 @@ export async function classifyMail(input: {
         system: SYSTEM,
         input: prompt,
         jsonSchema,
+        feature: "receipt-reading",
       });
     }
   } else {
@@ -128,6 +130,7 @@ export async function classifyMail(input: {
       system: SYSTEM,
       input: prompt,
       jsonSchema,
+      feature: "receipt-reading",
     });
   }
 

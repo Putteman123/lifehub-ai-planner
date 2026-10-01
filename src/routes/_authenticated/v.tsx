@@ -46,6 +46,7 @@ function CareAppLayout() {
             ) : null}
             <Item to="/v/samtal" label="Samtal" />
             <Item to="/v/inkorg" label="Inkorg" />
+            {ctx?.isOwner === true ? <Item to="/v/ai" label="AI-förbrukning" /> : null}
             {ctx?.isOwner === true ? <Item to="/v/github" label="GitHub" /> : null}
             <PushButton />
           </nav>
@@ -66,7 +67,7 @@ function Item({
   label,
   exact,
 }: {
-  to: "/v" | "/v/organisationer" | "/v/samtal" | "/v/inkorg" | "/v/github";
+  to: "/v" | "/v/organisationer" | "/v/samtal" | "/v/inkorg" | "/v/ai" | "/v/github";
   label: string;
   exact?: boolean;
 }) {

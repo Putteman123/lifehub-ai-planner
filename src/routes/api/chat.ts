@@ -185,6 +185,7 @@ export const Route = createFileRoute("/api/chat")({
         const { createLovableResponsesModel, withModelFallback } = await import(
           "@/lib/ai-gateway.server"
         );
+        const { recordAiUsage } = await import("@/lib/ai-usage.server");
         const agent = await import("@/lib/agent.server");
         const { routeAndreaTurn } = await import("@/lib/andrea-router.server");
         const { isSafeTool } = await import("@/lib/agent-tools");
@@ -1060,6 +1061,9 @@ export const Route = createFileRoute("/api/chat")({
               store: false,
               include: ["reasoning.encrypted_content"],
             },
+          },
+          onFinish: async () => {
+            await recordAiUsage(aiProvider(), "andrea-chat");
           },
         });
 

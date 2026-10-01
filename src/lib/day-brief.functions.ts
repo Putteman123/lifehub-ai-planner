@@ -55,6 +55,7 @@ export const getDayBrief = createServerFn({ method: "POST" })
         "Du är Andrea, en personlig planeringsassistent. Svara på svenska, kort och konkret. Ge JSON: summary (2–3 meningar om dagen), priorities (max 3 viktigaste sakerna), gaps (max 3 lediga luckor med tid, t.ex. 'Fokus 10:00–11:30' eller paus), warnings (krockar, tight schema, restid mellan olika platser; tom lista om inget).",
       input: `Datum: ${data.date}\nHändelser:\n${list}`,
       jsonSchema: schema as never,
+      feature: "day-brief",
     });
     try {
       const raw = res.text.replace(/^```(json)?|```$/g, "").trim();

@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- AI usage analytics stores metadata only (provider, feature, timestamp), because prompts and responses may contain sensitive personal or care information.
