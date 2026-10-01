@@ -4,16 +4,17 @@ import { useQuery } from "@tanstack/react-query";
 import { useRef } from "react";
 
 import { Button } from "@/components/ui/button";
+import { AppShell } from "@/components/AppShell";
 import { getGithubOverview } from "@/lib/github-overview.functions";
 import type { GhItem } from "@/lib/github-overview.server";
-import { getCareContext } from "@/lib/care.functions";
+import { myAccountStatus } from "@/lib/account.functions";
 
-export const Route = createFileRoute("/_authenticated/v/github")({
+export const Route = createFileRoute("/_authenticated/github")({
   head: () => ({
     meta: [
-      { title: "GitHub – livo.health superadmin" },
+      { title: "GitHub – LifeHub AI" },
       { name: "description", content: "Skrivskyddad översikt över appens GitHub-repo." },
-      { property: "og:title", content: "GitHub – livo.health superadmin" },
+      { property: "og:title", content: "GitHub – LifeHub AI" },
       { property: "og:description", content: "Skrivskyddad översikt över appens GitHub-repo." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -52,12 +53,12 @@ function List({ title, items, empty }: { title: string; items: GhItem[]; empty: 
 }
 
 function GithubView() {
-  const fetchContext = useServerFn(getCareContext);
+  const fetchContext = useServerFn(myAccountStatus);
   const fetchOverview = useServerFn(getGithubOverview);
   const forceRef = useRef(false);
 
   const ctxQuery = useQuery({
-    queryKey: ["care-context"],
+    queryKey: ["account-status"],
     queryFn: () => fetchContext(),
     staleTime: 60_000,
   });
@@ -91,6 +92,7 @@ function GithubView() {
   }
 
   return (
+    <AppShell title="GitHub" subtitle="Superadmin">
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -127,5 +129,6 @@ function GithubView() {
         </>
       ) : null}
     </div>
+    </AppShell>
   );
 }

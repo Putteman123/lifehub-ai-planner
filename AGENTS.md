@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - AI usage analytics stores metadata only (provider, feature, timestamp), because prompts and responses may contain sensitive personal or care information.
+- Keep former care database tables untouched as an archival backup; LifeHub application code must not read or expose them.

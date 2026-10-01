@@ -5,17 +5,18 @@ import { ArrowDown, Bot, RefreshCw } from "lucide-react";
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 
 import { Button } from "@/components/ui/button";
+import { AppShell } from "@/components/AppShell";
 import { getAiUsageOverview } from "@/lib/ai-usage.functions";
 import type { AiUsageOverview, AiUsageSlice } from "@/lib/ai-usage.server";
 import type { AiProvider } from "@/lib/ai-complete.server";
-import { getCareContext } from "@/lib/care.functions";
+import { myAccountStatus } from "@/lib/account.functions";
 
-export const Route = createFileRoute("/_authenticated/v/ai")({
+export const Route = createFileRoute("/_authenticated/ai")({
   head: () => ({
     meta: [
-      { title: "AI-förbrukning – livo.health superadmin" },
+      { title: "AI-förbrukning – LifeHub AI" },
       { name: "description", content: "Skrivskyddad översikt över vilka AI-tjänster som levererar svar." },
-      { property: "og:title", content: "AI-förbrukning – livo.health superadmin" },
+      { property: "og:title", content: "AI-förbrukning – LifeHub AI" },
       { property: "og:description", content: "Skrivskyddad översikt över vilka AI-tjänster som levererar svar." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -156,9 +157,9 @@ function Dashboard({ data }: { data: AiUsageOverview }) {
 }
 
 function AiUsagePage() {
-  const fetchContext = useServerFn(getCareContext);
+  const fetchContext = useServerFn(myAccountStatus);
   const fetchUsage = useServerFn(getAiUsageOverview);
-  const contextQuery = useQuery({ queryKey: ["care-context"], queryFn: () => fetchContext({}) });
+  const contextQuery = useQuery({ queryKey: ["account-status"], queryFn: () => fetchContext({}) });
   const isOwner = contextQuery.data?.isOwner === true;
   const usageQuery = useQuery({
     queryKey: ["ai-usage-overview"],
@@ -173,6 +174,7 @@ function AiUsagePage() {
   }
 
   return (
+    <AppShell title="AI-förbrukning" subtitle="Superadmin">
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -192,5 +194,6 @@ function AiUsagePage() {
         </p>
       ) : usageQuery.data ? <Dashboard data={usageQuery.data} /> : null}
     </div>
+    </AppShell>
   );
 }
