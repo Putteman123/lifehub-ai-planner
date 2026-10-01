@@ -24,11 +24,11 @@ export const Route = createFileRoute("/_authenticated/v/ai")({
   component: AiUsagePage,
 });
 
-const PROVIDERS: Array<{ id: AiProvider; label: string; note: string; color: string }> = [
-  { id: "google", label: "Din Google-nyckel", note: "Förstahandsval", color: "var(--chart-5)" },
-  { id: "openai", label: "ChatGPT", note: "Andrahandsval", color: "var(--chart-1)" },
-  { id: "perplexity", label: "Perplexity", note: "Tredjehandsval", color: "var(--chart-4)" },
-  { id: "lovable", label: "Lovable", note: "Sista reserv", color: "var(--chart-2)" },
+const PROVIDERS: Array<{ id: AiProvider; label: string; note: string; color: string; dotClass: string }> = [
+  { id: "google", label: "Din Google-nyckel", note: "Förstahandsval", color: "var(--chart-5)", dotClass: "bg-chart-5" },
+  { id: "openai", label: "ChatGPT", note: "Andrahandsval", color: "var(--chart-1)", dotClass: "bg-chart-1" },
+  { id: "perplexity", label: "Perplexity", note: "Tredjehandsval", color: "var(--chart-4)", dotClass: "bg-chart-4" },
+  { id: "lovable", label: "Lovable", note: "Sista reserv", color: "var(--chart-2)", dotClass: "bg-chart-2" },
 ];
 
 function percent(count: number, total: number) {
@@ -84,7 +84,7 @@ function Period({ label, slice }: { label: string; slice: AiUsageSlice }) {
       <div className="mt-3 space-y-2">
         {PROVIDERS.map((provider) => (
           <div key={provider.id} className="grid grid-cols-[auto_1fr_auto] items-center gap-2 text-sm">
-            <span className="size-2.5 rounded-full" style={{ backgroundColor: provider.color }} />
+            <span className={`size-2.5 rounded-full ${provider.dotClass}`} />
             <span>{provider.label}</span>
             <span className="tabular-nums text-muted-foreground">
               {slice.providers[provider.id]} · {percent(slice.providers[provider.id], slice.total)}%
@@ -109,7 +109,7 @@ function Dashboard({ data }: { data: AiUsageOverview }) {
           <div className="mt-5 space-y-3">
             {PROVIDERS.map((provider) => (
               <div key={provider.id} className="flex items-center gap-3">
-                <span className="size-3 rounded-full" style={{ backgroundColor: provider.color }} />
+                <span className={`size-3 rounded-full ${provider.dotClass}`} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium">{provider.label}</p>
                   <p className="text-xs text-muted-foreground">{provider.note}</p>

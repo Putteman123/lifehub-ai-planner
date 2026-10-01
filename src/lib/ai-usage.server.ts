@@ -121,3 +121,12 @@ export async function recordAiUsage(provider: AiProvider, feature: string): Prom
     console.warn("AI-användningen kunde inte registreras:", error);
   }
 }
+
+export async function recordDeliveredAiResponse(
+  provider: AiProvider,
+  feature: string,
+  recorder: (provider: AiProvider, feature: string) => Promise<void> = recordAiUsage,
+): Promise<AiProvider> {
+  await recorder(provider, feature);
+  return provider;
+}

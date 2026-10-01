@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { aggregateAiUsage, loadAiUsageOverview, type AiUsageEvent } from "./ai-usage.server";
+import {
+  aggregateAiUsage,
+  loadAiUsageOverview,
+  recordDeliveredAiResponse,
+  type AiUsageEvent,
+} from "./ai-usage.server";
 
 const event = (provider: AiUsageEvent["provider"], created_at: string): AiUsageEvent => ({
   provider,
@@ -39,6 +44,13 @@ describe("AI-förbrukning", () => {
     const result = aggregateAiUsage([], new Date("2026-10-01T10:00:00Z"));
     expect(result.month.total).toBe(0);
     expect(result.trackingStartedAt).toBeNull();
+  });
+
+  it("registrerar ett levererat svar exakt en gång med rätt leverantör", async () => {
+    const recorder = vi.fn(async () => undefined);
+    await expect(recordDeliveredAiResponse("perplexity", "day-brief", recorder)).resolves.toBe("perplexity");
+    expect(recorder).toHaveBeenCalledOnce();
+    expect(recorder).toHaveBeenCalledWith("perplexity", "day-brief");
   });
 
   it("låter strikt superadmin läsa data", async () => {
