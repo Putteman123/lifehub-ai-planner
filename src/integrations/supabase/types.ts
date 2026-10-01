@@ -65,6 +65,27 @@ export type Database = {
           },
         ]
       }
+      ai_usage_events: {
+        Row: {
+          created_at: string
+          feature: string
+          id: string
+          provider: string
+        }
+        Insert: {
+          created_at?: string
+          feature?: string
+          id?: string
+          provider: string
+        }
+        Update: {
+          created_at?: string
+          feature?: string
+          id?: string
+          provider?: string
+        }
+        Relationships: []
+      }
       andrea_memories: {
         Row: {
           confidence: number

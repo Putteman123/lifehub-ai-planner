@@ -71,6 +71,13 @@
       "when": 1790802196668,
       "tag": "0009_calendar_external_account",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790816948864,
+      "tag": "0010_create_ai_usage_events",
+      "breakpoints": true
     }
   ]
 }
