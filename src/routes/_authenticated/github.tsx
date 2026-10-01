@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRef } from "react";
 
 import { Button } from "@/components/ui/button";
+import { AppShell } from "@/components/AppShell";
 import { getGithubOverview } from "@/lib/github-overview.functions";
 import type { GhItem } from "@/lib/github-overview.server";
 import { myAccountStatus } from "@/lib/account.functions";
@@ -91,6 +92,7 @@ function GithubView() {
   }
 
   return (
+    <AppShell title="GitHub" subtitle="Superadmin">
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -127,5 +129,6 @@ function GithubView() {
         </>
       ) : null}
     </div>
+    </AppShell>
   );
 }

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import "@lovable.dev/cloud-auth-js/styles.css";
 
 import { Button } from "@/components/ui/button";
+import lifehubIcon from "@/assets/lifehub-app-icon.png";
 import { lovable } from "@/integrations/lovable";
 import { supabase } from "@/integrations/supabase/client";
 import { claimMyData } from "@/lib/account.functions";
@@ -296,9 +297,7 @@ function PinGate() {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-background px-6 py-10">
         <div className="w-full max-w-xs text-center">
-          <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-            <Sparkles className="size-5" />
-          </span>
+          <img src={lifehubIcon} alt="LifeHub AI" width={1024} height={1024} className="mx-auto size-20 object-contain" />
           <h1 className="mt-4 text-xl font-semibold tracking-tight">LifeHub AI</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {message ?? "Logga in med ditt Google-konto – all data blir din egen."}
@@ -373,9 +372,7 @@ function PinGate() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background px-6 py-10">
       <div className="w-full max-w-xs text-center">
-        <span className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-          <Sparkles className="size-5" />
-        </span>
+        <img src={lifehubIcon} alt="LifeHub AI" width={1024} height={1024} className="mx-auto size-20 object-contain" />
         <h1 className="mt-4 text-xl font-semibold tracking-tight">LifeHub AI</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {message ??

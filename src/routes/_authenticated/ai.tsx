@@ -5,6 +5,7 @@ import { ArrowDown, Bot, RefreshCw } from "lucide-react";
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 
 import { Button } from "@/components/ui/button";
+import { AppShell } from "@/components/AppShell";
 import { getAiUsageOverview } from "@/lib/ai-usage.functions";
 import type { AiUsageOverview, AiUsageSlice } from "@/lib/ai-usage.server";
 import type { AiProvider } from "@/lib/ai-complete.server";
@@ -173,6 +174,7 @@ function AiUsagePage() {
   }
 
   return (
+    <AppShell title="AI-förbrukning" subtitle="Superadmin">
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -192,5 +194,6 @@ function AiUsagePage() {
         </p>
       ) : usageQuery.data ? <Dashboard data={usageQuery.data} /> : null}
     </div>
+    </AppShell>
   );
 }
