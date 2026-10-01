@@ -82,7 +82,7 @@ async function completeViaLovable(
 }
 
 /**
- * Förstahandsval: användarens eget ChatGPT-konto (OPENAI_API_KEY).
+ * Andrahandsval: användarens eget ChatGPT-konto (OPENAI_API_KEY).
  * Returnerar null om nyckeln saknas eller anropet misslyckas, så att
  * anroparen kan gå vidare i reservkedjan.
  */
@@ -119,7 +119,7 @@ async function completeViaOpenAI(
   }
 }
 
-/** Andrahandsval: användarens Google-konto (GEMINI_API_KEY, annars den delade GOOGLE_API_KEY). */
+/** Förstahandsval: användarens Google-konto (GOOGLE_API_KEY, annars GEMINI_API_KEY). */
 async function completeViaGemini(
   messages: Message[],
   jsonSchema: JsonSchema | undefined,
@@ -162,7 +162,7 @@ async function completeViaGemini(
 
 /**
  * Kör ett strömmande textanrop i prioritetsordning:
- * ChatGPT (eget konto) → Gemini (eget konto) → Lovable AI (reserv).
+ * Gemini (eget konto) → ChatGPT (eget konto) → Perplexity → Lovable AI (reserv).
  */
 export type AiProvider = "openai" | "google" | "perplexity" | "lovable";
 
@@ -186,9 +186,6 @@ export async function completeTextDetailed(opts: {
     return { text, provider };
   };
 
-  const openAiText = await completeViaOpenAI(messages, opts.jsonSchema);
-  if (openAiText) return delivered(openAiText, "openai");
-
   const geminiText = await completeViaGemini(
     messages,
     opts.jsonSchema,
@@ -196,6 +193,9 @@ export async function completeTextDetailed(opts: {
     opts.apiKey,
   );
   if (geminiText) return delivered(geminiText, "google");
+
+  const openAiText = await completeViaOpenAI(messages, opts.jsonSchema);
+  if (openAiText) return delivered(openAiText, "openai");
 
   const pplxText = await completeViaPerplexity(messages, opts.jsonSchema, opts.input);
   if (pplxText) return delivered(pplxText, "perplexity");
