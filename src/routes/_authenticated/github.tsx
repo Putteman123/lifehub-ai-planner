@@ -8,7 +8,7 @@ import { getGithubOverview } from "@/lib/github-overview.functions";
 import type { GhItem } from "@/lib/github-overview.server";
 import { getCareContext } from "@/lib/care.functions";
 
-export const Route = createFileRoute("/_authenticated/v/github")({
+export const Route = createFileRoute("/_authenticated/github")({
   head: () => ({
     meta: [
       { title: "GitHub – livo.health superadmin" },

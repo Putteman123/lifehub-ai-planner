@@ -10,7 +10,7 @@ import type { AiUsageOverview, AiUsageSlice } from "@/lib/ai-usage.server";
 import type { AiProvider } from "@/lib/ai-complete.server";
 import { getCareContext } from "@/lib/care.functions";
 
-export const Route = createFileRoute("/_authenticated/v/ai")({
+export const Route = createFileRoute("/_authenticated/ai")({
   head: () => ({
     meta: [
       { title: "AI-förbrukning – livo.health superadmin" },
