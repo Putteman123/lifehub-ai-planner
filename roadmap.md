@@ -10,7 +10,8 @@
 - [x] Behåll vårddatan orörd som säkerhetskopia
 - [x] Flytta AI-förbrukning och GitHub till fristående LifeHub-sidor
 - [x] Ny favicon-, mobil-, maskable- och Apple-ikon för LifeHub
-- [ ] Verifiera superadmin och vanlig användare i förhandsvisningen
+- [x] Verifiera superadminflödet i förhandsvisningen
+- [ ] Verifiera dold superadminmeny med ett vanligt konto (blockerad: inget vanligt testkonto tillgängligt)
 
 ## Pushnotiser
 - [ ] Koppla Firebase Cloud Messaging (väntar på Firebase-uppgifter från Patrick)
