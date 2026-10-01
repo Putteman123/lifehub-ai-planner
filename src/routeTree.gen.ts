@@ -42,6 +42,7 @@ import { Route as VardSakerhetRouteImport } from './routes/vard.sakerhet'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as AuthenticatedVIndexRouteImport } from './routes/_authenticated/v.index'
+import { Route as AuthenticatedVAiRouteImport } from './routes/_authenticated/v.ai'
 import { Route as AuthenticatedVGithubRouteImport } from './routes/_authenticated/v.github'
 import { Route as AuthenticatedVInkorgRouteImport } from './routes/_authenticated/v.inkorg'
 import { Route as AuthenticatedVOrganisationerRouteImport } from './routes/_authenticated/v.organisationer'
@@ -231,6 +232,11 @@ const AuthenticatedVIndexRoute = AuthenticatedVIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedVRoute,
 } as any)
+const AuthenticatedVAiRoute = AuthenticatedVAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => AuthenticatedVRoute,
+} as any)
 const AuthenticatedVGithubRoute = AuthenticatedVGithubRouteImport.update({
   id: '/github',
   path: '/github',
@@ -382,6 +388,7 @@ export interface FileRoutesByFullPath {
   '/vard/': typeof VardIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/v/ai': typeof AuthenticatedVAiRoute
   '/v/github': typeof AuthenticatedVGithubRoute
   '/v/inkorg': typeof AuthenticatedVInkorgRoute
   '/v/organisationer': typeof AuthenticatedVOrganisationerRoute
@@ -435,6 +442,7 @@ export interface FileRoutesByTo {
   '/vard': typeof VardIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/v/ai': typeof AuthenticatedVAiRoute
   '/v/github': typeof AuthenticatedVGithubRoute
   '/v/inkorg': typeof AuthenticatedVInkorgRoute
   '/v/organisationer': typeof AuthenticatedVOrganisationerRoute
@@ -491,6 +499,7 @@ export interface FileRoutesById {
   '/vard/': typeof VardIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
+  '/_authenticated/v/ai': typeof AuthenticatedVAiRoute
   '/_authenticated/v/github': typeof AuthenticatedVGithubRoute
   '/_authenticated/v/inkorg': typeof AuthenticatedVInkorgRoute
   '/_authenticated/v/organisationer': typeof AuthenticatedVOrganisationerRoute
@@ -548,6 +557,7 @@ export interface FileRouteTypes {
     | '/vard/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/v/ai'
     | '/v/github'
     | '/v/inkorg'
     | '/v/organisationer'
@@ -601,6 +611,7 @@ export interface FileRouteTypes {
     | '/vard'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/v/ai'
     | '/v/github'
     | '/v/inkorg'
     | '/v/organisationer'
@@ -656,6 +667,7 @@ export interface FileRouteTypes {
     | '/vard/'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
+    | '/_authenticated/v/ai'
     | '/_authenticated/v/github'
     | '/_authenticated/v/inkorg'
     | '/_authenticated/v/organisationer'
@@ -933,6 +945,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVIndexRouteImport
       parentRoute: typeof AuthenticatedVRoute
     }
+    '/_authenticated/v/ai': {
+      id: '/_authenticated/v/ai'
+      path: '/ai'
+      fullPath: '/v/ai'
+      preLoaderRoute: typeof AuthenticatedVAiRouteImport
+      parentRoute: typeof AuthenticatedVRoute
+    }
     '/_authenticated/v/github': {
       id: '/_authenticated/v/github'
       path: '/github'
@@ -1117,6 +1136,7 @@ const AuthenticatedVFSlugRouteWithChildren =
   AuthenticatedVFSlugRoute._addFileChildren(AuthenticatedVFSlugRouteChildren)
 
 interface AuthenticatedVRouteChildren {
+  AuthenticatedVAiRoute: typeof AuthenticatedVAiRoute
   AuthenticatedVGithubRoute: typeof AuthenticatedVGithubRoute
   AuthenticatedVInkorgRoute: typeof AuthenticatedVInkorgRoute
   AuthenticatedVOrganisationerRoute: typeof AuthenticatedVOrganisationerRoute
@@ -1127,6 +1147,7 @@ interface AuthenticatedVRouteChildren {
 }
 
 const AuthenticatedVRouteChildren: AuthenticatedVRouteChildren = {
+  AuthenticatedVAiRoute: AuthenticatedVAiRoute,
   AuthenticatedVGithubRoute: AuthenticatedVGithubRoute,
   AuthenticatedVInkorgRoute: AuthenticatedVInkorgRoute,
   AuthenticatedVOrganisationerRoute: AuthenticatedVOrganisationerRoute,
