@@ -167,7 +167,8 @@ async function completeViaGemini(
 
 /**
  * Kör ett strömmande textanrop i prioritetsordning:
- * Gemini (eget konto) → ChatGPT (eget konto) → Perplexity → Lovable AI (reserv).
+ * Gemini via Lovables gateway (fungerar alltid) → Gemini (eget konto) →
+ * ChatGPT (eget konto) → Perplexity.
  */
 export type AiProvider = "openai" | "google" | "perplexity" | "lovable";
 
@@ -190,6 +191,14 @@ export async function completeTextDetailed(opts: {
     await recordAiUsage(provider, opts.feature ?? "text");
     return { text, provider };
   };
+
+  // Först: Gemini via Lovables gateway – den Gemini-väg som fungerar direkt.
+  try {
+    const gatewayText = await completeViaLovable(messages, opts.jsonSchema);
+    if (gatewayText) return delivered(gatewayText, "lovable");
+  } catch (error) {
+    console.warn("Gemini via Lovable misslyckades, provar reservkedjan.", error);
+  }
 
   const geminiText = await completeViaGemini(
     messages,
