@@ -167,7 +167,7 @@ async function completeViaGemini(
 
 /**
  * Kör ett strömmande textanrop i prioritetsordning:
- * Gemini via Lovables gateway (fungerar alltid) → Gemini (eget konto) →
+ * Gemini (eget konto, förstahandsval) → Gemini via Lovables gateway →
  * ChatGPT (eget konto) → Perplexity.
  */
 export type AiProvider = "openai" | "google" | "perplexity" | "lovable";
@@ -192,14 +192,7 @@ export async function completeTextDetailed(opts: {
     return { text, provider };
   };
 
-  // Först: Gemini via Lovables gateway – den Gemini-väg som fungerar direkt.
-  try {
-    const gatewayText = await completeViaLovable(messages, opts.jsonSchema);
-    if (gatewayText) return delivered(gatewayText, "lovable");
-  } catch (error) {
-    console.warn("Gemini via Lovable misslyckades, provar reservkedjan.", error);
-  }
-
+  // Först: användarens egen Gemini-nyckel (GOOGLE_API_KEY).
   const geminiText = await completeViaGemini(
     messages,
     opts.jsonSchema,
@@ -207,6 +200,14 @@ export async function completeTextDetailed(opts: {
     opts.apiKey,
   );
   if (geminiText) return delivered(geminiText, "google");
+
+  // Reserv: Gemini via Lovables gateway – fungerar även om den egna nyckeln är begränsad.
+  try {
+    const gatewayText = await completeViaLovable(messages, opts.jsonSchema);
+    if (gatewayText) return delivered(gatewayText, "lovable");
+  } catch (error) {
+    console.warn("Gemini via Lovable misslyckades, provar reservkedjan.", error);
+  }
 
   const openAiText = await completeViaOpenAI(messages, opts.jsonSchema);
   if (openAiText) return delivered(openAiText, "openai");
