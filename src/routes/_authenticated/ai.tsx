@@ -26,10 +26,10 @@ export const Route = createFileRoute("/_authenticated/ai")({
 });
 
 const PROVIDERS: Array<{ id: AiProvider; label: string; note: string; color: string; dotClass: string }> = [
-  { id: "google", label: "Din Google-nyckel", note: "Förstahandsval", color: "var(--chart-5)", dotClass: "bg-chart-5" },
-  { id: "openai", label: "ChatGPT", note: "Andrahandsval", color: "var(--chart-1)", dotClass: "bg-chart-1" },
-  { id: "perplexity", label: "Perplexity", note: "Tredjehandsval", color: "var(--chart-4)", dotClass: "bg-chart-4" },
-  { id: "lovable", label: "Lovable", note: "Sista reserv", color: "var(--chart-2)", dotClass: "bg-chart-2" },
+  { id: "lovable", label: "Google Gemini", note: "Förstahandsval", color: "var(--chart-2)", dotClass: "bg-chart-2" },
+  { id: "google", label: "Din Google-nyckel", note: "Andrahandsval", color: "var(--chart-5)", dotClass: "bg-chart-5" },
+  { id: "openai", label: "ChatGPT", note: "Tredjehandsval", color: "var(--chart-1)", dotClass: "bg-chart-1" },
+  { id: "perplexity", label: "Perplexity", note: "Sista reserv", color: "var(--chart-4)", dotClass: "bg-chart-4" },
 ];
 
 function percent(count: number, total: number) {
@@ -143,7 +143,7 @@ function Dashboard({ data }: { data: AiUsageOverview }) {
             </li>
           ))}
         </ol>
-        <p className="mt-3 text-xs text-muted-foreground">Andrea-chatten använder din Google-nyckel direkt och Lovable som reserv.</p>
+        <p className="mt-3 text-xs text-muted-foreground">Andrea-chatten svarar via Google Gemini direkt – din egen Google-nyckel, ChatGPT och Perplexity är reserver.</p>
       </section>
 
       <p className="text-xs text-muted-foreground">

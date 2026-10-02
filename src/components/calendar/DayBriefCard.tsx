@@ -10,7 +10,7 @@ const LABEL: Record<string, string> = {
   google: "Via din Google-nyckel",
   openai: "Via ChatGPT",
   perplexity: "Via Perplexity",
-  lovable: "Via Lovable (reserv)",
+  lovable: "Via Google Gemini",
 };
 
 export function DayBriefCard({ events, day }: { events: EventRow[]; day: Date }) {

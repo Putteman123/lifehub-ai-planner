@@ -140,7 +140,7 @@ function providerLabel(provider?: string): string | null {
     case "perplexity":
       return "Svarade via Perplexity";
     case "lovable":
-      return "Svarade via Lovable (reserv)";
+      return "Svarade via Google Gemini";
     default:
       return null;
   }
