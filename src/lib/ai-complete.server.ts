@@ -47,7 +47,12 @@ function jsonFormat(jsonSchema?: JsonSchema) {
   };
 }
 
-/** Reservväg: Lovable AI när Googles nyckel eller kvot inte räcker. */
+/**
+ * Förstahandsval: Google Gemini via Lovables AI-gateway – den Gemini-väg som
+ * alltid fungerar oavsett om användarens egen nyckel är begränsad.
+ * Returnerar null vid tillfälliga fel så reservkedjan kan ta vid; anroparen
+ * kastar felet om inget annat svarar.
+ */
 async function completeViaLovable(
   messages: Message[],
   jsonSchema?: JsonSchema,
