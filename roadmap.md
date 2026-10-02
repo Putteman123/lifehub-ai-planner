@@ -19,3 +19,7 @@
 - [x] Aviseringsruta med status och testknapp i LifeHub
 
 - [x] AI-kedjan: Andrea svarar direkt via Google Gemini (Lovable-gatewayn), egna nyckeln/ChatGPT/Perplexity som reserver
+
+## Google Maps-koppling (LifeHack)
+- [x] Google Maps-kopplingen länkad till projektet (webbläsarnyckel + servernyckel på plats)
+- [x] Kartan laddar felfritt i förhandsvisningen – egen nyckel i första hand, kopplingen som reserv
