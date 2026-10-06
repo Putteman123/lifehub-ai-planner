@@ -203,7 +203,7 @@ function CalendarPage() {
       </div>
 
       <div className="mt-5">
-        <WeekPlanCard events={events} />
+        <div className="mb-4"><WeekPlanCard events={events} /></div>
         <MeetingSlotsCard events={events} />
       </div>
 
