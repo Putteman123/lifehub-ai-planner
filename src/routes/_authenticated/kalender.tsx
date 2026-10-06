@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ShiftLegend } from "@/components/calendar/ShiftLegend";
 import { MeetingSlotsCard } from "@/components/calendar/MeetingSlotsCard";
+import { WeekPlanCard } from "@/components/calendar/WeekPlanCard";
 import { SHIFT_STYLES, type Category, type EventRow } from "@/lib/categories";
 import { useCategoryOptions } from "@/lib/event-categories";
 import {
@@ -202,6 +203,7 @@ function CalendarPage() {
       </div>
 
       <div className="mt-5">
+        <div className="mb-4"><WeekPlanCard events={events} /></div>
         <MeetingSlotsCard events={events} />
       </div>
 
