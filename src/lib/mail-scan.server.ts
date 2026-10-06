@@ -324,6 +324,13 @@ export async function scanInbox(
         }
       }
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      // Slut på krediter/kvot: avbryt hela skanningen och markera inte mejlet
+      // som läst, så det tolkas vid nästa körning när AI:n fungerar igen.
+      if (/AI-krediterna är slut|hårt belastad/.test(message)) {
+        console.warn("mail-scan avbruten: AI-tjänsterna är inte tillgängliga", message);
+        break;
+      }
       console.error("mail-scan", mail.id, error);
     }
 
