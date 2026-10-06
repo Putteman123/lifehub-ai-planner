@@ -24,7 +24,7 @@ export function ownMapsKey() {
 
 export function hasGoogle(service: GoogleService) {
   if (service === "maps" && ownMapsKey()) return true;
-  return Boolean(process.env["LOVABLE_API_KEY"] && process.env[GOOGLE_CONNECTORS[service].env]);
+  return Boolean(process.env["LOVABLE_API_KEY"] && (process.env[GOOGLE_CONNECTORS[service].env] || (service === "maps" && process.env["GOOGLE_MAPS_API_KEY_1"])));
 }
 
 /** Rätt Google-värd för en gateway-sökväg när vi ringer Google direkt. */
@@ -110,7 +110,7 @@ async function call(
   accountIndex?: number,
 ): Promise<unknown> {
   const lovableKey = process.env["LOVABLE_API_KEY"];
-  let connectorKey = process.env[GOOGLE_CONNECTORS[service].env];
+  let connectorKey = (service === "maps" ? process.env["GOOGLE_MAPS_API_KEY_1"] : undefined) ?? process.env[GOOGLE_CONNECTORS[service].env];
   if (service === "calendar" && accountIndex !== undefined) {
     connectorKey = calendarAccounts().find((a) => a.index === accountIndex)?.key;
   }
