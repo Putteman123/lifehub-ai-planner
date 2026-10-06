@@ -12,8 +12,6 @@ export const getWeekPlan = createServerFn({ method: "POST" })
     today: String(d.today ?? "").slice(0, 40),
   }))
   .handler(async ({ data }): Promise<WeekPlan> => {
-    const { getSessionUserId } = await import("@/lib/week-plan.server");
-    await getSessionUserId();
     const { completeTextDetailed } = await import("@/lib/ai-complete.server");
     const { text, provider } = await completeTextDetailed({
       feature: "week-plan",
