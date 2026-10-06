@@ -201,7 +201,11 @@ export async function completeTextDetailed(opts: {
   );
   if (geminiText) return delivered(geminiText, "google");
 
-  // Reserv: Gemini via Lovables gateway – fungerar även om den egna nyckeln är begränsad.
+  // Andrahand: Gemini via användarens påfyllda Perplexity-konto.
+  const pplxText = await completeViaPerplexity(messages, opts.jsonSchema);
+  if (pplxText) return delivered(pplxText, "perplexity");
+
+  // Reserv: Gemini via Lovables gateway.
   try {
     const gatewayText = await completeViaLovable(messages, opts.jsonSchema);
     if (gatewayText) return delivered(gatewayText, "lovable");
@@ -211,9 +215,6 @@ export async function completeTextDetailed(opts: {
 
   const openAiText = await completeViaOpenAI(messages, opts.jsonSchema);
   if (openAiText) return delivered(openAiText, "openai");
-
-  const pplxText = await completeViaPerplexity(messages, opts.jsonSchema, opts.input);
-  if (pplxText) return delivered(pplxText, "perplexity");
 
   return delivered(await completeViaLovable(messages, opts.jsonSchema), "lovable");
 }
@@ -229,36 +230,65 @@ export async function completeText(opts: {
   return (await completeTextDetailed(opts)).text;
 }
 
-/** Välj Perplexity-modell efter typ av fråga. */
-function pickPerplexityModel(input: string): string {
-  const q = input.toLocaleLowerCase("sv-SE");
-  if (/(planera|plan |schema|kalender|prioritera|steg för steg|varför)/.test(q))
-    return "sonar-reasoning-pro";
-  if (/(nyhet|senaste|idag|pris|väder|vem är|vad hände|aktuell)/.test(q)) return "sonar-pro";
-  return "sonar";
+/** Gemini-modellen som körs via Perplexitys Agent API. */
+const PERPLEXITY_GEMINI_MODEL = "google/gemini-3.6-flash";
+
+/** Läser texten ur ett strömmande Responses-svar (Perplexity Agent API). */
+async function readResponsesStream(body: ReadableStream<Uint8Array>): Promise<string> {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let text = "";
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line.startsWith("data:")) continue;
+      try {
+        const evt = JSON.parse(line.slice(5).trim()) as { type?: string; delta?: string };
+        if (evt.type === "response.output_text.delta" && evt.delta) text += evt.delta;
+      } catch {
+        // ofullständigt event
+      }
+    }
+  }
+  return text.trim();
 }
 
-/** Tredjehandsval: användarens Perplexity-konto, före Lovable-reserven. */
+/** Användarens Perplexity-konto, som kör Gemini via Agent API (/v1/responses). */
 async function completeViaPerplexity(
   messages: Message[],
   jsonSchema: JsonSchema | undefined,
-  input: string,
 ): Promise<string | null> {
   const keys = [process.env["PERPLEXITY_API_KEY_1"], process.env["PERPLEXITY_API_KEY"]].filter(
     (k): k is string => Boolean(k),
   );
-  const model = jsonSchema ? "sonar" : pickPerplexityModel(input);
+  const instructions = messages.filter((m) => m.role === "system").map((m) => m.content).join("\n\n");
+  const input = messages.filter((m) => m.role === "user").map((m) => m.content).join("\n\n");
   for (const key of keys) {
     try {
-      const res = await fetch("https://api.perplexity.ai/chat/completions", {
+      const res = await fetch("https://api.perplexity.ai/v1/responses", {
         method: "POST",
         headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-          model,
+          model: PERPLEXITY_GEMINI_MODEL,
           stream: true,
-          messages,
+          instructions,
+          input,
           ...(jsonSchema
-            ? { response_format: { type: "json_schema", json_schema: { schema: jsonSchema.schema } } }
+            ? {
+                text: {
+                  format: {
+                    type: "json_schema",
+                    name: jsonSchema.name,
+                    strict: true,
+                    schema: jsonSchema.schema,
+                  },
+                },
+              }
             : {}),
         }),
       });
@@ -267,8 +297,7 @@ async function completeViaPerplexity(
         console.warn(`Perplexity svarade ${res.status}: ${detail.slice(0, 300)}`);
         continue;
       }
-      let text = await readStream(res.body);
-      text = text.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+      const text = await readResponsesStream(res.body);
       if (text) return text;
     } catch (error) {
       console.warn("Perplexity misslyckades, provar reservtjänsten.", error);
