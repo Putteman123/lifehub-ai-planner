@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Check, Mailbox, Paperclip, RefreshCw, X } from "lucide-react";
 
 import { SectionCard } from "@/components/SectionCard";
@@ -236,21 +236,11 @@ export function MailFindingsCard({
 }) {
   const findingsQ = useMailFindings();
   const scan = useScanMail();
-  const autoRef = useRef(false);
-  const [lastScan, setLastScan] = useState<number>(0);
+  const [lastScan, setLastScan] = useState<number>(() =>
+    Number(window.localStorage.getItem(SCAN_KEY) ?? 0),
+  );
 
-  // Skanna automatiskt, men högst en gång i timmen.
-  useEffect(() => {
-    const last = Number(window.localStorage.getItem(SCAN_KEY) ?? 0);
-    setLastScan(last);
-    if (autoRef.current) return;
-    autoRef.current = true;
-    if (Date.now() - last < 3_600_000) return;
-    window.localStorage.setItem(SCAN_KEY, String(Date.now()));
-    setLastScan(Date.now());
-    scan.mutate(undefined);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Inkorgen skannas bara när användaren trycker på en knapp – aldrig automatiskt.
 
   function run(days: number) {
     window.localStorage.setItem(SCAN_KEY, String(Date.now()));
