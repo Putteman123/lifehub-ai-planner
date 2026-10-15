@@ -77,6 +77,10 @@ export function DayBriefCard({ events, day }: { events: EventRow[]; day: Date })
         <p className="text-sm text-muted-foreground">Andrea går igenom din dag…</p>
       ) : error ? (
         <p className="text-sm text-muted-foreground">Kunde inte sammanfatta dagen just nu.</p>
+      ) : !brief ? (
+        <Button size="sm" onClick={() => load()} disabled={loading}>
+          <Sparkles className="size-4" /> Sammanfatta dagen
+        </Button>
       ) : brief ? (
         <div className="space-y-3 text-sm">
           <p className="leading-relaxed">{brief.summary}</p>
