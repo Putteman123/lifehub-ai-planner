@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Check, Mailbox, Paperclip, RefreshCw, X } from "lucide-react";
 
 import { SectionCard } from "@/components/SectionCard";
