@@ -51,9 +51,12 @@ export function DayBriefCard({ events, day }: { events: EventRow[]; day: Date })
     }
   }
 
+  // Visar bara sparad sammanfattning – AI:n körs aldrig automatiskt,
+  // utan först när användaren trycker på knappen.
   useEffect(() => {
-    setBrief(null);
-    void load();
+    const cached = localStorage.getItem(key);
+    setBrief(cached ? JSON.parse(cached) : null);
+    setError(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
