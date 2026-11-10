@@ -192,7 +192,11 @@ export async function completeTextDetailed(opts: {
     return { text, provider };
   };
 
-  // Först: användarens egen Gemini-nyckel (GOOGLE_API_KEY).
+  // Först: Gemini via användarens påfyllda Perplexity-konto (sparar övriga krediter).
+  const pplxText = await completeViaPerplexity(messages, opts.jsonSchema);
+  if (pplxText) return delivered(pplxText, "perplexity");
+
+  // Andrahand: användarens egen Gemini-nyckel (GOOGLE_API_KEY).
   const geminiText = await completeViaGemini(
     messages,
     opts.jsonSchema,
@@ -200,10 +204,6 @@ export async function completeTextDetailed(opts: {
     opts.apiKey,
   );
   if (geminiText) return delivered(geminiText, "google");
-
-  // Andrahand: Gemini via användarens påfyllda Perplexity-konto.
-  const pplxText = await completeViaPerplexity(messages, opts.jsonSchema);
-  if (pplxText) return delivered(pplxText, "perplexity");
 
   // Reserv: Gemini via Lovables gateway.
   try {
