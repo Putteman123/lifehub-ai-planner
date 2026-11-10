@@ -71,7 +71,7 @@ export function StatementImportCard({ accounts }: { accounts: AccountRow[] }) {
       if (error) throw new Error(error.message);
     } else if (r.kind === "income" || r.amount > 0) {
       const { error } = await supabase.from("finance_incomes").insert({
-        user_id: userId, amount: Math.abs(r.amount), label: r.text || "Inkomst", kind: "ovrigt",
+        user_id: userId, amount: Math.abs(r.amount), label: r.text || "Inkomst", kind: r.category === "Lön" ? "lon" : "annat",
         category: r.category, account_id: accountId, expected_on: r.date, received_on: r.date, is_received: true, note: "Från kontoutdrag",
       });
       if (error) throw new Error(error.message);
