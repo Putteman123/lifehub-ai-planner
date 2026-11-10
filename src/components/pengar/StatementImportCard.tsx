@@ -38,7 +38,8 @@ async function readFile(file: File): Promise<{ bank: Bank; rows: StatementRow[];
   if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
     const XLSX = await import("xlsx");
     const wb = XLSX.read(await file.arrayBuffer(), { cellDates: false });
-    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const sheet = wb.Sheets[wb.SheetNames[0] ?? ""];
+    if (!sheet) return { bank: "okänd", rows: [] };
     const table = (XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false }) as unknown[][]).map((r) => r.map((c) => String(c ?? "")));
     return parseTable(table, file.name);
   }
@@ -101,8 +102,8 @@ export function StatementImportCard({ accounts }: { accounts: AccountRow[] }) {
       if (!items.length) throw new Error("AI:n hittade inga transaktioner.");
 
       const dates = items.map((r) => r.date).sort();
-      const from = new Date(Date.parse(dates[0]) - 4 * 86400000).toISOString();
-      const to = new Date(Date.parse(dates[dates.length - 1]) + 4 * 86400000).toISOString();
+      const from = new Date(Date.parse(dates[0] ?? "") - 4 * 86400000).toISOString();
+      const to = new Date(Date.parse(dates[dates.length - 1] ?? "") + 4 * 86400000).toISOString();
       const [sp, inc, tr] = await Promise.all([
         supabase.from("spend_entries").select("amount,note,spent_at").gte("spent_at", from).lte("spent_at", to),
         supabase.from("finance_incomes").select("amount,label,expected_on").gte("expected_on", from.slice(0, 10)).lte("expected_on", to.slice(0, 10)),

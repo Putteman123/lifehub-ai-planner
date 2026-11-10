@@ -16,14 +16,14 @@ export function parseDate(raw: string): string | null {
   let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (m) return `${m[1]}-${m[2]}-${m[3]}`;
   m = s.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})/);
-  if (m) return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  if (m) return `${m[3]}-${(m[2] ?? "").padStart(2, "0")}-${(m[1] ?? "").padStart(2, "0")}`;
   return null;
 }
 
 export function splitCsv(text: string): string[][] {
   const lines = text.replace(/^\ufeff/, "").split(/\r?\n/).filter((l) => l.trim());
   if (!lines.length) return [];
-  const head = lines[0];
+  const head = lines[0] ?? "";
   const delim = [";", "\t", ","].sort((a, b) => head.split(b).length - head.split(a).length)[0];
   return lines.map((line) => {
     const out: string[] = [];
@@ -58,7 +58,7 @@ const col = (header: string[], ...names: RegExp[]) => {
 export function parseTable(table: string[][], fileName = ""): { bank: Bank; rows: StatementRow[] } {
   const headerIdx = table.findIndex((r) => r.some((c) => /datum|date/i.test(c)) && r.some((c) => /belopp|amount/i.test(c)));
   if (headerIdx < 0) return { bank: "okänd", rows: [] };
-  const header = table[headerIdx];
+  const header = table[headerIdx] ?? [];
   const bank = detectBank(header, fileName);
   const dateI = col(header, /completed date/, /bokföringsdatum/, /transaktionsdatum/, /datum|date/);
   const amountI = col(header, /^amount$/, /^belopp/, /belopp|amount/);
