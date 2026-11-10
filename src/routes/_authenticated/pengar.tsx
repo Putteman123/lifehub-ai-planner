@@ -50,6 +50,7 @@ import { ReceiptScanner } from "@/components/pengar/ReceiptScanner";
 import { SpendPieCard } from "@/components/pengar/SpendPieCard";
 import { BetsCard } from "@/components/pengar/BetsCard";
 import { TransferCard } from "@/components/pengar/TransferCard";
+import { StatementImportCard } from "@/components/pengar/StatementImportCard";
 import { LoansCard } from "@/components/pengar/LoansCard";
 import { MailFindingsCard } from "@/components/pengar/MailFindingsCard";
 import { IncomesCard } from "@/components/pengar/IncomesCard";
@@ -216,6 +217,7 @@ function MoneyPage() {
             <TabsContent value="ut" className="mt-4 grid gap-4 lg:grid-cols-2">
               <SpendCard accounts={accounts} spends={spends} />
               <ReceiptScanner accounts={accounts} spends={spends} />
+              <StatementImportCard accounts={accounts} />
               <SpendListCard accounts={accounts} spends={spends} />
               <SpendPieCard spends={spends} fixed={fixed} />
             </TabsContent>
