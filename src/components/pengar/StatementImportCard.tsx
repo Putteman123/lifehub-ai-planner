@@ -120,7 +120,7 @@ export function StatementImportCard({ accounts }: { accounts: AccountRow[] }) {
       for (const r of items) {
         if (r.kind === "transfer") {
           if (findTransferPair(r, transfers)) { dups++; continue; }
-          if (r.confidence >= 0.85) { await saveRow(r, accountId, u.user.id); transfers.push({ date: r.date, amount: Math.abs(r.amount) }); saved++; }
+          if (r.confidence >= 0.85) { await saveRow(r, accountId, u.user.id); saved++; }
           else pending.push({ ...r, reason: "Osäker överföring" });
           continue;
         }
@@ -128,7 +128,6 @@ export function StatementImportCard({ accounts }: { accounts: AccountRow[] }) {
         if (dup === "exakt") { dups++; continue; }
         if (shouldAutoSave(r.confidence, dup)) {
           await saveRow(r, accountId, u.user.id);
-          existing.push({ date: r.date, amount: r.amount, text: r.text, kind: r.kind === "income" ? "income" : "spend" });
           saved++;
         } else pending.push({ ...r, reason: dup ? "Möjlig dubblett" : "Osäker kategori" });
       }
