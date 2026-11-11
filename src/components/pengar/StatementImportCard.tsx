@@ -103,13 +103,13 @@ export function StatementImportCard({ accounts }: { accounts: AccountRow[] }) {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Du är inte inloggad.");
       const parsed = await readFile(file);
-      if (!parsed.rows.length && !parsed.rawText) throw new Error("Hittade inga transaktioner i filen. Prova CSV- eller Excel-exporten från banken.");
+      if (!parsed.rows.length && !parsed.rawText && !parsed.image) throw new Error("Hittade inga transaktioner i filen. Prova CSV, Excel, PDF eller en tydlig bild.");
       const bankName = parsed.bank === "okänd" ? "" : parsed.bank;
       const accountId = bankName ? accountFor(bankName) : null;
 
       const res = await classify({ data: {
         bank: parsed.bank, accounts: accounts.map((a) => a.name),
-        rows: parsed.rows.slice(0, 400).map((r, i) => ({ i, ...r })), rawText: parsed.rawText,
+        rows: parsed.rows.slice(0, 400).map((r, i) => ({ i, ...r })), rawText: parsed.rawText, image: parsed.image,
       } });
       const items = res.items;
       if (!items.length) throw new Error("AI:n hittade inga transaktioner.");
