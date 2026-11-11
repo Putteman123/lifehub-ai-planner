@@ -19,8 +19,21 @@ const LABEL: Record<string, string> = {
   perplexity: "Perplexity (Gemini)", google: "din Gemini-nyckel", lovable: "Google Gemini", openai: "ChatGPT",
 };
 
-async function readFile(file: File): Promise<{ bank: Bank; rows: StatementRow[]; rawText?: string }> {
+async function imageToBase64(file: File): Promise<{ mimeType: string; data: string }> {
+  const bmp = await createImageBitmap(file);
+  const scale = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas");
+  c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
+  c.getContext("2d")!.drawImage(bmp, 0, 0, c.width, c.height);
+  return { mimeType: "image/jpeg", data: c.toDataURL("image/jpeg", 0.85).split(",")[1] ?? "" };
+}
+
+async function readFile(file: File): Promise<{ bank: Bank; rows: StatementRow[]; rawText?: string; image?: { mimeType: string; data: string } }> {
   const name = file.name.toLowerCase();
+  if (file.type.startsWith("image/") || /\.(png|jpe?g|webp|heic|heif)$/.test(name)) {
+    const bank: Bank = /revolut/.test(name) ? "revolut" : /seb/.test(name) ? "seb" : "okänd";
+    return { bank, rows: [], image: await imageToBase64(file) };
+  }
   if (name.endsWith(".pdf")) {
     const pdfjs = await import("pdfjs-dist");
     const worker = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
@@ -157,7 +170,7 @@ export function StatementImportCard({ accounts }: { accounts: AccountRow[] }) {
       <p className="text-sm text-muted-foreground">
         SEB eller Revolut – CSV, Excel eller PDF. Nya händelser sparas automatiskt, dubbletter hoppas över och överföringar mellan dina konton hamnar under Överföring. Kontosaldon ändras inte.
       </p>
-      <input ref={input} type="file" accept=".csv,.txt,.xlsx,.xls,.pdf" className="hidden" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
+      <input ref={input} type="file" accept=".csv,.txt,.xlsx,.xls,.pdf,image/*" className="hidden" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
       <Button className="mt-3" onClick={() => input.current?.click()} disabled={busy}>
         {busy ? <Loader2 className="size-4 animate-spin" /> : <FileSpreadsheet className="size-4" />}
         {busy ? "Läser in…" : "Välj kontoutdrag"}

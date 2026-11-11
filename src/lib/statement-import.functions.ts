@@ -7,6 +7,7 @@ const Input = z.object({
   accounts: z.array(z.string().max(80)).max(30),
   rows: z.array(z.object({ i: z.number(), date: z.string().max(10), amount: z.number(), text: z.string().max(200) })).max(400),
   rawText: z.string().max(60000).optional(),
+  image: z.object({ mimeType: z.string().regex(/^image\//), data: z.string().max(8_000_000) }).optional(),
 });
 
 export type ClassifiedRow = {
@@ -53,7 +54,14 @@ other_account = namnet på det andra egna kontot vid transfer (ur listan), annar
 category = kort svensk kategori för utgifter (Mat, Transport, Nöje, Boende, Shopping, Hälsa, Abonnemang, Restaurang, Resor, Övrigt) eller inkomstslag (Lön, Swish, Återbetalning, Övrigt).
 confidence 0–1 = hur säker du är på kind och category. Behåll i, date (YYYY-MM-DD), amount (negativt = pengar ut) och text oförändrade.${data.rawText ? " Raderna kommer som fri text från en PDF: läs ut varje transaktion själv och numrera i från 0." : ""} Svara enbart med JSON.`;
     const input = data.rawText ? data.rawText : JSON.stringify(data.rows);
-    const { text, provider } = await completeTextDetailed({ system, input, jsonSchema: schema, feature: "kontoutdrag" });
+    let text: string; let provider: string;
+    if (data.image) {
+      const { completeVision } = await import("./ai-complete.server");
+      text = await completeVision({ system: system + " Raderna finns i bifogad bild (skärmdump/foto av kontoutdrag): läs ut varje transaktion själv och numrera i från 0.", input: "Läs ut alla transaktioner ur bilden.", attachments: [{ filename: "kontoutdrag", mimeType: data.image.mimeType, data: data.image.data }], jsonSchema: schema, feature: "kontoutdrag-bild" });
+      provider = "lovable";
+    } else {
+      ({ text, provider } = await completeTextDetailed({ system, input, jsonSchema: schema, feature: "kontoutdrag" }));
+    }
     const clean = text.replace(/^```(?:json)?|```$/gm, "").trim();
     let items: ClassifiedRow[];
     try { items = JSON.parse(clean).items; } catch { throw new Error("Kunde inte tolka svaret från AI:n. Försök igen."); }
