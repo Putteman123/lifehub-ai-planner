@@ -1,5 +1,6 @@
 import { ANDREA_FAST_MODEL, ANDREA_GATEWAY_MODEL } from "@/lib/ai-models";
 import { createGoogleAiStudioFetch, googleAiKey } from "@/lib/google-ai.server";
+import { logAiError, logAiSuccess } from "@/lib/ai-logger.server";
 
 type JsonSchema = { name: string; schema: Record<string, unknown> };
 
@@ -56,10 +57,19 @@ function jsonFormat(jsonSchema?: JsonSchema) {
 async function completeViaLovable(
   messages: Message[],
   jsonSchema?: JsonSchema,
+  feature = "text",
 ): Promise<string> {
   const key = process.env["LOVABLE_API_KEY"];
-  if (!key) throw new Error("AI-tjänsten är inte tillgänglig just nu. Försök igen om en stund.");
+  if (!key) {
+    logAiError({
+      provider: "lovable",
+      feature,
+      error: new Error("API-nyckel saknas (LOVABLE_API_KEY)"),
+    });
+    throw new Error("AI-tjänsten är inte tillgänglig just nu. Försök igen om en stund.");
+  }
 
+  const started = Date.now();
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -76,6 +86,14 @@ async function completeViaLovable(
   });
 
   if (!res.ok || !res.body) {
+    const detail = await res.text().catch(() => "");
+    logAiError({
+      provider: "lovable",
+      feature,
+      status: res.status,
+      durationMs: Date.now() - started,
+      error: new Error(`HTTP ${res.status}: ${detail}`),
+    });
     if (res.status === 429)
       throw new Error("AI-tjänsten är hårt belastad just nu. Försök igen om en stund.");
     if (res.status === 402 || res.status === 403)
@@ -83,7 +101,9 @@ async function completeViaLovable(
     throw new Error("AI-tjänsten kunde inte nås just nu. Försök igen om en stund.");
   }
 
-  return readStream(res.body);
+  const text = await readStream(res.body);
+  if (text) logAiSuccess({ provider: "lovable", feature, durationMs: Date.now() - started });
+  return text;
 }
 
 /**
@@ -94,9 +114,11 @@ async function completeViaLovable(
 async function completeViaOpenAI(
   messages: Message[],
   jsonSchema?: JsonSchema,
+  feature = "text",
 ): Promise<string | null> {
   const apiKey = process.env["OPENAI_API_KEY"];
   if (!apiKey) return null;
+  const started = Date.now();
   try {
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -113,13 +135,20 @@ async function completeViaOpenAI(
     });
     if (!res.ok || !res.body) {
       const detail = await res.text().catch(() => "");
-      console.warn(`ChatGPT svarade ${res.status}: ${detail.slice(0, 300)}`);
+      logAiError({
+        provider: "openai",
+        feature,
+        status: res.status,
+        durationMs: Date.now() - started,
+        error: new Error(`HTTP ${res.status}: ${detail}`),
+      });
       return null;
     }
     const text = await readStream(res.body);
+    if (text) logAiSuccess({ provider: "openai", feature, durationMs: Date.now() - started });
     return text || null;
   } catch (error) {
-    console.warn("ChatGPT misslyckades, provar nästa tjänst.", error);
+    logAiError({ provider: "openai", feature, durationMs: Date.now() - started, error });
     return null;
   }
 }
@@ -130,10 +159,12 @@ async function completeViaGemini(
   jsonSchema: JsonSchema | undefined,
   model: string,
   apiKeyOverride?: string,
+  feature = "text",
 ): Promise<string | null> {
   const apiKey = apiKeyOverride ?? googleAiKey();
 
   if (!apiKey) return null;
+  const started = Date.now();
   try {
     const googleFetch = createGoogleAiStudioFetch();
     const res = await googleFetch(
@@ -154,13 +185,20 @@ async function completeViaGemini(
     );
     if (!res.ok || !res.body) {
       const detail = await res.text().catch(() => "");
-      console.warn(`Google AI Studio svarade ${res.status}: ${detail.slice(0, 300)}`);
+      logAiError({
+        provider: "google",
+        feature,
+        status: res.status,
+        durationMs: Date.now() - started,
+        error: new Error(`HTTP ${res.status}: ${detail}`),
+      });
       return null;
     }
     const text = await readStream(res.body);
+    if (text) logAiSuccess({ provider: "google", feature, durationMs: Date.now() - started });
     return text || null;
   } catch (error) {
-    console.warn("Google AI Studio misslyckades, provar reservtjänsten.", error);
+    logAiError({ provider: "google", feature, durationMs: Date.now() - started, error });
     return null;
   }
 }
