@@ -23,3 +23,6 @@
 ## Google Maps-koppling (LifeHack)
 - [x] Google Maps-kopplingen länkad till projektet (webbläsarnyckel + servernyckel på plats)
 - [x] Kartan laddar felfritt i förhandsvisningen – egen nyckel i första hand, kopplingen som reserv
+
+- [x] Dubblettfilen finns inte i appen (ta bort på GitHub)
+- [x] Bilder som kontoutdrag
