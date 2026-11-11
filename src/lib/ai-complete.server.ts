@@ -1,5 +1,6 @@
 import { ANDREA_FAST_MODEL, ANDREA_GATEWAY_MODEL } from "@/lib/ai-models";
 import { createGoogleAiStudioFetch, googleAiKey } from "@/lib/google-ai.server";
+import { logAiError, logAiSuccess } from "@/lib/ai-logger.server";
 
 type JsonSchema = { name: string; schema: Record<string, unknown> };
 
@@ -56,10 +57,19 @@ function jsonFormat(jsonSchema?: JsonSchema) {
 async function completeViaLovable(
   messages: Message[],
   jsonSchema?: JsonSchema,
+  feature = "text",
 ): Promise<string> {
   const key = process.env["LOVABLE_API_KEY"];
-  if (!key) throw new Error("AI-tjänsten är inte tillgänglig just nu. Försök igen om en stund.");
+  if (!key) {
+    logAiError({
+      provider: "lovable",
+      feature,
+      error: new Error("API-nyckel saknas (LOVABLE_API_KEY)"),
+    });
+    throw new Error("AI-tjänsten är inte tillgänglig just nu. Försök igen om en stund.");
+  }
 
+  const started = Date.now();
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -76,6 +86,14 @@ async function completeViaLovable(
   });
 
   if (!res.ok || !res.body) {
+    const detail = await res.text().catch(() => "");
+    logAiError({
+      provider: "lovable",
+      feature,
+      status: res.status,
+      durationMs: Date.now() - started,
+      error: new Error(`HTTP ${res.status}: ${detail}`),
+    });
     if (res.status === 429)
       throw new Error("AI-tjänsten är hårt belastad just nu. Försök igen om en stund.");
     if (res.status === 402 || res.status === 403)
@@ -83,7 +101,9 @@ async function completeViaLovable(
     throw new Error("AI-tjänsten kunde inte nås just nu. Försök igen om en stund.");
   }
 
-  return readStream(res.body);
+  const text = await readStream(res.body);
+  if (text) logAiSuccess({ provider: "lovable", feature, durationMs: Date.now() - started });
+  return text;
 }
 
 /**
@@ -94,9 +114,11 @@ async function completeViaLovable(
 async function completeViaOpenAI(
   messages: Message[],
   jsonSchema?: JsonSchema,
+  feature = "text",
 ): Promise<string | null> {
   const apiKey = process.env["OPENAI_API_KEY"];
   if (!apiKey) return null;
+  const started = Date.now();
   try {
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -113,13 +135,20 @@ async function completeViaOpenAI(
     });
     if (!res.ok || !res.body) {
       const detail = await res.text().catch(() => "");
-      console.warn(`ChatGPT svarade ${res.status}: ${detail.slice(0, 300)}`);
+      logAiError({
+        provider: "openai",
+        feature,
+        status: res.status,
+        durationMs: Date.now() - started,
+        error: new Error(`HTTP ${res.status}: ${detail}`),
+      });
       return null;
     }
     const text = await readStream(res.body);
+    if (text) logAiSuccess({ provider: "openai", feature, durationMs: Date.now() - started });
     return text || null;
   } catch (error) {
-    console.warn("ChatGPT misslyckades, provar nästa tjänst.", error);
+    logAiError({ provider: "openai", feature, durationMs: Date.now() - started, error });
     return null;
   }
 }
@@ -130,10 +159,12 @@ async function completeViaGemini(
   jsonSchema: JsonSchema | undefined,
   model: string,
   apiKeyOverride?: string,
+  feature = "text",
 ): Promise<string | null> {
   const apiKey = apiKeyOverride ?? googleAiKey();
 
   if (!apiKey) return null;
+  const started = Date.now();
   try {
     const googleFetch = createGoogleAiStudioFetch();
     const res = await googleFetch(
@@ -154,13 +185,20 @@ async function completeViaGemini(
     );
     if (!res.ok || !res.body) {
       const detail = await res.text().catch(() => "");
-      console.warn(`Google AI Studio svarade ${res.status}: ${detail.slice(0, 300)}`);
+      logAiError({
+        provider: "google",
+        feature,
+        status: res.status,
+        durationMs: Date.now() - started,
+        error: new Error(`HTTP ${res.status}: ${detail}`),
+      });
       return null;
     }
     const text = await readStream(res.body);
+    if (text) logAiSuccess({ provider: "google", feature, durationMs: Date.now() - started });
     return text || null;
   } catch (error) {
-    console.warn("Google AI Studio misslyckades, provar reservtjänsten.", error);
+    logAiError({ provider: "google", feature, durationMs: Date.now() - started, error });
     return null;
   }
 }
@@ -192,8 +230,10 @@ export async function completeTextDetailed(opts: {
     return { text, provider };
   };
 
+  const feature = opts.feature ?? "text";
+
   // Först: Gemini via användarens påfyllda Perplexity-konto (sparar övriga krediter).
-  const pplxText = await completeViaPerplexity(messages, opts.jsonSchema);
+  const pplxText = await completeViaPerplexity(messages, opts.jsonSchema, feature);
   if (pplxText) return delivered(pplxText, "perplexity");
 
   // Andrahand: användarens egen Gemini-nyckel (GOOGLE_API_KEY).
@@ -202,21 +242,22 @@ export async function completeTextDetailed(opts: {
     opts.jsonSchema,
     opts.model ?? ANDREA_FAST_MODEL,
     opts.apiKey,
+    feature,
   );
   if (geminiText) return delivered(geminiText, "google");
 
   // Reserv: Gemini via Lovables gateway.
   try {
-    const gatewayText = await completeViaLovable(messages, opts.jsonSchema);
+    const gatewayText = await completeViaLovable(messages, opts.jsonSchema, feature);
     if (gatewayText) return delivered(gatewayText, "lovable");
   } catch (error) {
-    console.warn("Gemini via Lovable misslyckades, provar reservkedjan.", error);
+    logAiError({ provider: "lovable", feature, error });
   }
 
-  const openAiText = await completeViaOpenAI(messages, opts.jsonSchema);
+  const openAiText = await completeViaOpenAI(messages, opts.jsonSchema, feature);
   if (openAiText) return delivered(openAiText, "openai");
 
-  return delivered(await completeViaLovable(messages, opts.jsonSchema), "lovable");
+  return delivered(await completeViaLovable(messages, opts.jsonSchema, feature), "lovable");
 }
 
 export async function completeText(opts: {
@@ -262,6 +303,7 @@ async function readResponsesStream(body: ReadableStream<Uint8Array>): Promise<st
 async function completeViaPerplexity(
   messages: Message[],
   jsonSchema: JsonSchema | undefined,
+  feature = "text",
 ): Promise<string | null> {
   const keys = [process.env["PERPLEXITY_API_KEY_1"], process.env["PERPLEXITY_API_KEY"]].filter(
     (k): k is string => Boolean(k),
@@ -269,6 +311,7 @@ async function completeViaPerplexity(
   const instructions = messages.filter((m) => m.role === "system").map((m) => m.content).join("\n\n");
   const input = messages.filter((m) => m.role === "user").map((m) => m.content).join("\n\n");
   for (const key of keys) {
+    const started = Date.now();
     try {
       const res = await fetch("https://api.perplexity.ai/v1/responses", {
         method: "POST",
@@ -294,13 +337,22 @@ async function completeViaPerplexity(
       });
       if (!res.ok || !res.body) {
         const detail = await res.text().catch(() => "");
-        console.warn(`Perplexity svarade ${res.status}: ${detail.slice(0, 300)}`);
+        logAiError({
+          provider: "perplexity",
+          feature,
+          status: res.status,
+          durationMs: Date.now() - started,
+          error: new Error(`HTTP ${res.status}: ${detail}`),
+        });
         continue;
       }
       const text = await readResponsesStream(res.body);
-      if (text) return text;
+      if (text) {
+        logAiSuccess({ provider: "perplexity", feature, durationMs: Date.now() - started });
+        return text;
+      }
     } catch (error) {
-      console.warn("Perplexity misslyckades, provar reservtjänsten.", error);
+      logAiError({ provider: "perplexity", feature, durationMs: Date.now() - started, error });
     }
   }
   return null;
@@ -325,8 +377,16 @@ export async function completeVision(opts: {
   jsonSchema?: JsonSchema;
   feature?: string;
 }): Promise<string> {
+  const feature = opts.feature ?? "vision";
   const key = process.env["LOVABLE_API_KEY"];
-  if (!key) throw new Error("AI-tjänsten är inte tillgänglig just nu. Försök igen om en stund.");
+  if (!key) {
+    logAiError({
+      provider: "lovable",
+      feature,
+      error: new Error("API-nyckel saknas (LOVABLE_API_KEY)"),
+    });
+    throw new Error("AI-tjänsten är inte tillgänglig just nu. Försök igen om en stund.");
+  }
 
   const blocks: Block[] = [{ type: "text", text: opts.input }];
   let imagesOnly = opts.attachments.length > 0;
@@ -341,6 +401,7 @@ export async function completeVision(opts: {
 
   // Förstahandsval för bilder: användarens eget Google-konto.
   const geminiKey = googleAiKey();
+  const started = Date.now();
 
   if (imagesOnly && geminiKey) {
     try {
@@ -367,16 +428,23 @@ export async function completeVision(opts: {
       if (geminiRes.ok && geminiRes.body) {
         const text = await readStream(geminiRes.body);
         if (text) {
+          logAiSuccess({ provider: "google", feature, durationMs: Date.now() - started });
           const { recordAiUsage } = await import("./ai-usage.server");
           await recordAiUsage("google", opts.feature ?? "vision");
           return text;
         }
       } else {
         const detail = await geminiRes.text().catch(() => "");
-        console.warn(`Gemini (bilaga) svarade ${geminiRes.status}: ${detail.slice(0, 300)}`);
+        logAiError({
+          provider: "google",
+          feature,
+          status: geminiRes.status,
+          durationMs: Date.now() - started,
+          error: new Error(`HTTP ${geminiRes.status}: ${detail}`),
+        });
       }
     } catch (error) {
-      console.warn("Gemini (bilaga) misslyckades, provar reservtjänsten.", error);
+      logAiError({ provider: "google", feature, durationMs: Date.now() - started, error });
     }
   }
 
@@ -400,7 +468,13 @@ export async function completeVision(opts: {
 
   if (!res.ok || !res.body) {
     const detail = await res.text().catch(() => "");
-    console.warn(`Lovable AI (bilaga) svarade ${res.status}: ${detail.slice(0, 300)}`);
+    logAiError({
+      provider: "lovable",
+      feature,
+      status: res.status,
+      durationMs: Date.now() - started,
+      error: new Error(`HTTP ${res.status}: ${detail}`),
+    });
     if (res.status === 402 || res.status === 403)
       throw new Error("AI-krediterna är slut – fyll på för att fortsätta använda Andrea.");
     throw new Error("AI-tjänsten kunde inte läsa bilagan just nu.");
@@ -408,6 +482,7 @@ export async function completeVision(opts: {
 
   const text = await readStream(res.body);
   if (text) {
+    logAiSuccess({ provider: "lovable", feature, durationMs: Date.now() - started });
     const { recordAiUsage } = await import("./ai-usage.server");
     await recordAiUsage("lovable", opts.feature ?? "vision");
   }
