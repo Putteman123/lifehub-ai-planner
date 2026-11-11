@@ -393,6 +393,7 @@ export async function completeVision(opts: {
 
   // Förstahandsval för bilder: användarens eget Google-konto.
   const geminiKey = googleAiKey();
+  const started = Date.now();
 
   if (imagesOnly && geminiKey) {
     try {
@@ -419,16 +420,23 @@ export async function completeVision(opts: {
       if (geminiRes.ok && geminiRes.body) {
         const text = await readStream(geminiRes.body);
         if (text) {
+          logAiSuccess({ provider: "google", feature, durationMs: Date.now() - started });
           const { recordAiUsage } = await import("./ai-usage.server");
           await recordAiUsage("google", opts.feature ?? "vision");
           return text;
         }
       } else {
         const detail = await geminiRes.text().catch(() => "");
-        console.warn(`Gemini (bilaga) svarade ${geminiRes.status}: ${detail.slice(0, 300)}`);
+        logAiError({
+          provider: "google",
+          feature,
+          status: geminiRes.status,
+          durationMs: Date.now() - started,
+          error: new Error(`HTTP ${geminiRes.status}: ${detail}`),
+        });
       }
     } catch (error) {
-      console.warn("Gemini (bilaga) misslyckades, provar reservtjänsten.", error);
+      logAiError({ provider: "google", feature, durationMs: Date.now() - started, error });
     }
   }
 
@@ -452,7 +460,13 @@ export async function completeVision(opts: {
 
   if (!res.ok || !res.body) {
     const detail = await res.text().catch(() => "");
-    console.warn(`Lovable AI (bilaga) svarade ${res.status}: ${detail.slice(0, 300)}`);
+    logAiError({
+      provider: "lovable",
+      feature,
+      status: res.status,
+      durationMs: Date.now() - started,
+      error: new Error(`HTTP ${res.status}: ${detail}`),
+    });
     if (res.status === 402 || res.status === 403)
       throw new Error("AI-krediterna är slut – fyll på för att fortsätta använda Andrea.");
     throw new Error("AI-tjänsten kunde inte läsa bilagan just nu.");
@@ -460,6 +474,7 @@ export async function completeVision(opts: {
 
   const text = await readStream(res.body);
   if (text) {
+    logAiSuccess({ provider: "lovable", feature, durationMs: Date.now() - started });
     const { recordAiUsage } = await import("./ai-usage.server");
     await recordAiUsage("lovable", opts.feature ?? "vision");
   }
