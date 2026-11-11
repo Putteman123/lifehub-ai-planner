@@ -230,8 +230,10 @@ export async function completeTextDetailed(opts: {
     return { text, provider };
   };
 
+  const feature = opts.feature ?? "text";
+
   // Först: Gemini via användarens påfyllda Perplexity-konto (sparar övriga krediter).
-  const pplxText = await completeViaPerplexity(messages, opts.jsonSchema);
+  const pplxText = await completeViaPerplexity(messages, opts.jsonSchema, feature);
   if (pplxText) return delivered(pplxText, "perplexity");
 
   // Andrahand: användarens egen Gemini-nyckel (GOOGLE_API_KEY).
@@ -240,21 +242,22 @@ export async function completeTextDetailed(opts: {
     opts.jsonSchema,
     opts.model ?? ANDREA_FAST_MODEL,
     opts.apiKey,
+    feature,
   );
   if (geminiText) return delivered(geminiText, "google");
 
   // Reserv: Gemini via Lovables gateway.
   try {
-    const gatewayText = await completeViaLovable(messages, opts.jsonSchema);
+    const gatewayText = await completeViaLovable(messages, opts.jsonSchema, feature);
     if (gatewayText) return delivered(gatewayText, "lovable");
   } catch (error) {
-    console.warn("Gemini via Lovable misslyckades, provar reservkedjan.", error);
+    logAiError({ provider: "lovable", feature, error });
   }
 
-  const openAiText = await completeViaOpenAI(messages, opts.jsonSchema);
+  const openAiText = await completeViaOpenAI(messages, opts.jsonSchema, feature);
   if (openAiText) return delivered(openAiText, "openai");
 
-  return delivered(await completeViaLovable(messages, opts.jsonSchema), "lovable");
+  return delivered(await completeViaLovable(messages, opts.jsonSchema, feature), "lovable");
 }
 
 export async function completeText(opts: {
@@ -300,6 +303,7 @@ async function readResponsesStream(body: ReadableStream<Uint8Array>): Promise<st
 async function completeViaPerplexity(
   messages: Message[],
   jsonSchema: JsonSchema | undefined,
+  feature = "text",
 ): Promise<string | null> {
   const keys = [process.env["PERPLEXITY_API_KEY_1"], process.env["PERPLEXITY_API_KEY"]].filter(
     (k): k is string => Boolean(k),
@@ -307,6 +311,7 @@ async function completeViaPerplexity(
   const instructions = messages.filter((m) => m.role === "system").map((m) => m.content).join("\n\n");
   const input = messages.filter((m) => m.role === "user").map((m) => m.content).join("\n\n");
   for (const key of keys) {
+    const started = Date.now();
     try {
       const res = await fetch("https://api.perplexity.ai/v1/responses", {
         method: "POST",
@@ -332,13 +337,22 @@ async function completeViaPerplexity(
       });
       if (!res.ok || !res.body) {
         const detail = await res.text().catch(() => "");
-        console.warn(`Perplexity svarade ${res.status}: ${detail.slice(0, 300)}`);
+        logAiError({
+          provider: "perplexity",
+          feature,
+          status: res.status,
+          durationMs: Date.now() - started,
+          error: new Error(`HTTP ${res.status}: ${detail}`),
+        });
         continue;
       }
       const text = await readResponsesStream(res.body);
-      if (text) return text;
+      if (text) {
+        logAiSuccess({ provider: "perplexity", feature, durationMs: Date.now() - started });
+        return text;
+      }
     } catch (error) {
-      console.warn("Perplexity misslyckades, provar reservtjänsten.", error);
+      logAiError({ provider: "perplexity", feature, durationMs: Date.now() - started, error });
     }
   }
   return null;
