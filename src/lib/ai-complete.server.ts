@@ -377,8 +377,16 @@ export async function completeVision(opts: {
   jsonSchema?: JsonSchema;
   feature?: string;
 }): Promise<string> {
+  const feature = opts.feature ?? "vision";
   const key = process.env["LOVABLE_API_KEY"];
-  if (!key) throw new Error("AI-tjänsten är inte tillgänglig just nu. Försök igen om en stund.");
+  if (!key) {
+    logAiError({
+      provider: "lovable",
+      feature,
+      error: new Error("API-nyckel saknas (LOVABLE_API_KEY)"),
+    });
+    throw new Error("AI-tjänsten är inte tillgänglig just nu. Försök igen om en stund.");
+  }
 
   const blocks: Block[] = [{ type: "text", text: opts.input }];
   let imagesOnly = opts.attachments.length > 0;
